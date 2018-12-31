@@ -24,7 +24,9 @@ module.exports = {
                         presets: ['@babel/preset-env'],
                         plugins: [
                             ["transform-react-jsx", { "pragma": "h" }],
-                            ["syntax-dynamic-import"]
+                            ["syntax-dynamic-import"],
+                            ["@babel/plugin-proposal-class-properties"],
+                            ["@babel/syntax-class-properties"],
                         ]
                     }
                 }
