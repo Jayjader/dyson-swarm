@@ -47,17 +47,17 @@ pub enum Building {
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct ResourceCount{
-    resource: Resource,
-    count: u64,
+    pub resource: Resource,
+    pub count: u32,
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct BuildingCount{
-    building: Building,
-    count: u64,
+    pub building: Building,
+    pub count: u32,
 }
 
 #[wasm_bindgen]
@@ -76,6 +76,7 @@ pub struct StateBuildings {
     pub miners: BuildingCount,
     pub refiners: BuildingCount,
     pub satellite_factories: BuildingCount,
+    pub launchers: BuildingCount,
 }
 
 #[wasm_bindgen]
@@ -90,18 +91,51 @@ impl State {
     pub fn new() -> State {
         State {
             resources: StateResources {
-                electricity: ResourceCount{resource: Resource::Electricity, count: 0},
-                ore: ResourceCount{resource: Resource::Ore, count: 0},
-                metal: ResourceCount{resource: Resource::Metal, count: 0},
-                satellites: ResourceCount{resource: Resource::Satellite, count: 0},
+                electricity: ResourceCount{
+                    resource: Resource::Electricity,
+                    count: 0,
+                },
+                ore: ResourceCount{
+                    resource: Resource::Ore,
+                    count: 0,
+                },
+                metal: ResourceCount{
+                    resource: Resource::Metal,
+                    count: 0,
+                },
+                satellites: ResourceCount{
+                    resource: Resource::Satellite,
+                    count: 0,
+                },
             },
             buildings: StateBuildings {
-                collectors: BuildingCount{building: Building::SolarCollector, count: 0},
-                miners: BuildingCount{building: Building::Miner, count: 0},
-                refiners: BuildingCount{building: Building::Refiner, count: 0},
-                satellite_factories: BuildingCount{building: Building::SatelliteFactory, count: 0},
+                collectors: BuildingCount{
+                    building: Building::SolarCollector,
+                    count: 0,
+                },
+                miners: BuildingCount{
+                    building: Building::Miner,
+                    count: 0,
+                },
+                refiners: BuildingCount{
+                    building: Building::Refiner,
+                    count: 0,
+                },
+                satellite_factories: BuildingCount{
+                    building: Building::SatelliteFactory,
+                    count: 0,
+                },
+                launchers: BuildingCount{
+                    building: Building::Launcher,
+                    count: 0,
+                }
             },
         }
+    }
+    
+    #[wasm_bindgen]
+    pub fn add_collector(self) -> State {
+        return State {..self};
     }
 }
 
@@ -128,9 +162,18 @@ mod test {
         assert_eq!(state.buildings.miners.building, Building::Miner);
         assert_eq!(state.buildings.refiners.building, Building::Refiner);
         assert_eq!(state.buildings.satellite_factories.building, Building::SatelliteFactory);
+        assert_eq!(state.buildings.launchers.building, Building::Launcher);
         assert_eq!(state.buildings.collectors.count, 0);
         assert_eq!(state.buildings.miners.count, 0);
         assert_eq!(state.buildings.refiners.count, 0);
         assert_eq!(state.buildings.satellite_factories.count, 0);
+        assert_eq!(state.buildings.launchers.count, 0);
+    }
+
+    #[test]
+    fn test_add_collector() {
+        let state = State::new();
+        let post_action_state = state.add_collector();
+        assert_eq!(post_action_state.buildings.collectors.count, 1);
     }
 }
