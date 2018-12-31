@@ -1,0 +1,32 @@
+.game-content {
+    display: flex;
+}
+
+.resources, .buildings, .swarm {
+    border: 2px solid purple;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+.resources td, .buildings td, .swarm td {
+    border-top: 1px solid black;
+    padding: 0 1rem;
+}
+.resources td:nth-child(1), .buildings td:nth-child(1), .swarm td:nth-child(1) {
+    border-right: 1px solid black;
+}
+.resources .resource-name, .buildings .building-name, .swarm .swarm-attribute-name {
+    text-align: left;
+    min-width: 14rem;
+    padding: 0 1rem;
+}
+.resources .resource-count, .buildings .building-count, .swarm .swarm-attribute-value {
+    text-align: right;
+    min-width: 6rem;
+}
+
+.actions button {
+    display: block;
+    padding: 0.5rem;
+    margin: 1.2rem;
+    width: 15rem;
+}
