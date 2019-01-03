@@ -41,5 +41,6 @@ module.exports = {
         new WasmPackPlugin({
             crateDirectory: path.resolve(__dirname, "crate")
         }),
-    ]
+    ],
+    devtool: 'eval-source-map',
 };
