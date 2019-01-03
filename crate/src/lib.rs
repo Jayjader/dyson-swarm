@@ -135,7 +135,72 @@ impl State {
     
     #[wasm_bindgen]
     pub fn add_collector(self) -> State {
-        return State {..self};
+        return State {
+            buildings: StateBuildings {
+                collectors: BuildingCount {
+                    building: Building::SolarCollector,
+                    count: self.buildings.collectors.count + 1,
+                },
+                ..self.buildings
+            },
+            resources: self.resources,
+        };
+    }
+
+    #[wasm_bindgen]
+    pub fn add_miner(self) -> State {
+        return State {
+            buildings: StateBuildings {
+                miners: BuildingCount {
+                    building: Building::Miner,
+                    count: self.buildings.miners.count + 1,
+                },
+                ..self.buildings
+            },
+            resources: self.resources
+        };
+    }
+
+    #[wasm_bindgen]
+    pub fn add_refiner(self) -> State {
+        return State {
+            buildings: StateBuildings {
+                refiners: BuildingCount {
+                    building: Building::Refiner,
+                    count: self.buildings.refiners.count + 1,
+                },
+                ..self.buildings
+            },
+            resources: self.resources,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn add_satellite_factory(self) -> State {
+        return State {
+            buildings: StateBuildings {
+                satellite_factories: BuildingCount {
+                    building: Building::SatelliteFactory,
+                    count: self.buildings.satellite_factories.count + 1,
+                },
+                ..self.buildings
+            },
+            resources: self.resources,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn add_launcher(self) -> State {
+        return State {
+            buildings: StateBuildings {
+                launchers: BuildingCount {
+                    building: Building::Launcher,
+                    count: self.buildings.launchers.count + 1,
+                },
+                ..self.buildings
+            },
+            resources: self.resources,
+        }
     }
 }
 
@@ -175,5 +240,35 @@ mod test {
         let state = State::new();
         let post_action_state = state.add_collector();
         assert_eq!(post_action_state.buildings.collectors.count, 1);
+        assert_eq!(post_action_state.buildings.collectors.building, Building::SolarCollector);
+    }
+
+    #[test]
+    fn test_add_miner() {
+        let state = State::new();
+        let post_action_state = state.add_miner();
+        assert_eq!(post_action_state.buildings.miners.count, 1);
+        assert_eq!(post_action_state.buildings.miners.building, Building::Miner);
+    }
+
+    #[test]
+    fn test_add_refiner() {
+        let state = State::new().add_refiner();
+        assert_eq!(state.buildings.refiners.count, 1);
+        assert_eq!(state.buildings.refiners.building, Building::Refiner);
+    }
+
+    #[test]
+    fn test_add_satellite_factory() {
+        let state = State::new().add_satellite_factory();
+        assert_eq!(state.buildings.satellite_factories.count, 1);
+        assert_eq!(state.buildings.satellite_factories.building, Building::SatelliteFactory);
+    }
+
+    #[test]
+    fn test_add_launcher() {
+        let state = State::new().add_launcher();
+        assert_eq!(state.buildings.launchers.count, 1);
+        assert_eq!(state.buildings.launchers.building, Building::Launcher);
     }
 }
