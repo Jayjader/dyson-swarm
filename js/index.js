@@ -14,7 +14,14 @@ import('../crate/pkg').then(wasm => {
             this.state = {
                 game: new_game_state(),
             };
+
+            this.frameId = requestAnimationFrame(this.tick);
         }
+
+        tick = () => {
+            this.setState({game: this.state.game.tick()});
+            this.frameId = requestAnimationFrame(this.tick);
+        };
 
         buildCollector = () => {
             this.setState(prevState => ({game: prevState.game.add_collector()}));
