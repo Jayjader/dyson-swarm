@@ -45,8 +45,8 @@ fn test_new_game_state() {
     assert_eq!(state.buildings.satellite_factories.building, Building::SatelliteFactory);
     assert_eq!(state.buildings.launchers.building, Building::Launcher);
     assert_eq!(state.buildings.collectors.count, 1);
-    assert_eq!(state.buildings.miners.count, 0);
-    assert_eq!(state.buildings.refiners.count, 0);
+    assert_eq!(state.buildings.miners.count, 1);
+    assert_eq!(state.buildings.refiners.count, 1);
     assert_eq!(state.buildings.satellite_factories.count, 0);
     assert_eq!(state.buildings.launchers.count, 0);
 }
