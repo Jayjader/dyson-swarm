@@ -23,14 +23,14 @@ pub enum Building {
 #[derive(Debug, Copy, Clone)]
 pub struct ResourceCount {
     pub resource: Resource,
-    pub count: u32,
+    pub count: i32,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Copy, Clone)]
 pub struct BuildingCount {
     pub building: Building,
-    pub count: u32,
+    pub count: i32,
 }
 
 #[wasm_bindgen]
@@ -150,7 +150,6 @@ impl State {
 
     #[wasm_bindgen]
     pub fn tick(&self) -> State {
-        // todo: handle wraparound?
         let total_elec_produced = self.buildings.collectors.count * 1;
         let total_elec_consumed = self.buildings.miners.count * 1
             + self.buildings.refiners.count * 5
