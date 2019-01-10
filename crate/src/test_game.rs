@@ -1,3 +1,7 @@
+use COLLECTOR_ELECTRICITY_PRODUCTION;
+use MINER_ELECTRICITY_CONSUMPTION;
+use MINER_ORE_PRODUCTION;
+
 use Building;
 use Resource;
 use State;
@@ -91,8 +95,18 @@ fn test_add_launcher() {
 #[test]
 fn test_tick() {
     let state = State::new().add_collector().tick();
-    assert_eq!(state.resources.electricity.count, 10);
+    assert_eq!(state.resources.electricity.count, COLLECTOR_ELECTRICITY_PRODUCTION);
 
     let state = state.add_miner().tick();
-    assert_eq!(state.resources.electricity.count, 19);
+    assert_eq!(state.resources.electricity.count, COLLECTOR_ELECTRICITY_PRODUCTION * 2);
+
+    let state = &mut State::new()
+        .add_collector()
+        .add_miner();
+    for _i in 0..MINER_ELECTRICITY_CONSUMPTION - 1 {
+        *state = state.tick();
+    }
+    assert_eq!(state.resources.electricity.count, MINER_ELECTRICITY_CONSUMPTION - 1);
+    *state = state.tick();
+    assert_eq!(state.resources.electricity.count, 0);
 }

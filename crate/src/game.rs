@@ -1,5 +1,14 @@
 use wasm_bindgen::prelude::*;
 
+pub const REFINER_ELECTRICITY_CONSUMPTION: i32 = 50;
+pub const REFINER_ORE_CONSUMPTION: i32 = 5;
+pub const REFINER_METAL_PRODUCTION: i32 = 1;
+pub const MINER_ELECTRICITY_CONSUMPTION: i32 = 15;
+pub const MINER_ORE_PRODUCTION: i32 = 3;
+pub const COLLECTOR_ELECTRICITY_PRODUCTION: i32 = 1;
+pub const SATELLITE_FACTORY_ELECTRICITY_CONSUMPTION: i32 = 45;
+pub const SATELLITE_FACTORY_METAL_CONSUMPTION: i32 = 15;
+
 #[wasm_bindgen]
 #[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
 pub enum Resource {
@@ -52,7 +61,20 @@ pub struct StateBuildings {
     pub launchers: BuildingCount,
 }
 
+impl StateBuildings {
+    pub fn new() -> StateBuildings {
+        StateBuildings {
+            collectors: BuildingCount { building: Building::SolarCollector, count: 0 },
+            miners: BuildingCount { building: Building::Miner, count: 0 },
+            refiners: BuildingCount { building: Building::Refiner, count: 0 },
+            satellite_factories: BuildingCount { building: Building::SatelliteFactory, count: 0 },
+            launchers: BuildingCount { building: Building::Launcher, count: 0 },
+        }
+    }
+}
+
 #[wasm_bindgen]
+#[derive(Copy, Clone)]
 pub struct State {
     pub resources: StateResources,
     pub buildings: StateBuildings,
@@ -64,17 +86,17 @@ impl State {
     pub fn new() -> State {
         State {
             resources: StateResources {
-                electricity: ResourceCount { resource: Resource::Electricity, count: 0, },
-                ore: ResourceCount { resource: Resource::Ore, count: 0, },
-                metal: ResourceCount { resource: Resource::Metal, count: 0, },
-                satellites: ResourceCount { resource: Resource::Satellite, count: 0, },
+                electricity: ResourceCount { resource: Resource::Electricity, count: 0 },
+                ore: ResourceCount { resource: Resource::Ore, count: 0 },
+                metal: ResourceCount { resource: Resource::Metal, count: 0 },
+                satellites: ResourceCount { resource: Resource::Satellite, count: 0 },
             },
             buildings: StateBuildings {
-                collectors: BuildingCount { building: Building::SolarCollector, count: 0, },
-                miners: BuildingCount { building: Building::Miner, count: 0, },
-                refiners: BuildingCount { building: Building::Refiner, count: 0, },
-                satellite_factories: BuildingCount { building: Building::SatelliteFactory, count: 0, },
-                launchers: BuildingCount { building: Building::Launcher, count: 0, },
+                collectors: BuildingCount { building: Building::SolarCollector, count: 0 },
+                miners: BuildingCount { building: Building::Miner, count: 0 },
+                refiners: BuildingCount { building: Building::Refiner, count: 0 },
+                satellite_factories: BuildingCount { building: Building::SatelliteFactory, count: 0 },
+                launchers: BuildingCount { building: Building::Launcher, count: 0 },
             },
         }
     }
@@ -150,48 +172,47 @@ impl State {
 
     #[wasm_bindgen]
     pub fn tick(&self) -> State {
-        let total_elec_produced = self.buildings.collectors.count * 1;
-        let total_elec_consumed = self.buildings.miners.count * 1
-            + self.buildings.refiners.count * 5
-            + self.buildings.satellite_factories.count * 15
-            + self.buildings.launchers.count * 30;
+        let metal_budget = &mut self.resources.metal.count.clone();
+        let ore_budget = &mut self.resources.ore.count.clone();
+        let electricity_budget = &mut self.resources.electricity.count.clone();
+        let mut satellites_produced = 0;
 
-        let total_ore_produced = self.buildings.miners.count * 2;
-        let total_ore_consumed = self.buildings.refiners.count * 10;
+        *electricity_budget += self.buildings.collectors.count * COLLECTOR_ELECTRICITY_PRODUCTION;
 
-        let total_metal_produced = self.buildings.refiners.count * 1;
-        let total_metal_consumed = self.buildings.satellite_factories.count * 100;
+        for _i in 0..self.buildings.satellite_factories.count {
+            if *metal_budget >= SATELLITE_FACTORY_METAL_CONSUMPTION && *electricity_budget >= SATELLITE_FACTORY_ELECTRICITY_CONSUMPTION {
+                satellites_produced += 1;
+                *electricity_budget -= SATELLITE_FACTORY_ELECTRICITY_CONSUMPTION;
+                *metal_budget -= SATELLITE_FACTORY_METAL_CONSUMPTION;
+            }
+        }
+
+        for _i in 0..self.buildings.refiners.count {
+            if *ore_budget >= REFINER_ORE_CONSUMPTION && *electricity_budget >= REFINER_ELECTRICITY_CONSUMPTION {
+                *metal_budget += REFINER_METAL_PRODUCTION;
+                *electricity_budget -= REFINER_ELECTRICITY_CONSUMPTION;
+                *ore_budget -= REFINER_ORE_CONSUMPTION;
+            } else {
+                break;
+            }
+        }
+
+        for _i in 0..self.buildings.miners.count  {
+            if *electricity_budget >= MINER_ELECTRICITY_CONSUMPTION {
+                *ore_budget += MINER_ORE_PRODUCTION;
+                *electricity_budget -= MINER_ELECTRICITY_CONSUMPTION;
+            }
+        }
 
         return State {
             resources: StateResources {
-                electricity: ResourceCount {
-                    resource: Resource::Electricity,
-                    count: {
-                        let max_consumption = self.resources.electricity.count + total_elec_produced;
-                        if max_consumption > total_elec_consumed {
-                            max_consumption - total_elec_consumed
-                        } else { 0 }
-                    },
+                electricity: ResourceCount { resource: Resource::Electricity, count: *electricity_budget },
+                ore: ResourceCount { resource: Resource::Electricity, count: *ore_budget },
+                metal: ResourceCount { resource: Resource::Electricity, count: *metal_budget },
+                satellites: ResourceCount {
+                    resource: Resource::Satellite,
+                    count: self.resources.satellites.count + satellites_produced,
                 },
-                ore: ResourceCount {
-                    resource: Resource::Ore,
-                    count: {
-                        let max_consumption = self.resources.ore.count + total_ore_produced;
-                        if max_consumption > total_ore_consumed {
-                            max_consumption - total_elec_consumed
-                        } else { 0 }
-                    },
-                },
-                metal: ResourceCount {
-                    resource: Resource::Metal,
-                    count: {
-                        let max_consumption = self.resources.metal.count + total_metal_produced;
-                        if max_consumption > total_metal_consumed {
-                            max_consumption - total_metal_consumed
-                        } else { 0 }
-                    },
-                },
-                satellites: self.resources.satellites,
             },
             buildings: self.buildings,
         };
