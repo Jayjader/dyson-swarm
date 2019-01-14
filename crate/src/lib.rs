@@ -2,6 +2,9 @@
 extern crate cfg_if;
 extern crate web_sys;
 extern crate wasm_bindgen;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 use wasm_bindgen::prelude::*;
 
@@ -51,4 +54,14 @@ pub fn new_game_state() -> State {
         },
 
     };
+}
+
+#[wasm_bindgen]
+pub fn serialize_game_state(state: &State) -> String {
+    return serde_json::to_string(state).unwrap();
+}
+
+#[wasm_bindgen]
+pub fn deserialize_game_state(s: &str) -> State {
+    return serde_json::from_str(s).unwrap();
 }

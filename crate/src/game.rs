@@ -1,4 +1,5 @@
 use wasm_bindgen::prelude::*;
+use serde_derive;
 
 pub const REFINER_ELECTRICITY_CONSUMPTION: i32 = 50;
 pub const REFINER_ORE_CONSUMPTION: i32 = 5;
@@ -10,7 +11,7 @@ pub const SATELLITE_FACTORY_ELECTRICITY_CONSUMPTION: i32 = 45;
 pub const SATELLITE_FACTORY_METAL_CONSUMPTION: i32 = 15;
 
 #[wasm_bindgen]
-#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Resource {
     Electricity,
     Ore,
@@ -19,7 +20,7 @@ pub enum Resource {
 }
 
 #[wasm_bindgen]
-#[derive(Debug, Hash, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Building {
     SolarCollector,
     Miner,
@@ -29,21 +30,21 @@ pub enum Building {
 }
 
 #[wasm_bindgen]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct ResourceCount {
     pub resource: Resource,
     pub count: i32,
 }
 
 #[wasm_bindgen]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct BuildingCount {
     pub building: Building,
     pub count: i32,
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct StateResources {
     pub electricity: ResourceCount,
     pub ore: ResourceCount,
@@ -52,7 +53,7 @@ pub struct StateResources {
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct StateBuildings {
     pub collectors: BuildingCount,
     pub miners: BuildingCount,
@@ -74,7 +75,7 @@ impl StateBuildings {
 }
 
 #[wasm_bindgen]
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct State {
     pub resources: StateResources,
     pub buildings: StateBuildings,
@@ -207,8 +208,8 @@ impl State {
         return State {
             resources: StateResources {
                 electricity: ResourceCount { resource: Resource::Electricity, count: *electricity_budget },
-                ore: ResourceCount { resource: Resource::Electricity, count: *ore_budget },
-                metal: ResourceCount { resource: Resource::Electricity, count: *metal_budget },
+                ore: ResourceCount { resource: Resource::Ore, count: *ore_budget },
+                metal: ResourceCount { resource: Resource::Metal, count: *metal_budget },
                 satellites: ResourceCount {
                     resource: Resource::Satellite,
                     count: self.resources.satellites.count + satellites_produced,

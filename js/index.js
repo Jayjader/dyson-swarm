@@ -6,20 +6,27 @@ import {BuildingsDisplay} from './displays/Buildings.js';
 import {SwarmDisplay} from './displays/Swarm.js';
 
 import('../crate/pkg').then(wasm => {
-    let { new_game_state } = wasm;
+    let { new_game_state, serialize_game_state, deserialize_game_state } = wasm;
 
     class Game extends Component {
+
         constructor(props) {
             super(props);
-            this.state = {
-                game: new_game_state(),
-            };
+
+            try {
+                this.state = {game: deserialize_game_state(localStorage.game)};
+            } catch (error) {
+                this.state = {game: new_game_state()}
+            }
+
+            localStorage.game = serialize_game_state(this.state.game);
 
             this.frameId = requestAnimationFrame(this.tick);
         }
 
         tick = () => {
             this.setState({game: this.state.game.tick()});
+            localStorage.game = serialize_game_state(this.state.game);
             this.frameId = requestAnimationFrame(this.tick);
         };
 
