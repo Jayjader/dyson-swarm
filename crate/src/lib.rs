@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate cfg_if;
-extern crate web_sys;
 extern crate wasm_bindgen;
+extern crate web_sys;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
@@ -40,19 +40,45 @@ cfg_if! {
 pub fn new_game_state() -> State {
     return State {
         buildings: StateBuildings {
-            collectors: BuildingCount { building: Building::SolarCollector, count: 1 },
-            miners: BuildingCount { building: Building::Miner, count: 1 },
-            refiners: BuildingCount { building: Building::Refiner, count: 1 },
-            satellite_factories: BuildingCount { building: Building::SatelliteFactory, count: 0 },
-            launchers: BuildingCount { building: Building::Launcher, count: 0 },
+            collectors: BuildingCount {
+                building: Building::SolarCollector,
+                count: 1,
+            },
+            miners: BuildingCount {
+                building: Building::Miner,
+                count: 1,
+            },
+            refiners: BuildingCount {
+                building: Building::Refiner,
+                count: 1,
+            },
+            satellite_factories: BuildingCount {
+                building: Building::SatelliteFactory,
+                count: 0,
+            },
+            launchers: BuildingCount {
+                building: Building::Launcher,
+                count: 0,
+            },
         },
         resources: StateResources {
-            electricity: ResourceCount { resource: Resource::Electricity, count: 0 },
-            ore: ResourceCount { resource: Resource::Ore, count: 0 },
-            metal: ResourceCount { resource: Resource::Metal, count: 0 },
-            satellites: ResourceCount { resource: Resource::Satellite, count: 0 },
+            electricity: ResourceCount {
+                resource: Resource::Electricity,
+                count: 0,
+            },
+            ore: ResourceCount {
+                resource: Resource::Ore,
+                count: 0,
+            },
+            metal: ResourceCount {
+                resource: Resource::Metal,
+                count: 0,
+            },
+            satellites: ResourceCount {
+                resource: Resource::Satellite,
+                count: 0,
+            },
         },
-
     };
 }
 
