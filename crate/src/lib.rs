@@ -73,15 +73,15 @@ pub fn new_game_state() -> State {
     return State {
         buildings: Buildings {
             collectors: 1,
-            miners: 1,
-            refiners: 1,
+            miners: 0,
+            refiners: 0,
             satellite_factories: 0,
             launchers: 0,
         },
         resources: Resources {
-            electricity: 0,
+            electricity: 500,
             ore: 0,
-            metal: 0,
+            metal: 200,
             satellites: 0,
         },
     };
