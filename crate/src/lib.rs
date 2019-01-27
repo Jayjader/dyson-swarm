@@ -71,14 +71,14 @@ impl State {
 pub fn new_game_state() -> State {
     set_panic_hook();
     return State {
-        buildings: StateBuildings {
+        buildings: Buildings {
             collectors: 1,
             miners: 1,
             refiners: 1,
             satellite_factories: 0,
             launchers: 0,
         },
-        resources: StateResources {
+        resources: Resources {
             electricity: 0,
             ore: 0,
             metal: 0,

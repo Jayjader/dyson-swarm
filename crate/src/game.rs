@@ -9,6 +9,12 @@ pub const COLLECTOR_ELECTRICITY_PRODUCTION: u32 = 1;
 pub const SATELLITE_FACTORY_ELECTRICITY_CONSUMPTION: u32 = 45;
 pub const SATELLITE_FACTORY_METAL_CONSUMPTION: u32 = 15;
 
+pub const COLLECTOR_BUILD_COST: u32 = 10;
+pub const MINER_BUILD_COST: u32 = 35;
+pub const REFINER_BUILD_COST: u32 = 20;
+pub const SATELLITE_FACTORY_BUILD_COST: u32 = 50;
+pub const LAUNCHER_BUILD_COST: u32 = 100;
+
 #[wasm_bindgen]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub enum Resource {
@@ -30,7 +36,7 @@ pub enum Building {
 
 #[wasm_bindgen]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct StateResources {
+pub struct Resources {
     pub electricity: u32,
     pub ore: u32,
     pub metal: u32,
@@ -39,7 +45,7 @@ pub struct StateResources {
 
 #[wasm_bindgen]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct StateBuildings {
+pub struct Buildings {
     pub collectors: u32,
     pub miners: u32,
     pub refiners: u32,
@@ -47,9 +53,9 @@ pub struct StateBuildings {
     pub launchers: u32,
 }
 
-impl StateBuildings {
-    pub fn new() -> StateBuildings {
-        StateBuildings {
+impl Buildings {
+    pub fn new() -> Buildings {
+        Buildings {
             collectors: 0,
             miners: 0,
             refiners: 0,
@@ -62,8 +68,8 @@ impl StateBuildings {
 #[wasm_bindgen]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct State {
-    pub resources: StateResources,
-    pub buildings: StateBuildings,
+    pub resources: Resources,
+    pub buildings: Buildings,
 }
 
 #[wasm_bindgen]
@@ -71,13 +77,13 @@ impl State {
     #[wasm_bindgen(constructor)]
     pub fn new() -> State {
         State {
-            resources: StateResources {
+            resources: Resources {
                 electricity: 0,
                 ore: 0,
                 metal: 0,
                 satellites: 0,
             },
-            buildings: StateBuildings {
+            buildings: Buildings {
                 collectors: 0,
                 miners: 0,
                 refiners: 0,
@@ -87,53 +93,89 @@ impl State {
         }
     }
 
-    pub fn add_collector(self) -> State {
-        return State {
-            buildings: StateBuildings {
-                collectors: self.buildings.collectors + 1,
-                ..self.buildings
-            },
-            resources: self.resources,
-        };
-    }
-    pub fn add_miner(self) -> State {
-        return State {
-            buildings: StateBuildings {
-                miners: self.buildings.miners + 1,
-                ..self.buildings
-            },
-            resources: self.resources,
-        };
+    pub fn build_collector(self) -> State {
+        if self.resources.metal >= COLLECTOR_BUILD_COST {
+            State {
+                buildings: Buildings {
+                    collectors: self.buildings.collectors + 1,
+                    ..self.buildings
+                },
+                resources: Resources {
+                    metal: self.resources.metal - COLLECTOR_BUILD_COST,
+                    ..self.resources
+                },
+            }
+        } else {
+            self
+        }
     }
 
-    pub fn add_refiner(self) -> State {
-        return State {
-            buildings: StateBuildings {
-                refiners: self.buildings.refiners + 1,
-                ..self.buildings
-            },
-            resources: self.resources,
-        };
+    pub fn build_miner(self) -> State {
+        if self.resources.metal >= MINER_BUILD_COST {
+            State {
+                buildings: Buildings {
+                    miners: self.buildings.miners + 1,
+                    ..self.buildings
+                },
+                resources: Resources {
+                    metal: self.resources.metal - MINER_BUILD_COST,
+                    ..self.resources
+                },
+            }
+        } else {
+            self
+        }
     }
 
-    pub fn add_satellite_factory(self) -> State {
-        return State {
-            buildings: StateBuildings {
-                satellite_factories: self.buildings.satellite_factories + 1,
-                ..self.buildings
-            },
-            resources: self.resources,
-        };
+    pub fn build_refiner(self) -> State {
+        if self.resources.metal >= REFINER_BUILD_COST {
+            State {
+                buildings: Buildings {
+                    refiners: self.buildings.refiners + 1,
+                    ..self.buildings
+                },
+                resources: Resources {
+                    metal: self.resources.metal - REFINER_BUILD_COST,
+                    ..self.resources
+                },
+            }
+        } else {
+            self
+        }
     }
 
-    pub fn add_launcher(self) -> State {
-        return State {
-            buildings: StateBuildings {
-                launchers: self.buildings.launchers + 1,
-                ..self.buildings
-            },
-            resources: self.resources,
-        };
+    pub fn build_satellite_factory(self) -> State {
+        if self.resources.metal >= SATELLITE_FACTORY_BUILD_COST {
+            State {
+                buildings: Buildings {
+                    satellite_factories: self.buildings.satellite_factories + 1,
+                    ..self.buildings
+                },
+                resources: Resources {
+                    metal: self.resources.metal - SATELLITE_FACTORY_BUILD_COST,
+                    ..self.resources
+                },
+            }
+        } else {
+            self
+        }
+    }
+
+    pub fn build_launcher(self) -> State {
+        if self.resources.metal >= LAUNCHER_BUILD_COST {
+            State {
+                buildings: Buildings {
+                    launchers: self.buildings.launchers + 1,
+                    ..self.buildings
+                },
+                resources: Resources {
+                    metal: self.resources.metal - LAUNCHER_BUILD_COST,
+                    ..self.resources
+                },
+            }
+        } else {
+            self
+        }
     }
 
     #[wasm_bindgen]
@@ -175,7 +217,7 @@ impl State {
         }
 
         return State {
-            resources: StateResources {
+            resources: Resources {
                 electricity: *electricity_budget,
                 ore: *ore_budget,
                 metal: *metal_budget,

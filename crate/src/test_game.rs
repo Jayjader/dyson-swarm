@@ -1,10 +1,12 @@
-use COLLECTOR_ELECTRICITY_PRODUCTION;
-use MINER_ELECTRICITY_CONSUMPTION;
-use MINER_ORE_PRODUCTION;
-
+use game;
+use game::Buildings;
+use game::Resources;
 use Building;
 use Resource;
 use State;
+use COLLECTOR_ELECTRICITY_PRODUCTION;
+use MINER_ELECTRICITY_CONSUMPTION;
+use MINER_ORE_PRODUCTION;
 
 #[test]
 fn test_state_new() {
@@ -38,59 +40,70 @@ fn test_new_game_state() {
 }
 
 #[test]
-fn test_add_collector() {
-    let state = State::new();
-    let post_action_state = state.add_collector();
+fn test_build_collector() {
+    let mut state = State::new();
+    state.resources.metal = game::COLLECTOR_BUILD_COST;
+    let post_action_state = state.build_collector();
     assert_eq!(post_action_state.buildings.collectors, 1);
+    assert_eq!(post_action_state.resources.metal, 0);
 }
 
 #[test]
-fn test_add_miner() {
-    let state = State::new();
-    let post_action_state = state.add_miner();
+fn test_build_miner() {
+    let mut state = State::new();
+    state.resources.metal = game::MINER_BUILD_COST;
+    let post_action_state = state.build_miner();
     assert_eq!(post_action_state.buildings.miners, 1);
+    assert_eq!(post_action_state.resources.metal, 0);
 }
 
 #[test]
-fn test_add_refiner() {
-    let state = State::new().add_refiner();
-    assert_eq!(state.buildings.refiners, 1);
+fn test_build_refiner() {
+    let mut state = State::new();
+    state.resources.metal = game::REFINER_BUILD_COST;
+    let post_action_state = state.build_refiner();
+    assert_eq!(post_action_state.buildings.refiners, 1);
+    assert_eq!(post_action_state.resources.metal, 0);
 }
 
 #[test]
-fn test_add_satellite_factory() {
-    let state = State::new().add_satellite_factory();
-    assert_eq!(state.buildings.satellite_factories, 1);
+fn test_build_satellite_factory() {
+    let mut state = State::new();
+    state.resources.metal = game::SATELLITE_FACTORY_BUILD_COST;
+    let post_action_state = state.build_satellite_factory();
+    assert_eq!(post_action_state.buildings.satellite_factories, 1);
+    assert_eq!(post_action_state.resources.metal, 0);
 }
 
 #[test]
-fn test_add_launcher() {
-    let state = State::new().add_launcher();
-    assert_eq!(state.buildings.launchers, 1);
+fn test_build_launcher() {
+    let mut state = State::new();
+    state.resources.metal = game::LAUNCHER_BUILD_COST;
+    let post_action_state = state.build_launcher();
+    assert_eq!(post_action_state.buildings.launchers, 1);
+    assert_eq!(post_action_state.resources.metal, 0);
 }
 
 #[test]
 fn test_tick() {
-    let state = State::new().add_collector().tick();
+    let state = State {
+        resources: Resources {
+            electricity: 0,
+            ore: 0,
+            metal: 0,
+            satellites: 0,
+        },
+        buildings: Buildings {
+            collectors: 1,
+            miners: 0,
+            refiners: 0,
+            satellite_factories: 0,
+            launchers: 0,
+        },
+    }
+    .tick();
     assert_eq!(
         state.resources.electricity,
         COLLECTOR_ELECTRICITY_PRODUCTION
     );
-
-    let state = state.add_miner().tick();
-    assert_eq!(
-        state.resources.electricity,
-        COLLECTOR_ELECTRICITY_PRODUCTION * 2
-    );
-
-    let state = &mut State::new().add_collector().add_miner();
-    for _i in 0..MINER_ELECTRICITY_CONSUMPTION - 1 {
-        *state = state.tick();
-    }
-    assert_eq!(
-        state.resources.electricity,
-        MINER_ELECTRICITY_CONSUMPTION - 1
-    );
-    *state = state.tick();
-    assert_eq!(state.resources.electricity, 0);
 }
