@@ -6,19 +6,19 @@ export class ResourcesDisplay extends Component {
             <caption>Resources</caption>
             <tr>
                 <td class="resource-name">Electricity</td>
-                <td class="resource-count">{String(this.props.resources.electricity.count)}</td>
+                <td class="resource-count">{this.props.state.electricity_count()}</td>
             </tr>
             <tr>
                 <td class="resource-name">Ore</td>
-                <td class="resource-count">{String(this.props.resources.ore.count)}</td>
+                <td class="resource-count">{this.props.state.ore_count()}</td>
             </tr>
             <tr>
                 <td class="resource-name">Metal</td>
-                <td class="resource-count">{String(this.props.resources.metal.count)}</td>
+                <td class="resource-count">{this.props.state.metal_count()}</td>
             </tr>
             <tr>
                 <td class="resource-name">Satellite</td>
-                <td class="resource-count">{String(this.props.resources.satellites.count)}</td>
+                <td class="resource-count">{this.props.state.satellite_count()}</td>
             </tr>
         </table>;
     }

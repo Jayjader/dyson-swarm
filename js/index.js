@@ -21,12 +21,17 @@ import('../crate/pkg').then(wasm => {
 
             localStorage.game = serialize_game_state(this.state.game);
 
+            this.tickProgress = 0;
             this.frameId = requestAnimationFrame(this.tick);
         }
 
         tick = () => {
-            this.setState({game: this.state.game.tick()});
-            localStorage.game = serialize_game_state(this.state.game);
+            this.tickProgress += 1;
+            if (this.tickProgress === 60) {
+                this.setState({game: this.state.game.tick()});
+                localStorage.game = serialize_game_state(this.state.game);
+                this.tickProgress = 0;
+            }
             this.frameId = requestAnimationFrame(this.tick);
         };
 
@@ -53,8 +58,8 @@ import('../crate/pkg').then(wasm => {
         render() {
             return <div class="game-content">
                 <div class="tables">
-                    <ResourcesDisplay resources={this.state.game.resources}/>
-                    <BuildingsDisplay buildings={this.state.game.buildings}/>
+                    <ResourcesDisplay state={this.state.game}/>
+                    <BuildingsDisplay state={this.state.game}/>
                     <SwarmDisplay swarm={{count: 0}}/>
                 </div>
                 <div class="actions">
