@@ -35,24 +35,29 @@ import('../crate/pkg').then(wasm => {
             this.frameId = requestAnimationFrame(this.tick);
         };
 
+        newGame = () => {
+            this.state = {game: new_game_state()};
+            localStorage.game = serialize_game_state(this.state.game);
+        };
+
         buildCollector = () => {
-            this.setState(prevState => ({game: prevState.game.add_collector()}));
+            this.setState(prevState => ({game: prevState.game.build_collector()}));
         };
 
         buildMiner = () => {
-            this.setState(prevState => ({game: prevState.game.add_miner()}));
+            this.setState(prevState => ({game: prevState.game.build_miner()}));
         };
 
         buildRefiner = () => {
-            this.setState(prevState => ({game: prevState.game.add_refiner()}));
+            this.setState(prevState => ({game: prevState.game.build_refiner()}));
         };
 
         buildSatelliteFactory = () => {
-            this.setState(prevState => ({game: prevState.game.add_satellite_factory()}));
+            this.setState(prevState => ({game: prevState.game.build_satellite_factory()}));
         };
 
         buildLauncher = () => {
-            this.setState(prevState => ({game: prevState.game.add_launcher()}));
+            this.setState(prevState => ({game: prevState.game.build_launcher()}));
         };
 
         render() {
@@ -63,6 +68,11 @@ import('../crate/pkg').then(wasm => {
                     <SwarmDisplay swarm={{count: 0}}/>
                 </div>
                 <div class="actions">
+                    <button type="button"
+                            onClick={this.newGame}
+                    >
+                        New Game
+                    </button>
                     <button type="button"
                             onClick={this.buildCollector}
                     >
