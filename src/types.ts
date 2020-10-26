@@ -1,25 +1,29 @@
 export interface Resources {
-    electricity: number,
-    ore: number,
-    metal: number,
-    packagedSatellites: number,
-};
+  electricity: number;
+  ore: number;
+  metal: number;
+  packagedSatellites: number;
+}
 export interface Buildings {
-    solarCollector: number,
-    miner: number,
-    refiner: number,
-    satelliteFactory: number,
-    satelliteLauncher: boolean
-};
+  solarCollector: number;
+  miner: number;
+  refiner: number;
+  satelliteFactory: number;
+  satelliteLauncher: boolean;
+}
 export interface Swarm {
-    satellites: number,
-};
-
-export interface State {
-    resources: Resources,
-    buildings: Buildings,
-    swarm: Swarm,
-    dispatch: (action: GameAction) => void
+  satellites: number;
 }
 
-export type GameAction = (state: State) => State
+export interface GameState {
+  resources: Resources;
+  buildings: Buildings;
+  swarm: Swarm;
+  dispatch: (
+    action: GameAction | ((state: GameState) => Result<GameState>)
+  ) => void;
+}
+
+export type Result<T> = T | Error;
+export const ok = <T>(r: Result<T>): r is T => !(r instanceof Error);
+export type GameAction = (state: GameState) => GameState;
