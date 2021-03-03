@@ -1,10 +1,11 @@
 <script lang="ts">
-  export let checked: boolean;
+  export let tripped: boolean;
 </script>
+
 <div data-augmented-ui="">
   <label>
     Circuit Breaker
-    <input type="checkbox" bind:checked on:change />
+    <input type="checkbox" bind:checked={tripped} on:change />
   </label>
 </div>
 
@@ -14,6 +15,8 @@
     position: relative;
     margin: 0 auto;
     cursor: pointer;
+    max-width: fit-content;
+    padding: 5px;
   }
 
   input {
