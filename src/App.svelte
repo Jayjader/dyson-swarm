@@ -73,7 +73,7 @@
     </Action>
     <Action on:click={() => state.dispatch(buildMiner)}>Miner</Action>
     <Action on:click={() => state.dispatch(buildRefiner)}>Refiner</Action>
-    <Action>Build</Action>
+    <Action disabled>Build</Action>
     <Action on:click={() => state.dispatch(buildSatFactory)}>
       Sat. Factory
     </Action>
@@ -87,7 +87,6 @@
     {:else}
       <Action
         on:click={() => state.dispatch(buildSatLauncher)}
-        disabled={state.buildings.satelliteLauncher}
       >
         Sat. Launcher
       </Action>

@@ -1,5 +1,14 @@
+<script lang="ts">
+  export let disabled: boolean = false;
+</script>
+
 <li class="action">
-  <button on:click data-augmented-ui="all-hex" class="action-content">
+  <button
+    on:click
+    data-augmented-ui="all-hex"
+    class="action-content"
+    disabled={disabled}
+  >
     <slot>Action name/display here</slot>
   </button>
 </li>
