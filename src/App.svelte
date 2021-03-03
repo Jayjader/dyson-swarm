@@ -1,17 +1,26 @@
 <script lang="ts">
   import Table from "./table.svelte";
+  import Breaker from "./breaker.svelte";
   import type { Resources, Buildings, Swarm, GameState, Result } from "./types";
-  import { update, launchSatellite, buildSolarCollector, buildMiner, buildRefiner, buildSatFactory, buildSatLauncher } from "./actions";
+  import {
+    update,
+    launchSatellite,
+    buildSolarCollector,
+    buildMiner,
+    buildRefiner,
+    buildSatFactory,
+    buildSatLauncher,
+    tripBreaker,
+  } from "./actions";
   import { ok } from "./types";
   import { onDestroy } from "svelte";
+  import Action from "./Action.svelte";
 
   export let init: { resources: Resources; buildings: Buildings; swarm: Swarm };
 
-  let { resources, buildings, swarm } = init;
   let state: GameState = {
-    resources,
-    buildings,
-    swarm,
+    ...init,
+    breaker: { tripped: false },
     dispatch: (action) => {
       const result = action(state) as Result<GameState>;
       if (ok(result)) {
@@ -24,26 +33,67 @@
     },
   };
 
-  const timestep = 1000;
+  const timeStep = 1000;
   let lastTimeStamp = window.performance.now();
   let animationFrame: number;
 
   function mainLoop(nextTimeStamp: number) {
     animationFrame = window.requestAnimationFrame(mainLoop);
     const timeElapsed = nextTimeStamp - lastTimeStamp;
-    if (timeElapsed < timestep) {
+    if (timeElapsed < timeStep) {
       return;
     }
     let delta = timeElapsed;
-    while (delta > timestep) {
-      delta -= timestep;
+    while (delta > timeStep) {
+      delta -= timeStep;
       state.dispatch(update);
     }
     lastTimeStamp = nextTimeStamp - delta;
   }
+
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
   mainLoop(lastTimeStamp);
 </script>
+
+<main>
+  <div class="tables">
+    <Table caption="resources" contents={Object.entries(state.resources)} />
+    <Table caption="swarm" contents={Object.entries(state.swarm)} />
+    <Table caption="buildings" contents={Object.entries(state.buildings)} />
+  </div>
+
+  <Breaker
+    tripped={state.breaker.tripped}
+    on:change={() => state.dispatch(tripBreaker)}
+  />
+
+  <ul class="actions">
+    <Action on:click={() => state.dispatch(buildSolarCollector)}>
+      Collector
+    </Action>
+    <Action on:click={() => state.dispatch(buildMiner)}>Miner</Action>
+    <Action on:click={() => state.dispatch(buildRefiner)}>Refiner</Action>
+    <Action>Build</Action>
+    <Action on:click={() => state.dispatch(buildSatFactory)}>
+      Sat. Factory
+    </Action>
+    {#if state.buildings.satelliteLauncher}
+      <Action
+        on:click={() => state.dispatch(launchSatellite)}
+        disabled={state.resources.packagedSatellites === 0}
+      >
+        Launch Sat.
+      </Action>
+    {:else}
+      <Action
+        on:click={() => state.dispatch(buildSatLauncher)}
+        disabled={state.buildings.satelliteLauncher}
+      >
+        Sat. Launcher
+      </Action>
+    {/if}
+  </ul>
+</main>
 
 <style>
   main {
@@ -65,36 +115,19 @@
       max-width: none;
     }
   }
-</style>
 
-<main>
-  <div class="tables">
-    <Table caption="resources" contents={Object.entries(state.resources)} />
-    <Table caption="swarm" contents={Object.entries(state.swarm)} />
-    <Table caption="buildings" contents={Object.entries(state.buildings)} />
-  </div>
-  <div class="actions">
-    <button on:click={() => state.dispatch(buildSolarCollector)}>
-      Build collector
-    </button>
-    <button on:click={() => state.dispatch(buildMiner)}>Build miner</button>
-    <button on:click={() => state.dispatch(buildRefiner)}>Build Refiner</button>
-    <button on:click={() => state.dispatch(buildSatFactory)}>
-      Build Sat. Factory
-    </button>
-    {#if state.buildings.satelliteLauncher}
-      <button
-        on:click={() => state.dispatch(launchSatellite)}
-        disabled={state.resources.packagedSatellites === 0}>
-        Launch Sat.
-      </button>
-    {:else}
-      <button
-        on:click={() => state.dispatch(buildSatLauncher)}
-		disabled={state.buildings.satelliteLauncher}
-	  >
-        Build Sat. Launcher
-      </button>
-    {/if}
-  </div>
-</main>
+  .actions {
+    position: absolute;
+    right: 3rem;
+    bottom: 3rem;
+    display: grid;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+    column-gap: 5px;
+    row-gap: 35px;
+    width: min-content;
+  }
+</style>

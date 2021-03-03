@@ -1,8 +1,9 @@
 import App from "./App.svelte";
+import "augmented-ui/augmented-ui.min.css";
 import type { Resources, Buildings, Swarm } from "./types";
 
 const resources: Resources = {
-  electricity: 10 ** 5,
+  electricity: 10 ** 3,
   ore: 0,
   metal: 2 * 10 ** 3,
   packagedSatellites: 0,

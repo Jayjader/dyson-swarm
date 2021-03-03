@@ -14,11 +14,14 @@ export interface Buildings {
 export interface Swarm {
   satellites: number;
 }
-
+export interface CircuitBreaker {
+  tripped: boolean;
+}
 export interface GameState {
   resources: Resources;
   buildings: Buildings;
   swarm: Swarm;
+  breaker: CircuitBreaker;
   dispatch: (
     action: GameAction | ((state: GameState) => Result<GameState>)
   ) => void;

@@ -1,5 +1,8 @@
-import type { Resources, Swarm, GameState, GameAction, Result } from "./types";
+import type { GameAction, GameState, Result } from "./types";
 
+export const tripBreaker: GameAction = (state) => {
+  return { ...state, breaker: { tripped: !state.breaker.tripped } };
+};
 export const buildSolarCollector: GameAction = (state) => {
   const collectorBuildCost = { electricity: 100, metal: 10 };
   const { resources, buildings } = state;
@@ -72,7 +75,7 @@ export const buildSatLauncher: GameAction = (state) => {
 export const launchSatellite: (state: GameState) => Result<GameState> = (
   state
 ) => {
-  const launchCost = { electricity: 1.4 * 10 ** 6 };
+  const launchCost = { electricity: 1.4 * 10 ** 3 };
   const resources = { ...state.resources };
   const swarm = { ...state.swarm };
   resources.electricity -= launchCost.electricity;
@@ -82,15 +85,34 @@ export const launchSatellite: (state: GameState) => Result<GameState> = (
   return { ...state, resources, swarm };
 };
 
+const minerConsumption = 3;
+const refinerElecConsumption = 5;
+const refinerOreConsumption = 3;
+const factoryElecConsumption = 25;
+const factoryMetalConsumption = 2;
+
 export const update: GameAction = (state) => {
   const nextState = { ...state };
-  const { buildings, resources } = nextState;
+  const { buildings, resources, breaker } = nextState;
 
   // produce elec
   resources.electricity += 1 * buildings.solarCollector;
 
   // consume elec
-  const minerConsumption = 3;
+  // forecast total elec consumption
+  const totalConsumption =
+    buildings.miner * minerConsumption +
+    buildings.refiner * refinerElecConsumption +
+    buildings.satelliteFactory * factoryElecConsumption;
+  if (!breaker.tripped && resources.electricity < totalConsumption) {
+    breaker.tripped = true;
+    console.log("tripped circuit breaker!");
+  }
+  if (breaker.tripped) {
+    return nextState;
+  }
+  console.log(`consuming ${totalConsumption}`);
+
   for (
     let i = 0;
     i < buildings.miner && resources.electricity >= minerConsumption;
@@ -100,8 +122,6 @@ export const update: GameAction = (state) => {
     resources.ore += 1;
   }
 
-  const refinerElecConsumption = 5;
-  const refinerOreConsumption = 3;
   for (
     let i = 0;
     i < buildings.refiner &&
@@ -114,8 +134,6 @@ export const update: GameAction = (state) => {
     resources.metal += 1;
   }
 
-  const factoryElecConsumption = 25;
-  const factoryMetalConsumption = 2;
   for (
     let i = 0;
     i < buildings.satelliteFactory &&
