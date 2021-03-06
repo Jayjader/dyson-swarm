@@ -2,21 +2,39 @@
   export let tripped: boolean;
 </script>
 
-<div data-augmented-ui="">
-  <label>
+<div
+  class="circuit-breaker"
+  data-augmented-ui="tl-clip tr-clip bl-clip br-clip"
+>
+  <label data-augmented-ui-inlay class:tripped>
     Circuit Breaker
-    <input type="checkbox" bind:checked={tripped} on:change />
+    <input type="checkbox" hidden bind:checked={tripped} on:change />
+    {tripped ? "(tripped)" : ""}
   </label>
 </div>
 
 <style>
-  label {
-    border: 1px solid black;
-    position: relative;
+  .circuit-breaker {
+    --aug-border: initial;
+    --aug-border-all: 1px;
+    --aug-border-bg: black;
+
+    --aug-inlay: initial;
+    --aug-delegated-inlay: initial;
+    --aug-inlay-bg: green;
+
+    max-width: min-content;
     margin: 0 auto;
+  }
+
+  .circuit-breaker .tripped {
+    --aug-inlay-bg: red;
+  }
+
+  label {
+    position: relative;
     cursor: pointer;
-    max-width: fit-content;
-    padding: 5px;
+    padding: 10px;
   }
 
   input {

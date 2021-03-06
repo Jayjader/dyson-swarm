@@ -15,6 +15,7 @@
   import { ok } from "./types";
   import { onDestroy } from "svelte";
   import Action from "./Action.svelte";
+  import SwarmDisplay from "./Swarm.svelte";
 
   export let init: { resources: Resources; buildings: Buildings; swarm: Swarm };
 
@@ -57,8 +58,12 @@
 
 <main>
   <div class="tables">
-    <Table caption="resources" contents={Object.entries(state.resources)} />
-    <Table caption="swarm" contents={Object.entries(state.swarm)} />
+    <Table
+      caption="resources"
+      contents={Object.entries(state.resources)}
+      orientation="left"
+    />
+    <SwarmDisplay count={state.swarm.satellites} />
     <Table caption="buildings" contents={Object.entries(state.buildings)} />
   </div>
 
@@ -85,9 +90,7 @@
         Launch Sat.
       </Action>
     {:else}
-      <Action
-        on:click={() => state.dispatch(buildSatLauncher)}
-      >
+      <Action on:click={() => state.dispatch(buildSatLauncher)}>
         Sat. Launcher
       </Action>
     {/if}
@@ -98,7 +101,7 @@
   main {
     text-align: center;
     padding: 1em;
-    max-width: 360px;
+    max-width: 320px;
     margin: 0 auto;
     background-color: #dddddd;
   }
@@ -111,7 +114,7 @@
 
   @media (min-width: 640px) {
     main {
-      max-width: none;
+      max-width: 90%;
     }
   }
 

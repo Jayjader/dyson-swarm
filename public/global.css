@@ -44,3 +44,15 @@ input:disabled {
 	color: #ccc;
 }
 
+.panel {
+	--aug-border: initial;
+	--aug-border-bg: #ac1fac;
+
+	--aug-inlay: initial;
+	--aug-inlay-bg: #b304b352;
+	padding: 20px;
+}
+
+.panel .header {
+	color: purple;
+}
