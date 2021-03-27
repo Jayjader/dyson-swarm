@@ -1,5 +1,4 @@
 import App from "./App.svelte";
-import "augmented-ui/augmented-ui.min.css";
 import type { Resources, Buildings, Swarm } from "./types";
 
 const resources: Resources = {
