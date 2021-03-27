@@ -7,7 +7,7 @@
     on:click
     data-augmented-ui="all-hex"
     class="action-content"
-    disabled={disabled}
+    {disabled}
   >
     <slot>Action name/display here</slot>
   </button>
