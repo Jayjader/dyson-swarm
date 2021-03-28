@@ -1,21 +1,12 @@
 <script lang="ts">
   import Table from "./table.svelte";
   import Breaker from "./breaker.svelte";
-  import type { Resources, Buildings, Swarm, GameState, Result } from "./types";
-  import {
-    update,
-    launchSatellite,
-    buildSolarCollector,
-    buildMiner,
-    buildRefiner,
-    buildSatFactory,
-    buildSatLauncher,
-    tripBreaker,
-  } from "./actions";
+  import type { Buildings, GameState, Resources, Result, Swarm } from "./types";
   import { ok } from "./types";
+  import { tripBreaker, update } from "./actions";
   import { onDestroy } from "svelte";
-  import Action from "./Action.svelte";
   import SwarmDisplay from "./Swarm.svelte";
+  import BuildMenu from "./BuildMenu.svelte";
 
   export let init: { resources: Resources; buildings: Buildings; swarm: Swarm };
 
@@ -71,30 +62,7 @@
     tripped={state.breaker.tripped}
     on:change={() => state.dispatch(tripBreaker)}
   />
-
-  <ul class="actions">
-    <Action on:click={() => state.dispatch(buildSolarCollector)}>
-      Collector
-    </Action>
-    <Action on:click={() => state.dispatch(buildMiner)}>Miner</Action>
-    <Action on:click={() => state.dispatch(buildRefiner)}>Refiner</Action>
-    <Action disabled>Build</Action>
-    <Action on:click={() => state.dispatch(buildSatFactory)}>
-      Sat. Factory
-    </Action>
-    {#if state.buildings.satelliteLauncher}
-      <Action
-        on:click={() => state.dispatch(launchSatellite)}
-        disabled={state.resources.packagedSatellites === 0}
-      >
-        Launch Sat.
-      </Action>
-    {:else}
-      <Action on:click={() => state.dispatch(buildSatLauncher)}>
-        Sat. Launcher
-      </Action>
-    {/if}
-  </ul>
+  <BuildMenu dispatch={state.dispatch} />
 </main>
 
 <style>
@@ -116,20 +84,5 @@
     main {
       max-width: 90%;
     }
-  }
-
-  .actions {
-    position: absolute;
-    right: 3rem;
-    bottom: 3rem;
-    display: grid;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    grid-template-rows: repeat(3, 1fr);
-    grid-template-columns: repeat(6, 1fr);
-    column-gap: 5px;
-    row-gap: 35px;
-    width: min-content;
   }
 </style>

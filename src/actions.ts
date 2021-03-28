@@ -148,3 +148,15 @@ export const update: GameAction = (state) => {
 
   return nextState;
 };
+
+// this is pure ergonomics, allowing manipulating the set of build actions
+// and invoking like `build.solarCollector()` (avoid repeating the "build")
+export const build = {
+  solarCollector: buildSolarCollector,
+  miner: buildMiner,
+  refiner: buildRefiner,
+  satelliteFactory: buildSatFactory,
+  satelliteLauncher: buildSatLauncher,
+};
+
+export default { ...build, launchSatellite };

@@ -1,0 +1,153 @@
+<script lang="ts">
+  import { createFsm, state as fsmState } from "./fsmStore";
+  import { build } from "./actions";
+  import type { GameAction } from "./types";
+
+  export let dispatch: (action: GameAction) => void;
+
+  type Open = "Open";
+  type Inactive = "Inactive";
+  type Building = "Building";
+  type BuildMenuStates = Inactive | Open | Building;
+
+  const buildMenu = createFsm(`
+  [ Inactive Building ] 'Open' => Open;
+  Open 'Choose building' => Building;
+  Open 'Choose Nothing' => Inactive;
+  `);
+  const state = fsmState<BuildMenuStates>(buildMenu);
+
+  $: doBuild = (action: GameAction) => {
+    dispatch(action);
+    buildMenu.action("Choose building");
+  };
+</script>
+
+<div class="actions">
+  <ul>
+    {#if $state === "Open"}
+      <li class="action">
+        <button
+          on:click={() => doBuild(build.solarCollector)}
+          data-augmented-ui="all-hex"
+          class="action-content"
+        >
+          Collector
+        </button>
+      </li>
+      <li class="action">
+        <button
+          on:click={() => doBuild(build.miner)}
+          data-augmented-ui="all-hex"
+          class="action-content">Miner</button
+        >
+      </li>
+      <li class="action">
+        <button
+          on:click={() => doBuild(build.refiner)}
+          data-augmented-ui="all-hex"
+          class="action-content">Refiner</button
+        >
+      </li>
+      <li class="action">
+        <button
+          on:click={() => buildMenu.action("Choose Nothing")}
+          data-augmented-ui="all-hex"
+          class="action-content">Nothing</button
+        >
+      </li>
+      <li class="action">
+        <button
+          on:click={() => doBuild(build.satelliteFactory)}
+          data-augmented-ui="all-hex"
+          class="action-content">Sat. Factory</button
+        >
+      </li>
+      <li class="action">
+        <button
+          on:click={() => doBuild(build.satelliteLauncher)}
+          data-augmented-ui="all-hex"
+          class="action-content"
+        >
+          Sat. Launcher</button
+        >
+      </li>
+    {:else if $state === "Inactive"}
+      <li class="action solo">
+        <button
+          on:click={() => buildMenu.action("Open")}
+          data-augmented-ui="all-hex"
+          class="action-content">Build</button
+        >
+      </li>
+    {:else if $state === "Building"}
+      <li class="action solo">
+        <button
+          on:click={() => buildMenu.action("Open")}
+          data-augmented-ui="all-hex"
+          class="action-content">Building...</button
+        >
+      </li>
+    {/if}
+  </ul>
+</div>
+
+<style>
+  ul {
+    display: grid;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
+    column-gap: 5px;
+    row-gap: 35px;
+  }
+  .actions {
+    position: absolute;
+    right: 3rem;
+    bottom: 3rem;
+  }
+  .action {
+    transform: scale(2, 2);
+  }
+  .action:nth-child(1) {
+    grid-row-start: 1;
+    grid-column-start: 2;
+    grid-column-end: 3;
+  }
+  .action:nth-child(2) {
+    grid-row-start: 1;
+    grid-column-start: 4;
+    grid-column-end: 5;
+  }
+  .action:nth-child(3) {
+    grid-row-start: 2;
+    grid-column-start: 1;
+    grid-column-end: 2;
+  }
+  .action:nth-child(4),
+  .action.solo {
+    grid-row-start: 2;
+    grid-column-start: 3;
+    grid-column-end: 4;
+  }
+  .action:nth-child(5) {
+    grid-row-start: 2;
+    grid-column-start: 5;
+    grid-column-end: 6;
+  }
+  .action:nth-child(6) {
+    grid-row-start: 3;
+    grid-column-start: 2;
+    grid-column-end: 3;
+  }
+  .action-content {
+    --aug-all-width: 45px;
+    /*--aug-all-height: 3rem;*/
+    font-size: 10px;
+    cursor: pointer;
+    overflow: hidden;
+    border: none;
+  }
+</style>

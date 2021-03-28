@@ -13,6 +13,7 @@
     "@rollup/plugin-typescript": "^4.0.0",
     "@tsconfig/svelte": "^1.0.10",
     "augmented-ui": "^2.0.0",
+    "jssm": "^5.35.4",
     "prettier": "^2.2.1",
     "prettier-plugin-svelte": "^2.2.0",
     "rollup-plugin-import-css": "^2.0.0",
