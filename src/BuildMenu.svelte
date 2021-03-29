@@ -38,22 +38,24 @@
     F: { x: Math.sqrt(3) / 2, y: -1 / 2 },
   };
 
-  function pivot(node, { corner }): TransitionConfig {
+  function pivot(
+    node,
+    { corner, angle = (2 * Math.PI) / 3, width = 45, duration = 560 }
+  ): TransitionConfig {
+    const x = corners[corner].x * width;
+    const y = corners[corner].y * width;
+    const changeOrigin = `translate(${-x}px, ${-y}px)`;
+    const changeBack = `translate(${x}px, ${y}px)`;
     return {
-      duration: 280,
-      css: (t, u) => {
-        const angle = Math.PI / 3;
-        const width = 45;
-        const x = corners[corner].x * width;
-        const y = corners[corner].y * width;
-        const transforms = [
-          `translate(${-x}px, ${-y}px)`,
+      duration,
+      css: (t, u) =>
+        [
+          "transform:",
+          changeOrigin,
           `rotate(${angle * u}rad)`,
-          `translate(${x}px, ${y}px)`,
-          `scale(2, 2)`,
-        ];
-        return `transform: ${transforms.join(" ")}`;
-      },
+          changeBack,
+          "scale(2, 2)",
+        ].join(" "),
     };
   }
 </script>
@@ -147,6 +149,7 @@
     display: block;
     transform-origin: 50% 50%;
     transform: scale(2, 2);
+    z-index: 1;
   }
   .action:nth-child(1) {
     grid-row-start: 1;
@@ -168,6 +171,7 @@
     grid-row-start: 2;
     grid-column-start: 3;
     grid-column-end: 4;
+    z-index: 2;
   }
   .action:nth-child(5) {
     grid-row-start: 2;
@@ -182,6 +186,7 @@
   .action-content {
     --aug-all-width: 45px;
     /*--aug-all-height: 3rem;*/
+    --aug-border: initial;
     font-size: 10px;
     cursor: pointer;
     overflow: hidden;
