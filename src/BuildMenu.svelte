@@ -1,27 +1,38 @@
 <script lang="ts">
   import { createFsm, state as fsmState } from "./fsmStore";
   import { build } from "./actions";
-  import type { GameAction } from "./types";
+  import type { BuildChoice, Buildings, GameAction } from "./types";
   import type { TransitionConfig } from "svelte/transition";
 
-  export let dispatch: (action: GameAction) => void;
+  type BuildMenuStates = "Inactive" | "Manual" | "Auto" | "Building";
 
-  type Open = "Open";
-  type Inactive = "Inactive";
-  type Building = "Building";
-  type BuildMenuStates = Inactive | Open | Building;
+  export let dispatch: (action: GameAction) => void;
+  export let autoBuildChoice: BuildChoice = null;
 
   const buildMenu = createFsm(`
-  [ Inactive Building ] 'Open' => Open;
-  Open 'Choose building' => Building;
-  Open 'Choose Nothing' => Inactive;
+  Inactive 'Open' => Manual;
+  Manual 'Build' -> Manual;
+  Manual 'Auto' => Auto 'Manual' => Manual;
+  [ Manual Auto ] 'Nothing' -> Inactive;
+  Auto 'Choose' => Building 'Open' => Auto;
   `);
   const state = fsmState<BuildMenuStates>(buildMenu);
 
-  $: doBuild = (action: GameAction) => {
-    dispatch(action);
-    buildMenu.action("Choose building");
+  $: manualBuild = (building: keyof Buildings) => {
+    dispatch(build[building]);
+    buildMenu.action("Build");
   };
+  $: chooseAutoBuild = (building: keyof Buildings) => {
+    autoBuildChoice = building;
+    buildMenu.action("Choose");
+  };
+  $: buildAction = (building: keyof Buildings, mode: BuildMenuStates) =>
+    ({
+      Inactive: undefined,
+      Building: undefined,
+      Manual: manualBuild,
+      Auto: chooseAutoBuild,
+    }[mode](building));
 
   /*   A
    *  B/|\F
@@ -60,12 +71,20 @@
   }
 </script>
 
-<div class="actions">
+<div class="actions" class:auto={$state === "Auto" || $state === "Building"}>
   <ul>
-    {#if $state === "Open"}
+    {#if $state === "Inactive"}
+      <li class="action solo">
+        <button
+          on:click={() => buildMenu.action("Open")}
+          data-augmented-ui="all-hex"
+          class="action-content">Build</button
+        >
+      </li>
+    {:else if $state === "Manual"}
       <li class="action" transition:pivot={{ corner: "D" }}>
         <button
-          on:click={() => doBuild(build.solarCollector)}
+          on:click={() => buildAction("solarCollector", $state)}
           data-augmented-ui="all-hex"
           class="action-content"
         >
@@ -74,47 +93,104 @@
       </li>
       <li class="action" transition:pivot={{ corner: "F" }}>
         <button
-          on:click={() => doBuild(build.miner)}
+          on:click={() => manualBuild("miner")}
           data-augmented-ui="all-hex"
           class="action-content">Miner</button
         >
       </li>
       <li class="action" transition:pivot={{ corner: "C" }}>
         <button
-          on:click={() => doBuild(build.refiner)}
+          on:click={() => manualBuild("refiner")}
           data-augmented-ui="all-hex"
           class="action-content">Refiner</button
         >
       </li>
       <li class="action">
         <button
-          on:click={() => buildMenu.action("Choose Nothing")}
+          on:click={() => buildMenu.action("Nothing")}
           data-augmented-ui="all-hex"
           class="action-content">Nothing</button
         >
       </li>
       <li class="action" transition:pivot={{ corner: "E" }}>
         <button
-          on:click={() => doBuild(build.satelliteFactory)}
+          on:click={() => manualBuild("satelliteFactory")}
           data-augmented-ui="all-hex"
           class="action-content">Sat. Factory</button
         >
       </li>
       <li class="action" transition:pivot={{ corner: "B" }}>
         <button
-          on:click={() => doBuild(build.satelliteLauncher)}
+          on:click={() => manualBuild("satelliteLauncher")}
           data-augmented-ui="all-hex"
           class="action-content"
         >
           Sat. Launcher</button
         >
       </li>
-    {:else if $state === "Inactive"}
-      <li class="action solo">
+      <li class="action" transition:pivot={{ corner: "A" }}>
         <button
-          on:click={() => buildMenu.action("Open")}
+          on:click={() => buildMenu.action("Auto")}
           data-augmented-ui="all-hex"
-          class="action-content">Build</button
+          class="action-content"
+        >
+          Auto</button
+        >
+      </li>
+    {:else if $state === "Auto"}
+      <li class="action" transition:pivot={{ corner: "D" }}>
+        <button
+          on:click={() => chooseAutoBuild("solarCollector")}
+          data-augmented-ui="all-hex"
+          class="action-content"
+        >
+          Collector
+        </button>
+      </li>
+      <li class="action" transition:pivot={{ corner: "F" }}>
+        <button
+          on:click={() => chooseAutoBuild("miner")}
+          data-augmented-ui="all-hex"
+          class="action-content">Miner</button
+        >
+      </li>
+      <li class="action" transition:pivot={{ corner: "C" }}>
+        <button
+          on:click={() => chooseAutoBuild("refiner")}
+          data-augmented-ui="all-hex"
+          class="action-content">Refiner</button
+        >
+      </li>
+      <li class="action">
+        <button
+          on:click={() => buildMenu.action("Nothing")}
+          data-augmented-ui="all-hex"
+          class="action-content">Nothing</button
+        >
+      </li>
+      <li class="action" transition:pivot={{ corner: "E" }}>
+        <button
+          on:click={() => chooseAutoBuild("satelliteFactory")}
+          data-augmented-ui="all-hex"
+          class="action-content">Sat. Factory</button
+        >
+      </li>
+      <li class="action" transition:pivot={{ corner: "B" }}>
+        <button
+          on:click={() => chooseAutoBuild("satelliteLauncher")}
+          data-augmented-ui="all-hex"
+          class="action-content"
+        >
+          Sat. Launcher</button
+        >
+      </li>
+      <li class="action" transition:pivot={{ corner: "A" }}>
+        <button
+          on:click={() => buildMenu.action("Manual")}
+          data-augmented-ui="all-hex"
+          class="action-content"
+        >
+          Manual</button
         >
       </li>
     {:else if $state === "Building"}
@@ -122,7 +198,7 @@
         <button
           on:click={() => buildMenu.action("Open")}
           data-augmented-ui="all-hex"
-          class="action-content">Building...</button
+          class="action-content">Building {autoBuildChoice}</button
         >
       </li>
     {/if}
@@ -139,6 +215,9 @@
     grid-template-columns: repeat(6, 1fr);
     column-gap: 5px;
     row-gap: 35px;
+  }
+  .auto button {
+    --aug-border-bg: purple;
   }
   .actions {
     position: absolute;
@@ -182,6 +261,11 @@
     grid-row-start: 3;
     grid-column-start: 2;
     grid-column-end: 3;
+  }
+  .action:nth-child(7) {
+    grid-row-start: 3;
+    grid-column-start: 4;
+    grid-column-end: 5;
   }
   .action-content {
     --aug-all-width: 45px;

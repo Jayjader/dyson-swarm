@@ -1,14 +1,22 @@
 <script lang="ts">
   import Table from "./table.svelte";
   import Breaker from "./breaker.svelte";
-  import type { Buildings, GameState, Resources, Result, Swarm } from "./types";
+  import type {
+    BuildChoice,
+    Buildings,
+    GameState,
+    Resources,
+    Result,
+    Swarm,
+  } from "./types";
   import { ok } from "./types";
-  import { tripBreaker, update } from "./actions";
+  import { build, tripBreaker, update } from "./actions";
   import { onDestroy } from "svelte";
   import SwarmDisplay from "./Swarm.svelte";
   import BuildMenu from "./BuildMenu.svelte";
 
   export let init: { resources: Resources; buildings: Buildings; swarm: Swarm };
+  let autoBuildChoice: BuildChoice = null;
 
   let state: GameState = {
     ...init,
@@ -38,6 +46,9 @@
     let delta = timeElapsed;
     while (delta > timeStep) {
       delta -= timeStep;
+      if (autoBuildChoice !== null) {
+        state.dispatch(build[autoBuildChoice]);
+      }
       state.dispatch(update);
     }
     lastTimeStamp = nextTimeStamp - delta;
@@ -62,7 +73,7 @@
     tripped={state.breaker.tripped}
     on:change={() => state.dispatch(tripBreaker)}
   />
-  <BuildMenu dispatch={state.dispatch} />
+  <BuildMenu dispatch={state.dispatch} bind:autoBuildChoice />
 </main>
 
 <style>

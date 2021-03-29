@@ -24,6 +24,8 @@ export interface CircuitBreaker {
   tripped: boolean;
 }
 
+export type BuildChoice = null | keyof Buildings;
+
 export interface GameState {
   resources: Resources;
   buildings: Buildings;

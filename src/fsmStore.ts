@@ -1,5 +1,5 @@
 import { sm } from "jssm";
-import { writable, derived } from "svelte/store";
+import { derived, writable } from "svelte/store";
 
 export function createFsm(fsmDsl: string) {
   const { subscribe, update } = writable(sm`${fsmDsl}`);
