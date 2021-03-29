@@ -2,6 +2,7 @@
   import { createFsm, state as fsmState } from "./fsmStore";
   import { build } from "./actions";
   import type { GameAction } from "./types";
+  import type { TransitionConfig } from "svelte/transition";
 
   export let dispatch: (action: GameAction) => void;
 
@@ -21,12 +22,46 @@
     dispatch(action);
     buildMenu.action("Choose building");
   };
+
+  /*   A
+   *  B/|\F
+   * --|.|-- "." <=> origin
+   *  C\|/E
+   *    D
+   * */
+  const corners = {
+    A: { x: 0, y: 1 },
+    B: { x: -Math.sqrt(3) / 2, y: 1 / 2 },
+    C: { x: -Math.sqrt(3) / 2, y: -1 / 2 },
+    D: { x: 0, y: -1 },
+    E: { x: Math.sqrt(3) / 2, y: 1 / 2 },
+    F: { x: Math.sqrt(3) / 2, y: -1 / 2 },
+  };
+
+  function pivot(node, { corner }): TransitionConfig {
+    return {
+      duration: 280,
+      css: (t, u) => {
+        const angle = Math.PI / 3;
+        const width = 45;
+        const x = corners[corner].x * width;
+        const y = corners[corner].y * width;
+        const transforms = [
+          `translate(${-x}px, ${-y}px)`,
+          `rotate(${angle * u}rad)`,
+          `translate(${x}px, ${y}px)`,
+          `scale(2, 2)`,
+        ];
+        return `transform: ${transforms.join(" ")}`;
+      },
+    };
+  }
 </script>
 
 <div class="actions">
   <ul>
     {#if $state === "Open"}
-      <li class="action">
+      <li class="action" transition:pivot={{ corner: "D" }}>
         <button
           on:click={() => doBuild(build.solarCollector)}
           data-augmented-ui="all-hex"
@@ -35,14 +70,14 @@
           Collector
         </button>
       </li>
-      <li class="action">
+      <li class="action" transition:pivot={{ corner: "F" }}>
         <button
           on:click={() => doBuild(build.miner)}
           data-augmented-ui="all-hex"
           class="action-content">Miner</button
         >
       </li>
-      <li class="action">
+      <li class="action" transition:pivot={{ corner: "C" }}>
         <button
           on:click={() => doBuild(build.refiner)}
           data-augmented-ui="all-hex"
@@ -56,14 +91,14 @@
           class="action-content">Nothing</button
         >
       </li>
-      <li class="action">
+      <li class="action" transition:pivot={{ corner: "E" }}>
         <button
           on:click={() => doBuild(build.satelliteFactory)}
           data-augmented-ui="all-hex"
           class="action-content">Sat. Factory</button
         >
       </li>
-      <li class="action">
+      <li class="action" transition:pivot={{ corner: "B" }}>
         <button
           on:click={() => doBuild(build.satelliteLauncher)}
           data-augmented-ui="all-hex"
@@ -109,6 +144,8 @@
     bottom: 3rem;
   }
   .action {
+    display: block;
+    transform-origin: 50% 50%;
     transform: scale(2, 2);
   }
   .action:nth-child(1) {
