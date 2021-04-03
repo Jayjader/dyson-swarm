@@ -28,20 +28,31 @@
     buildMenu.action("Choose");
   };
 
-  /*   A
-   *  B/|\F
+  /*    1
+   *  2/|\6
    * --|.|-- "." <=> origin
-   *  C\|/E
-   *    D
+   *  3\|/5
+   *    4
    * */
   const corners = {
-    A: { x: 0, y: 1 },
-    B: { x: Math.sqrt(3) / 2, y: 1 / 2 },
-    C: { x: Math.sqrt(3) / 2, y: -1 / 2 },
-    D: { x: 0, y: -1 },
-    E: { x: -Math.sqrt(3) / 2, y: -1 / 2 },
-    F: { x: -Math.sqrt(3) / 2, y: 1 / 2 },
+    1: { x: 0, y: 1 },
+    2: { x: -Math.sqrt(3) / 2, y: 1 / 2 },
+    3: { x: -Math.sqrt(3) / 2, y: -1 / 2 },
+    4: { x: 0, y: -1 },
+    5: { x: Math.sqrt(3) / 2, y: -1 / 2 },
+    6: { x: Math.sqrt(3) / 2, y: 1 / 2 },
   };
+  function cornerForIndex(index: 1 | 2 | 3 | 4 | 5 | 6): 1 | 2 | 3 | 4 | 5 | 6 {
+    /*
+      1 => 4
+      2 => 5
+      3 => 6
+      4 => 1
+      5 => 2
+      6 => 3
+     */
+    return (((index + 2) % 6) + 1) as 1 | 2 | 3 | 4 | 5 | 6;
+  }
 
   function pivot(
     _node,
@@ -64,78 +75,85 @@
         ].join(" "),
     };
   }
+
+  function menuItems(
+    state: BuildMenuStates,
+    sm: ReturnType<typeof createFsm>,
+    currentlyBuilding: BuildChoice
+  ): Array<{ label: string; action: () => void }> {
+    switch (state) {
+      case "Inactive":
+        return [{ label: "Build", action: () => sm.action("Open") }];
+      case "Manual":
+        return [
+          { label: "Nothing", action: () => sm.action("Nothing") },
+          { label: "Collector", action: () => manualBuild("solarCollector") },
+          { label: "Miner", action: () => manualBuild("miner") },
+          { label: "Refiner", action: () => manualBuild("refiner") },
+          {
+            label: "Sat. Factory",
+            action: () => manualBuild("satelliteFactory"),
+          },
+          {
+            label: "Sat. Launcher",
+            action: () => manualBuild("satelliteLauncher"),
+          },
+          { label: "Auto", action: () => sm.action("Auto") },
+        ];
+      case "Auto":
+        return [
+          {
+            label: "Nothing",
+            action: () => sm.action("Nothing"),
+          },
+          {
+            label: "Collector",
+            action: () => chooseAutoBuild("solarCollector"),
+          },
+          { label: "Miner", action: () => chooseAutoBuild("miner") },
+          { label: "Refiner", action: () => chooseAutoBuild("refiner") },
+          {
+            label: "Sat. Factory",
+            action: () => chooseAutoBuild("satelliteFactory"),
+          },
+          {
+            label: "Sat. Launcher",
+            action: () => chooseAutoBuild("satelliteLauncher"),
+          },
+          {
+            label: "Manual",
+            action: () => sm.action("Manual"),
+          },
+        ];
+      case "Building":
+        return [
+          {
+            label: `Building ${currentlyBuilding}`,
+            action: () => {
+              autoBuildChoice = null;
+              sm.action("Open");
+            },
+          },
+        ];
+    }
+  }
+
+  $: items = menuItems($state, buildMenu, autoBuildChoice);
 </script>
 
 <div class="actions" class:auto={$state === "Auto" || $state === "Building"}>
   <ul>
-    {#if $state === "Inactive"}
-      <li class="action solo">
-        <Tile on:click={() => buildMenu.action("Open")}>Build</Tile>
-      </li>
-    {:else if $state === "Manual"}
-      <li class="action" transition:pivot={{ corner: "D" }}>
-        <Tile on:click={() => manualBuild("solarCollector")}>Collector</Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "C" }}>
-        <Tile on:click={() => manualBuild("miner")}>Miner</Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "E" }}>
-        <Tile on:click={() => manualBuild("refiner")}>Refiner</Tile>
-      </li>
-      <li class="action">
-        <Tile on:click={() => buildMenu.action("Nothing")}>Nothing</Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "B" }}>
-        <Tile on:click={() => manualBuild("satelliteFactory")}
-          >Sat. Factory</Tile
-        >
-      </li>
-      <li class="action" transition:pivot={{ corner: "F" }}>
-        <Tile on:click={() => manualBuild("satelliteLauncher")}>
-          Sat. Launcher</Tile
-        >
-      </li>
-      <li class="action" transition:pivot={{ corner: "A" }}>
-        <Tile on:click={() => buildMenu.action("Auto")}>Auto</Tile>
-      </li>
-    {:else if $state === "Auto"}
-      <li class="action" transition:pivot={{ corner: "D" }}>
-        <Tile on:click={() => chooseAutoBuild("solarCollector")}>
-          Collector
-        </Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "C" }}>
-        <Tile on:click={() => chooseAutoBuild("miner")}>Miner</Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "E" }}>
-        <Tile on:click={() => chooseAutoBuild("refiner")}>Refiner</Tile>
-      </li>
-      <li class="action">
-        <Tile on:click={() => buildMenu.action("Nothing")}>Nothing</Tile>
-      </li>
-      <li class="action" transition:pivot={{ corner: "B" }}>
-        <Tile on:click={() => chooseAutoBuild("satelliteFactory")}
-          >Sat. Factory</Tile
-        >
-      </li>
-      <li class="action" transition:pivot={{ corner: "F" }}>
-        <Tile on:click={() => chooseAutoBuild("satelliteLauncher")}>
-          Sat. Launcher</Tile
-        >
-      </li>
-      <li class="action" transition:pivot={{ corner: "A" }}>
-        <Tile on:click={() => buildMenu.action("Manual")}>Manual</Tile>
-      </li>
-    {:else if $state === "Building"}
-      <li class="action solo">
-        <Tile
-          on:click={() => {
-            autoBuildChoice = null;
-            buildMenu.action("Open");
-          }}>Building {autoBuildChoice}</Tile
-        >
-      </li>
-    {/if}
+    {#each items as item, index (index)}
+      {#if index === 0}
+        <li class="action center">
+          <Tile on:click={item.action}>{item.label}</Tile>
+        </li>
+      {:else}
+        <li class="action" transition:pivot={{ corner: cornerForIndex(index) }}>
+          <Tile on:click={item.action}>{item.label}</Tile>
+        </li>
+      {/if}
+    {/each}
   </ul>
 </div>
 
@@ -164,34 +182,33 @@
     transform: scale(2, 2);
     z-index: 1;
   }
-  .action:nth-child(1) {
-    grid-row-start: 1;
-    grid-column: 2/3;
-  }
-  .action:nth-child(2) {
-    grid-row-start: 1;
-    grid-column: 4/5;
-  }
-  .action:nth-child(3) {
-    grid-row-start: 2;
-    grid-column: 1/2;
-  }
-  .action:nth-child(4),
-  .action.solo {
+  .action.center {
     grid-row-start: 2;
     grid-column: 3/4;
     z-index: 2;
   }
-  .action:nth-child(5) {
+  .action:nth-child(2) {
+    grid-row-start: 1;
+    grid-column: 2/3;
+  }
+  .action:nth-child(3) {
+    grid-row-start: 1;
+    grid-column: 4/5;
+  }
+  .action:nth-child(4) {
     grid-row-start: 2;
     grid-column: 5/6;
+  }
+  .action:nth-child(5) {
+    grid-row-start: 3;
+    grid-column: 4/5;
   }
   .action:nth-child(6) {
     grid-row-start: 3;
     grid-column: 2/3;
   }
   .action:nth-child(7) {
-    grid-row-start: 3;
-    grid-column: 4/5;
+    grid-row-start: 2;
+    grid-column: 1/2;
   }
 </style>
