@@ -3,6 +3,7 @@
   import { build } from "./actions";
   import type { BuildChoice, Buildings, GameAction } from "./types";
   import type { TransitionConfig } from "svelte/transition";
+  import Tile from "./Tile.svelte";
 
   type BuildMenuStates = "Inactive" | "Manual" | "Auto" | "Building";
 
@@ -26,13 +27,6 @@
     autoBuildChoice = building;
     buildMenu.action("Choose");
   };
-  $: buildAction = (building: keyof Buildings, mode: BuildMenuStates) =>
-    ({
-      Inactive: undefined,
-      Building: undefined,
-      Manual: manualBuild,
-      Auto: chooseAutoBuild,
-    }[mode](building));
 
   /*   A
    *  B/|\F
@@ -42,24 +36,25 @@
    * */
   const corners = {
     A: { x: 0, y: 1 },
-    B: { x: -Math.sqrt(3) / 2, y: 1 / 2 },
-    C: { x: -Math.sqrt(3) / 2, y: -1 / 2 },
+    B: { x: Math.sqrt(3) / 2, y: 1 / 2 },
+    C: { x: Math.sqrt(3) / 2, y: -1 / 2 },
     D: { x: 0, y: -1 },
-    E: { x: Math.sqrt(3) / 2, y: 1 / 2 },
-    F: { x: Math.sqrt(3) / 2, y: -1 / 2 },
+    E: { x: -Math.sqrt(3) / 2, y: -1 / 2 },
+    F: { x: -Math.sqrt(3) / 2, y: 1 / 2 },
   };
 
   function pivot(
-    node,
-    { corner, angle = (2 * Math.PI) / 3, width = 45, duration = 560 }
+    _node,
+    { corner, angle = (2 * Math.PI) / 3, width = 45, duration = 220 }
   ): TransitionConfig {
-    const x = corners[corner].x * width;
-    const y = corners[corner].y * width;
+    // multiplying by 9/7 places the center of rotation at about the center of the gap between tiles
+    const x = (corners[corner].x * width * 9) / 7;
+    const y = (corners[corner].y * width * 9) / 7;
     const changeOrigin = `translate(${-x}px, ${-y}px)`;
     const changeBack = `translate(${x}px, ${y}px)`;
     return {
       duration,
-      css: (t, u) =>
+      css: (_t, u) =>
         [
           "transform:",
           changeOrigin,
@@ -75,130 +70,69 @@
   <ul>
     {#if $state === "Inactive"}
       <li class="action solo">
-        <button
-          on:click={() => buildMenu.action("Open")}
-          data-augmented-ui="all-hex"
-          class="action-content">Build</button
-        >
+        <Tile on:click={() => buildMenu.action("Open")}>Build</Tile>
       </li>
     {:else if $state === "Manual"}
       <li class="action" transition:pivot={{ corner: "D" }}>
-        <button
-          on:click={() => buildAction("solarCollector", $state)}
-          data-augmented-ui="all-hex"
-          class="action-content"
-        >
-          Collector
-        </button>
-      </li>
-      <li class="action" transition:pivot={{ corner: "F" }}>
-        <button
-          on:click={() => manualBuild("miner")}
-          data-augmented-ui="all-hex"
-          class="action-content">Miner</button
-        >
+        <Tile on:click={() => manualBuild("solarCollector")}>Collector</Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "C" }}>
-        <button
-          on:click={() => manualBuild("refiner")}
-          data-augmented-ui="all-hex"
-          class="action-content">Refiner</button
-        >
-      </li>
-      <li class="action">
-        <button
-          on:click={() => buildMenu.action("Nothing")}
-          data-augmented-ui="all-hex"
-          class="action-content">Nothing</button
-        >
+        <Tile on:click={() => manualBuild("miner")}>Miner</Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "E" }}>
-        <button
-          on:click={() => manualBuild("satelliteFactory")}
-          data-augmented-ui="all-hex"
-          class="action-content">Sat. Factory</button
-        >
+        <Tile on:click={() => manualBuild("refiner")}>Refiner</Tile>
+      </li>
+      <li class="action">
+        <Tile on:click={() => buildMenu.action("Nothing")}>Nothing</Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "B" }}>
-        <button
-          on:click={() => manualBuild("satelliteLauncher")}
-          data-augmented-ui="all-hex"
-          class="action-content"
+        <Tile on:click={() => manualBuild("satelliteFactory")}
+          >Sat. Factory</Tile
         >
-          Sat. Launcher</button
+      </li>
+      <li class="action" transition:pivot={{ corner: "F" }}>
+        <Tile on:click={() => manualBuild("satelliteLauncher")}>
+          Sat. Launcher</Tile
         >
       </li>
       <li class="action" transition:pivot={{ corner: "A" }}>
-        <button
-          on:click={() => buildMenu.action("Auto")}
-          data-augmented-ui="all-hex"
-          class="action-content"
-        >
-          Auto</button
-        >
+        <Tile on:click={() => buildMenu.action("Auto")}>Auto</Tile>
       </li>
     {:else if $state === "Auto"}
       <li class="action" transition:pivot={{ corner: "D" }}>
-        <button
-          on:click={() => chooseAutoBuild("solarCollector")}
-          data-augmented-ui="all-hex"
-          class="action-content"
-        >
+        <Tile on:click={() => chooseAutoBuild("solarCollector")}>
           Collector
-        </button>
-      </li>
-      <li class="action" transition:pivot={{ corner: "F" }}>
-        <button
-          on:click={() => chooseAutoBuild("miner")}
-          data-augmented-ui="all-hex"
-          class="action-content">Miner</button
-        >
+        </Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "C" }}>
-        <button
-          on:click={() => chooseAutoBuild("refiner")}
-          data-augmented-ui="all-hex"
-          class="action-content">Refiner</button
-        >
-      </li>
-      <li class="action">
-        <button
-          on:click={() => buildMenu.action("Nothing")}
-          data-augmented-ui="all-hex"
-          class="action-content">Nothing</button
-        >
+        <Tile on:click={() => chooseAutoBuild("miner")}>Miner</Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "E" }}>
-        <button
-          on:click={() => chooseAutoBuild("satelliteFactory")}
-          data-augmented-ui="all-hex"
-          class="action-content">Sat. Factory</button
-        >
+        <Tile on:click={() => chooseAutoBuild("refiner")}>Refiner</Tile>
+      </li>
+      <li class="action">
+        <Tile on:click={() => buildMenu.action("Nothing")}>Nothing</Tile>
       </li>
       <li class="action" transition:pivot={{ corner: "B" }}>
-        <button
-          on:click={() => chooseAutoBuild("satelliteLauncher")}
-          data-augmented-ui="all-hex"
-          class="action-content"
+        <Tile on:click={() => chooseAutoBuild("satelliteFactory")}
+          >Sat. Factory</Tile
         >
-          Sat. Launcher</button
+      </li>
+      <li class="action" transition:pivot={{ corner: "F" }}>
+        <Tile on:click={() => chooseAutoBuild("satelliteLauncher")}>
+          Sat. Launcher</Tile
         >
       </li>
       <li class="action" transition:pivot={{ corner: "A" }}>
-        <button
-          on:click={() => buildMenu.action("Manual")}
-          data-augmented-ui="all-hex"
-          class="action-content"
-        >
-          Manual</button
-        >
+        <Tile on:click={() => buildMenu.action("Manual")}>Manual</Tile>
       </li>
     {:else if $state === "Building"}
       <li class="action solo">
-        <button
-          on:click={() => buildMenu.action("Open")}
-          data-augmented-ui="all-hex"
-          class="action-content">Building {autoBuildChoice}</button
+        <Tile
+          on:click={() => {
+            autoBuildChoice = null;
+            buildMenu.action("Open");
+          }}>Building {autoBuildChoice}</Tile
         >
       </li>
     {/if}
@@ -216,7 +150,7 @@
     column-gap: 5px;
     row-gap: 35px;
   }
-  .auto button {
+  .auto :global(button) {
     --aug-border-bg: purple;
   }
   .actions {
@@ -232,48 +166,32 @@
   }
   .action:nth-child(1) {
     grid-row-start: 1;
-    grid-column-start: 2;
-    grid-column-end: 3;
+    grid-column: 2/3;
   }
   .action:nth-child(2) {
     grid-row-start: 1;
-    grid-column-start: 4;
-    grid-column-end: 5;
+    grid-column: 4/5;
   }
   .action:nth-child(3) {
     grid-row-start: 2;
-    grid-column-start: 1;
-    grid-column-end: 2;
+    grid-column: 1/2;
   }
   .action:nth-child(4),
   .action.solo {
     grid-row-start: 2;
-    grid-column-start: 3;
-    grid-column-end: 4;
+    grid-column: 3/4;
     z-index: 2;
   }
   .action:nth-child(5) {
     grid-row-start: 2;
-    grid-column-start: 5;
-    grid-column-end: 6;
+    grid-column: 5/6;
   }
   .action:nth-child(6) {
     grid-row-start: 3;
-    grid-column-start: 2;
-    grid-column-end: 3;
+    grid-column: 2/3;
   }
   .action:nth-child(7) {
     grid-row-start: 3;
-    grid-column-start: 4;
-    grid-column-end: 5;
-  }
-  .action-content {
-    --aug-all-width: 45px;
-    /*--aug-all-height: 3rem;*/
-    --aug-border: initial;
-    font-size: 10px;
-    cursor: pointer;
-    overflow: hidden;
-    border: none;
+    grid-column: 4/5;
   }
 </style>
