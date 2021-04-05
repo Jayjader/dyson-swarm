@@ -21,14 +21,14 @@
 
     --aug-inlay: initial;
     --aug-delegated-inlay: initial;
-    --aug-inlay-bg: green;
+    --aug-inlay-bg: #1e781e;
 
     max-width: min-content;
     margin: 0 auto;
   }
 
   .circuit-breaker .tripped {
-    --aug-inlay-bg: red;
+    --aug-inlay-bg: #aa1515;
   }
 
   label {
