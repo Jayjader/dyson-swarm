@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createFsm, state as fsmState } from "./fsmStore";
   import { build } from "./actions";
-  import type { BuildChoice, Buildings, GameAction } from "./types";
+  import type { BuildChoice, Building, GameAction } from "./types";
   import type { TransitionConfig } from "svelte/transition";
   import Tile from "./Tile.svelte";
 
@@ -19,14 +19,16 @@
   `);
   const state = fsmState<BuildMenuStates>(buildMenu);
 
-  $: manualBuild = (building: keyof Buildings) => {
-    dispatch(build[building]);
+  function manualBuild(building: Building) {
+    // $: manualBuild = (building: Building) => {
+    dispatch(build(building));
     buildMenu.action("Build");
-  };
-  $: chooseAutoBuild = (building: keyof Buildings) => {
+  }
+  function chooseAutoBuild(building: Building) {
+    // $: chooseAutoBuild = (building: Building) => {
     autoBuildChoice = building;
     buildMenu.action("Choose");
-  };
+  }
 
   /*    1
    *  2/|\6
@@ -42,7 +44,7 @@
     5: { x: Math.sqrt(3) / 2, y: -1 / 2 },
     6: { x: Math.sqrt(3) / 2, y: 1 / 2 },
   };
-  function cornerForIndex(index: 1 | 2 | 3 | 4 | 5 | 6): 1 | 2 | 3 | 4 | 5 | 6 {
+  function cornerForIndex(index: number): 1 | 2 | 3 | 4 | 5 | 6 {
     /*
       1 => 4
       2 => 5

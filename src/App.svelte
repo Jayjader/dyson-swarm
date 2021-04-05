@@ -1,37 +1,27 @@
 <script lang="ts">
   import Table from "./table.svelte";
   import Breaker from "./breaker.svelte";
-  import type {
-    BuildChoice,
-    Buildings,
-    GameState,
-    Resources,
-    Result,
-    Swarm,
-  } from "./types";
-  import { ok } from "./types";
-  import { build, tripBreaker, update } from "./actions";
+  import type { BuildChoice, GameState } from "./types";
+  import {
+    build,
+    launchSatellite,
+    tripBreaker,
+    constructionCosts,
+  } from "./actions";
   import { onDestroy } from "svelte";
   import SwarmDisplay from "./Swarm.svelte";
   import BuildMenu from "./BuildMenu.svelte";
+  import {
+    createGameState,
+    tickProduction,
+    tickConsumption,
+  } from "./gameStateStore";
+  import LaunchButton from "./LaunchButton.svelte";
 
-  export let init: { resources: Resources; buildings: Buildings; swarm: Swarm };
+  export let init: GameState;
   let autoBuildChoice: BuildChoice = null;
 
-  let state: GameState = {
-    ...init,
-    breaker: { tripped: false },
-    dispatch: (action) => {
-      const result = action(state) as Result<GameState>;
-      if (ok(result)) {
-        state = result;
-      } else {
-        console.log(result);
-        // stop update loop
-        window.cancelAnimationFrame(animationFrame);
-      }
-    },
-  };
+  const state = createGameState(init);
 
   const timeStep = 1000;
   let lastTimeStamp = window.performance.now();
@@ -47,9 +37,10 @@
     while (delta > timeStep) {
       delta -= timeStep;
       if (autoBuildChoice !== null) {
-        state.dispatch(build[autoBuildChoice]);
+        console.debug(`building ${autoBuildChoice}`);
+        state.action(build(autoBuildChoice));
       }
-      state.dispatch(update);
+      state.tick();
     }
     lastTimeStamp = nextTimeStamp - delta;
   }
@@ -62,18 +53,55 @@
   <div class="tables">
     <Table
       caption="resources"
-      contents={Object.entries(state.resources)}
+      contents={Object.entries($state.resources)}
       orientation="left"
     />
-    <SwarmDisplay count={state.swarm.satellites} />
-    <Table caption="buildings" contents={Object.entries(state.buildings)} />
+    <SwarmDisplay count={$state.swarm.satellites} />
+    <Table caption="buildings" contents={Object.entries($state.buildings)} />
   </div>
 
+  <LaunchButton on:click={() => state.action(launchSatellite)} />
   <Breaker
-    tripped={state.breaker.tripped}
-    on:change={() => state.dispatch(tripBreaker)}
+    tripped={$state.breaker.tripped}
+    on:change={() => state.action(tripBreaker)}
   />
-  <BuildMenu dispatch={state.dispatch} bind:autoBuildChoice />
+  <BuildMenu dispatch={state.action} bind:autoBuildChoice />
+
+  <div class="tables">
+    <table>
+      <caption>Build Costs</caption>
+      {#each Object.entries(constructionCosts) as [building, costs] (building)}
+        <tr>
+          <th>{building}</th>
+          {#each Object.entries(costs) as [resource, amount] (resource)}
+            <td>{resource}: {amount}</td>
+          {/each}
+        </tr>
+      {/each}
+    </table>
+    <table>
+      <caption>Building Consumption (per tick)</caption>
+      {#each Object.entries(tickConsumption) as [building, inputs] (building)}
+        <tr>
+          <th>{building}</th>
+          {#each Object.entries(inputs) as [resource, amount] (resource)}
+            <td>{resource}: {amount}</td>
+          {/each}
+        </tr>
+      {/each}
+    </table>
+    <table>
+      <caption>Building Production (per tick)</caption>
+      {#each Object.entries(tickProduction) as [building, outputs] (building)}
+        <tr>
+          <th>{building}</th>
+          {#each Object.entries(outputs) as [resource, amount] (resource)}
+            <td>{resource}: {amount}</td>
+          {/each}
+        </tr>
+      {/each}
+    </table>
+  </div>
 </main>
 
 <style>
