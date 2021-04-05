@@ -7,12 +7,12 @@ export function createFsm(fsmDsl: string) {
     subscribe,
     action: (a: string) => {
       update(($fsm) => {
-        console.log(`pre-action: ${$fsm.state()}`);
+        console.debug(`pre-action: ${$fsm.state()}`);
         const success = $fsm.action(a);
         if (!success) {
-          console.log("action failed");
+          console.warn("action failed");
         }
-        console.log(`post-action: ${$fsm.state()}`);
+        console.debug(`post-action: ${$fsm.state()}`);
         return $fsm;
       });
     },
