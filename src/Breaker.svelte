@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let tripped: boolean;
+  export let tripped: boolean = false;
 </script>
 
 <div

@@ -1,20 +1,22 @@
 <script lang="ts">
-  import Table from "./table.svelte";
-  import Breaker from "./breaker.svelte";
+  import Table from "./Table.svelte";
+  import Breaker from "./Breaker.svelte";
+  import WorkerToggle from "./WorkerToggle.svelte";
   import type { BuildChoice, GameState } from "./types";
   import {
     build,
-    launchSatellite,
-    tripBreaker,
     constructionCosts,
+    launchSatellite,
+    toggleWorker,
+    tripBreaker,
   } from "./actions";
   import { onDestroy } from "svelte";
   import SwarmDisplay from "./Swarm.svelte";
   import BuildMenu from "./BuildMenu.svelte";
   import {
     createGameState,
-    tickProduction,
     tickConsumption,
+    tickProduction,
   } from "./gameStateStore";
   import LaunchButton from "./LaunchButton.svelte";
 
@@ -65,6 +67,18 @@
     tripped={$state.breaker.tripped}
     on:change={() => state.action(tripBreaker)}
   />
+  <ul class="control-panel">
+    {#each Object.keys($state.working) as worker (worker)}
+      <li>
+        <WorkerToggle
+          paused={!$state.working[worker]}
+          on:change={() => state.action(toggleWorker(worker))}
+        >
+          {worker}
+        </WorkerToggle>
+      </li>
+    {/each}
+  </ul>
   <BuildMenu dispatch={state.action} bind:autoBuildChoice />
 
   <div class="tables">
@@ -117,6 +131,12 @@
     display: flex;
     flex-flow: row wrap;
     justify-content: space-evenly;
+  }
+
+  .control-panel {
+    list-style: none;
+    display: flex;
+    flex-flow: row;
   }
 
   @media (min-width: 640px) {

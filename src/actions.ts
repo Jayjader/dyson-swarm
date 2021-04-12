@@ -30,8 +30,9 @@ export const build = (building: Building) => (state: GameState) => {
 
 const launchCost: Input = { electricity: 1.4 * 10 ** 3, packagedSatellites: 1 };
 export const launchSatellite: GameAction = (state) => {
-  return state.resources.electricity < launchCost.electricity ||
-    state.resources.packagedSatellites < launchCost.packagedSatellites
+  return Object.entries(launchCost).filter(
+    ([resource, amount]) => state.resources[resource] < amount
+  ).length > 0
     ? state
     : {
         ...state,
@@ -43,8 +44,22 @@ export const launchSatellite: GameAction = (state) => {
         swarm: { ...state.swarm, satellites: state.swarm.satellites + 1 },
       };
 };
-export const tripBreaker: GameAction = (state) => {
-  return { ...state, breaker: { tripped: !state.breaker.tripped } };
-};
+export const tripBreaker: GameAction = (state) => ({
+  ...state,
+  breaker: { tripped: !state.breaker.tripped },
+});
 
-export default { ...build, launchSatellite, tripBreaker };
+export const toggleWorker: (Worker) => GameAction = (worker) => (state) => ({
+  ...state,
+  working: {
+    ...state.working,
+    [worker]: !state.working[worker],
+  },
+});
+
+export default {
+  ...build,
+  launchSatellite,
+  tripBreaker,
+  toggleFactories: toggleWorker,
+};

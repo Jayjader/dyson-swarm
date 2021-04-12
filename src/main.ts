@@ -1,5 +1,11 @@
 import App from "./App.svelte";
-import type { Resources, Buildings, Swarm, CircuitBreaker } from "./types";
+import type {
+  Buildings,
+  CircuitBreaker,
+  Resources,
+  Swarm,
+  Working,
+} from "./types";
 
 const resources: Resources = {
   electricity: 10 ** 3,
@@ -16,6 +22,13 @@ const buildings: Buildings = {
 };
 const swarm: Swarm = { satellites: 0 };
 const breaker: CircuitBreaker = { tripped: false };
+const working: Working = {
+  miner: true,
+  refiner: true,
+  satelliteFactory: true,
+  solarCollector: true,
+  swarm: true,
+};
 
 const app = new App({
   target: document.body,
@@ -25,6 +38,7 @@ const app = new App({
       buildings,
       swarm,
       breaker,
+      working,
     },
   },
 });

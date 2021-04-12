@@ -23,6 +23,12 @@ export interface CircuitBreaker {
   tripped: boolean;
 }
 
+export interface FactoryToggle {
+  paused: boolean;
+}
+
+export type Working = Record<Worker, boolean>;
+
 export type BuildChoice = null | Building;
 
 export interface GameState {
@@ -30,13 +36,17 @@ export interface GameState {
   buildings: Buildings;
   swarm: Swarm;
   breaker: CircuitBreaker;
+  working: Working;
 }
 
 export type GameAction = (state: GameState) => GameState;
 export type Input = Partial<Record<Resource, number>>;
 export type Output = Partial<Record<Resource | Building, number>>;
-export type Worker = Extract<
-  Building,
-  "solarCollector" | "miner" | "refiner" | "satelliteFactory"
->;
+export type Worker =
+  | Extract<
+      Building,
+      "solarCollector" | "miner" | "refiner" | "satelliteFactory"
+    >
+  | "swarm";
 export type Production = Record<Worker, Output>;
+export type Consumption = Partial<Record<Worker, Input>>;

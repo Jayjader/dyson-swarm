@@ -1,14 +1,15 @@
 import type {
-  Building,
+  CircuitBreaker,
+  Consumption,
   GameAction,
   GameState,
-  Input,
   Production,
+  Resource,
   Worker,
 } from "./types";
 import { writable } from "svelte/store";
 
-export const tickConsumption: Partial<Record<Building, Input>> = {
+export const tickConsumption: Consumption = {
   miner: { electricity: 3 },
   refiner: { electricity: 5, ore: 3 },
   satelliteFactory: { electricity: 25, metal: 2 },
@@ -19,56 +20,86 @@ export const tickProduction: Production = {
   refiner: { metal: 1 },
   satelliteFactory: { packagedSatellites: 1 },
   solarCollector: { electricity: 1 },
+  swarm: { electricity: 20 },
 };
 
-const swarmSatelliteMultiplier = 500;
-
-const tick: GameAction = (state) => {
-  const nextState = { ...state };
-  const { buildings, resources, breaker, swarm } = nextState;
-
-  // produce elec
-  resources.electricity +=
-    tickProduction.solarCollector.electricity * buildings.solarCollector +
-    swarmSatelliteMultiplier * swarm.satellites;
-
-  // consume elec
-  // only consume if total elec consumption can be fulfilled
-  const totalElectricityConsumption = Object.values(tickConsumption)
-    .map((cost) => cost.electricity)
-    .reduce((accu, next) => accu + next);
-  if (!breaker.tripped && resources.electricity < totalElectricityConsumption) {
-    breaker.tripped = true;
-    console.log("tripped circuit breaker!");
-  }
+export const tick: GameAction = (state) => {
+  // to preemptively trip breaker we need to know how much elec we're about to consume
+  const totalProjectedElectricityConsumption = Object.entries(
+    state.working
+  ).reduce(
+    (accu, [worker, on]) =>
+      accu + (on ? tickConsumption[worker]?.electricity || 0 : 0),
+    0
+  );
+  const breaker: CircuitBreaker = {
+    tripped:
+      state.breaker.tripped ||
+      (!state.breaker.tripped &&
+        state.resources.electricity < totalProjectedElectricityConsumption),
+  };
 
   if (breaker.tripped) {
-    return nextState;
-  } else {
-    // resources.electricity -= totalElectricityConsumption
-    // needs workers as state machines; only workers that have all their inputs fulfilled can consume
+    return {
+      resources: { ...state.resources },
+      buildings: { ...state.buildings },
+      working: { ...state.working },
+      swarm: { ...state.swarm },
+      breaker,
+    };
   }
+  // resources.electricity -= totalElectricityConsumption
+  // needs workers as state machines; only workers that have all their inputs fulfilled can consume
+  // worker state machine first draft :
+  `arrange [Inactive Working];
 
-  const workers = Object.keys(tickProduction) as Worker[];
-  workers.forEach((worker) => {
-    const workerCount = buildings[worker];
+    Inactive 'turn on' ~> Waiting_for_Input 'turn off' ~> Inactive;
+    Waiting_for_Input 'input mats' -> Waiting_for_Input;
+    Waiting_for_Input 'has all mats' => Working 'work' => Working;
+    Working 'finished working' => Waiting_for_Input;`;
 
-    const inputs = Object.entries(tickConsumption?.[worker] || {});
-    inputs.forEach(([resource, amount]) => {
-      const satisfiedWorkerCount =
-        resources[resource] >= workerCount * amount
-          ? workerCount
-          : Math.floor(resources[resource] / amount);
-      resources[resource] -= satisfiedWorkerCount * amount;
-    });
+  // const consumers = Object.keys(tickConsumption);
+  const resources = { ...state.resources };
+  const workingWorkerCount = Object.entries(state.working)
+    .filter(([_, on]) => on)
+    .map(([worker, _]) => worker as Worker)
+    .map(
+      (worker) =>
+        [
+          worker,
+          worker === "swarm" ? state.swarm.satellites : state.buildings[worker],
+        ] as [Worker, number]
+    )
+    .filter(
+      ([worker, count]) =>
+        (worker === "swarm" && state.buildings.solarCollector === 0
+          ? 0
+          : count) > 0
+    );
 
-    const outputs = Object.entries(tickProduction[worker]);
-    outputs.forEach(([resource, amount]) => {
-      resources[resource] += workerCount * amount;
-    });
+  workingWorkerCount.forEach(([worker, count]) => {
+    Object.entries(tickConsumption?.[worker] || {}).forEach(
+      ([resource, amount]: [Resource, number]) => {
+        resources[resource] -= count * amount;
+      }
+    );
   });
 
-  return nextState;
+  workingWorkerCount.forEach(([worker, count]) => {
+    Object.entries(tickProduction?.[worker] || {}).forEach(
+      ([resource, amount]) => {
+        resources[resource] += count * amount;
+      }
+    );
+  });
+
+  return {
+    resources,
+    buildings: { ...state.buildings },
+    swarm: { ...state.swarm },
+    working: { ...state.working },
+    breaker,
+  };
 };
 
 export function createGameState(init: GameState) {
