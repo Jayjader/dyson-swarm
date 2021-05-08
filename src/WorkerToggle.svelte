@@ -6,7 +6,6 @@
   <label data-augmented-ui-inlay class:paused>
     <slot />
     <input type="checkbox" hidden checked={paused} on:change />
-    {paused ? "(paused)" : "(running)"}
   </label>
 </div>
 
@@ -32,5 +31,6 @@
     position: relative;
     cursor: pointer;
     padding: 10px;
+    min-width: 14ch;
   }
 </style>

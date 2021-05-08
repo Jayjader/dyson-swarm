@@ -68,7 +68,7 @@
     on:change={() => state.action(tripBreaker)}
   />
   <ul class="control-panel">
-    {#each Object.keys($state.working) as worker (worker)}
+    {#each Object.keys(tickConsumption) as worker (worker)}
       <li>
         <WorkerToggle
           paused={!$state.working[worker]}
@@ -136,7 +136,7 @@
   .control-panel {
     list-style: none;
     display: flex;
-    flex-flow: row;
+    flex-flow: column;
   }
 
   @media (min-width: 640px) {
