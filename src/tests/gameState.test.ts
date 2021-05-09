@@ -1,7 +1,7 @@
 import type { GameState } from "../types";
 import { tick, tickConsumption, tickProduction } from "../gameStateStore";
 
-function randInt(from, to): number {
+function randInt(from: number, to: number): number {
   return Math.floor(Math.random() * (to - from + 1) + from);
 }
 
@@ -251,5 +251,66 @@ describe("update/tick", function () {
         ore: state.resources.ore + count * tickProduction.miner.ore,
       },
     });
+  });
+  test("resource consumption cannot result in negative count of a stored resource", () => {
+    // Arrange
+    const count = randInt(2, 29);
+    const state: GameState = {
+      ...initialState,
+      buildings: { ...initialState.buildings, refiner: count },
+      resources: {
+        ...initialState.resources,
+        ore: count * tickConsumption.refiner.ore - 1,
+      },
+    };
+
+    // Act
+    const nextState = tick(state);
+
+    // Assert
+    Object.entries(nextState.resources).forEach(([_resource, count]) => {
+      expect(count).toBeGreaterThanOrEqual(0);
+    });
+  });
+  test("workers should consume what resources are available even if supply cannot meet demand for all", () => {
+    // Arrange
+    const count = randInt(9, 29);
+    const state: GameState = {
+      ...initialState,
+      buildings: { ...initialState.buildings, refiner: count },
+      resources: {
+        ...initialState.resources,
+        ore: (count - 5) * tickConsumption.refiner.ore,
+        electricity: count * tickConsumption.refiner.electricity + 100,
+      },
+    };
+
+    // Act
+    const nextState = tick(state);
+
+    // Assert
+    expect(nextState.resources.ore).toEqual(0);
+    // for next test [partial production] : expect(nextState.resources.metal).toEqual(state.resources.metal + (count - 5) * tickProduction.
+  });
+  test("workers should produce from what resources are available even if supply cannot meet demand for all", () => {
+    // Arrange
+    const count = randInt(9, 29);
+    const state: GameState = {
+      ...initialState,
+      buildings: { ...initialState.buildings, refiner: count },
+      resources: {
+        ...initialState.resources,
+        ore: (count - 5) * tickConsumption.refiner.ore,
+        electricity: count * tickConsumption.refiner.electricity + 100,
+      },
+    };
+
+    // Act
+    const nextState = tick(state);
+
+    // Assert
+    expect(nextState.resources.metal).toEqual(
+      state.resources.metal + (count - 5) * tickProduction.refiner.metal
+    );
   });
 });

@@ -68,19 +68,28 @@ export const tick: GameAction = (state) => {
         [
           worker,
           worker === "swarm" ? state.swarm.satellites : state.buildings[worker],
-        ] as [Worker, number]
+        ] as [Worker, number] // get count
     )
     .filter(
       ([worker, count]) =>
         (worker === "swarm" && state.buildings.solarCollector === 0
           ? 0
-          : count) > 0
+          : count) > 0 // swarm has no influence without solar collectors
     );
 
   workingWorkerCount.forEach(([worker, count]) => {
-    Object.entries(tickConsumption?.[worker] || {}).forEach(
+    Object.entries(tickConsumption[worker] ?? {}).forEach(
       ([resource, amount]: [Resource, number]) => {
-        resources[resource] -= count * amount;
+        const availableResourcesPerWorker = resources[resource] / count;
+        if (availableResourcesPerWorker >= amount) {
+          resources[resource] -= count * amount;
+        } else {
+          const satisfiedWorkers = Math.min(
+            Math.floor(resources[resource] / amount), // how many workers could be satisfied by the resource total
+            count
+          );
+          resources[resource] -= satisfiedWorkers * amount;
+        }
       }
     );
   });
