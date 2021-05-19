@@ -23,6 +23,9 @@ export const tickProduction: Production = {
   swarm: { electricity: 20 },
 };
 
+export type Consumer = keyof Consumption;
+export type Producer = keyof Production;
+
 export const tick: GameAction = (state) => {
   // to preemptively trip breaker we need to know how much elec we're about to consume
   const totalProjectedElectricityConsumption = Object.entries(
@@ -83,7 +86,7 @@ export const tick: GameAction = (state) => {
     Object.entries(tickConsumption[worker] ?? {}).forEach(
       ([resource, amount]: [Resource, number]) => {
         const satisfiedWorkers = Math.min(
-          Math.floor(resources[resource] / amount), // how many workers could be satisfied by the resource total
+          Math.floor(resources[resource] / amount), // how many workers _could_ be satisfied by the resource total
           count
         );
         inputSatisfiedCount = Math.min(satisfiedWorkers, inputSatisfiedCount);

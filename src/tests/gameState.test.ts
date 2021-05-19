@@ -1,8 +1,47 @@
-import type { GameState } from "../types";
+import type { GameState, Worker, Resources } from "../types";
 import { tick, tickConsumption, tickProduction } from "../gameStateStore";
+import type { Consumer, Producer } from "../gameStateStore";
 
 function randInt(from: number, to: number): number {
   return Math.floor(Math.random() * (to - from + 1) + from);
+}
+
+function randWorker(): Worker {
+  return ["solarCollector", "miner", "refiner", "satelliteFactory", "swarm"][
+    randInt(0, 4)
+  ] as Worker;
+}
+
+const consumers = Object.keys(tickConsumption) as Worker[];
+function randConsumer(): Worker {
+  return consumers[randInt(0, consumers.length - 1)];
+}
+const producers = Object.keys(tickProduction) as Worker[];
+function randProducer(): Worker {
+  return producers[randInt(0, producers.length - 1)];
+}
+function randConsumingProducer(): Producer & Consumer {
+  let producer = randProducer();
+  while (["swarm", "solarCollector"].includes(producer)) {
+    producer = randProducer();
+  }
+  return producer;
+}
+
+function elementwiseAdd(
+  obj1: Record<string, number>,
+  obj2: Record<string, number>
+): Record<string, number> {
+  const keys = new Set([...Object.keys(obj1), ...Object.keys(obj2)]);
+  return Object.fromEntries(
+    Array.from(keys).map((key: string) => [key, obj1?.[key] + obj1?.[key]])
+  ) as Record<string, number>;
+}
+function elementwiseMult(
+  n: number,
+  obj: Record<string, number>
+): Record<string, number> {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, n * v]));
 }
 
 describe("update/tick", function () {
@@ -287,42 +326,53 @@ describe("update/tick", function () {
   test("workers should consume what resources are available even if supply cannot meet demand for all", () => {
     // Arrange
     const count = randInt(9, 29);
+    const worker = randConsumer();
+
+    const resources: Resources = {
+      ...initialState.resources,
+      ...elementwiseMult(count, tickConsumption[worker] ?? {}),
+    };
     const state: GameState = {
       ...initialState,
-      buildings: { ...initialState.buildings, refiner: count },
-      resources: {
-        ...initialState.resources,
-        ore: (count - 5) * tickConsumption.refiner.ore,
-        electricity: count * tickConsumption.refiner.electricity + 100,
-      },
+      buildings: { ...initialState.buildings, [worker]: count },
+      resources,
     };
 
     // Act
     const nextState = tick(state);
 
     // Assert
-    expect(nextState.resources.ore).toEqual(0);
+    Object.entries(tickConsumption[worker] ?? {}).forEach(
+      ([resource, _amount]) => {
+        expect(nextState.resources[resource]).toEqual(0);
+      }
+    );
   });
 
-  test("workers should produce from what resources are available even if supply cannot meet demand for all", () => {
+  test("if only some workers are input-satisfied, they should still consume/produce", () => {
     // Arrange
     const count = randInt(9, 29);
+    const worker = randConsumingProducer();
+    const resources: Resources = {
+      ...initialState.resources,
+      ...elementwiseMult(count - 5, tickConsumption[worker] ?? {}),
+    };
     const state: GameState = {
       ...initialState,
-      buildings: { ...initialState.buildings, refiner: count },
-      resources: {
-        ...initialState.resources,
-        ore: (count - 5) * tickConsumption.refiner.ore,
-        electricity: count * tickConsumption.refiner.electricity + 100,
-      },
+      buildings: { ...initialState.buildings, [worker]: count },
+      resources,
     };
 
     // Act
     const nextState = tick(state);
 
     // Assert
-    expect(nextState.resources.metal).toEqual(
-      state.resources.metal + (count - 5) * tickProduction.refiner.metal
+    Object.entries(tickProduction[worker] ?? {}).forEach(
+      ([resource, amount]) => {
+        expect(nextState.resources[resource]).toEqual(
+          (count - 5) * amount + state.resources[resource]
+        );
+      }
     );
   });
 });
