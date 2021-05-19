@@ -30,6 +30,7 @@ describe("update/tick", function () {
       swarm: true,
     },
   };
+
   test("tick returns new object", () => {
     // Arrange
     const state: GameState = { ...initialState };
@@ -43,6 +44,7 @@ describe("update/tick", function () {
       expect(value).not.toBe(state[name]);
     });
   });
+
   test("single solar collector production", () => {
     // Arrange
     const state: GameState = {
@@ -67,6 +69,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("single miner consumption + production", () => {
     // Arrange
     const state: GameState = {
@@ -91,6 +94,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("single refiner consumption + production", () => {
     // Arrange
     const state: GameState = {
@@ -116,6 +120,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("single satellite factory consumption + production", () => {
     // Arrange
     const state: GameState = {
@@ -144,6 +149,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("breaker is tripped before attempting to consume more elec than we have", () => {
     // Arrange
     const state: GameState = {
@@ -173,6 +179,7 @@ describe("update/tick", function () {
       breaker: { tripped: true },
     });
   });
+
   test("swarm satellite by itself does nothing", () => {
     // Arrange
     const state: GameState = {
@@ -185,6 +192,7 @@ describe("update/tick", function () {
     // Assert
     expect(nextState).toEqual(state);
   });
+
   test("swarm satellite correctly supplements solar collector elec production", () => {
     // Arrange
     const state: GameState = {
@@ -207,6 +215,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("multiple of 1 building produce in proportion to their number", () => {
     // Arrange
     const count = randInt(2, 25);
@@ -229,6 +238,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("multiple of 1 building consume in proportion to their number", () => {
     // Arrange
     const count = randInt(2, 5);
@@ -252,6 +262,7 @@ describe("update/tick", function () {
       },
     });
   });
+
   test("resource consumption cannot result in negative count of a stored resource", () => {
     // Arrange
     const count = randInt(2, 29);
@@ -272,6 +283,7 @@ describe("update/tick", function () {
       expect(count).toBeGreaterThanOrEqual(0);
     });
   });
+
   test("workers should consume what resources are available even if supply cannot meet demand for all", () => {
     // Arrange
     const count = randInt(9, 29);
@@ -290,8 +302,8 @@ describe("update/tick", function () {
 
     // Assert
     expect(nextState.resources.ore).toEqual(0);
-    // for next test [partial production] : expect(nextState.resources.metal).toEqual(state.resources.metal + (count - 5) * tickProduction.
   });
+
   test("workers should produce from what resources are available even if supply cannot meet demand for all", () => {
     // Arrange
     const count = randInt(9, 29);

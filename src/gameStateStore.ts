@@ -1,3 +1,4 @@
+import { writable } from "svelte/store";
 import type {
   CircuitBreaker,
   Consumption,
@@ -7,7 +8,6 @@ import type {
   Resource,
   Worker,
 } from "./types";
-import { writable } from "svelte/store";
 
 export const tickConsumption: Consumption = {
   miner: { electricity: 3 },
@@ -77,24 +77,31 @@ export const tick: GameAction = (state) => {
           : count) > 0 // swarm has no influence without solar collectors
     );
 
-  workingWorkerCount.forEach(([worker, count]) => {
+  // 1: accounting for all inputs, how many of this worker type can produce work this tick?
+  const satisfiedWorkers = workingWorkerCount.map(([worker, count]) => {
+    let inputSatisfiedCount: number = count;
     Object.entries(tickConsumption[worker] ?? {}).forEach(
       ([resource, amount]: [Resource, number]) => {
-        const availableResourcesPerWorker = resources[resource] / count;
-        if (availableResourcesPerWorker >= amount) {
-          resources[resource] -= count * amount;
-        } else {
-          const satisfiedWorkers = Math.min(
-            Math.floor(resources[resource] / amount), // how many workers could be satisfied by the resource total
-            count
-          );
-          resources[resource] -= satisfiedWorkers * amount;
-        }
+        const satisfiedWorkers = Math.min(
+          Math.floor(resources[resource] / amount), // how many workers could be satisfied by the resource total
+          count
+        );
+        inputSatisfiedCount = Math.min(satisfiedWorkers, inputSatisfiedCount);
+      }
+    );
+    return [worker, inputSatisfiedCount];
+  });
+
+  satisfiedWorkers.forEach(([worker, count]: [Worker, number]) => {
+    Object.entries(tickConsumption[worker] ?? {}).forEach(
+      ([resource, amount]: [Resource, number]) => {
+        // 2: deduct from each resource that number times the correspoding required input amount [for that worker type]
+        resources[resource] -= count * amount;
       }
     );
   });
 
-  workingWorkerCount.forEach(([worker, count]) => {
+  satisfiedWorkers.forEach(([worker, count]: [Worker, number]) => {
     Object.entries(tickProduction?.[worker] || {}).forEach(
       ([resource, amount]) => {
         resources[resource] += count * amount;
