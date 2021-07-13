@@ -1,3 +1,4 @@
+<!-- @component Top-level of dyson swarm application -->
 <script lang="ts">
   import Table from "./Table.svelte";
   import Breaker from "./Breaker.svelte";

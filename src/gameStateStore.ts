@@ -27,7 +27,8 @@ export type Consumer = keyof Consumption;
 export type Producer = keyof Production;
 
 export const tick: GameAction = (state) => {
-  // to preemptively trip breaker we need to know how much elec we're about to consume
+  // to correctly trip breaker before overconsumption of electricity in the network,
+  // we need to know how much elec we're about to consume (& how much we're about to produce)
   const totalProjectedElectricityConsumption = Object.entries(
     state.working
   ).reduce(
@@ -35,11 +36,28 @@ export const tick: GameAction = (state) => {
       accu + (on ? tickConsumption[worker]?.electricity || 0 : 0),
     0
   );
+  const totalProjectedElectricityProduction = Object.entries(
+    state.working
+  ).reduce(
+    (accu, [worker, on]) =>
+      accu + (on ? tickProduction[worker]?.electricity || 0 : 0),
+    0
+  );
+  const breakerShouldTrip =
+    state.resources.electricity + totalProjectedElectricityProduction <
+    totalProjectedElectricityConsumption;
+  console.debug({
+    working: state.working,
+    breakerShouldTrip,
+    current: state.resources.electricity,
+    projected: {
+      prod: totalProjectedElectricityProduction,
+      cons: totalProjectedElectricityConsumption,
+    },
+  });
   const breaker: CircuitBreaker = {
     tripped:
-      state.breaker.tripped ||
-      (!state.breaker.tripped &&
-        state.resources.electricity < totalProjectedElectricityConsumption),
+      state.breaker.tripped || (!state.breaker.tripped && breakerShouldTrip),
   };
 
   if (breaker.tripped) {
@@ -53,15 +71,11 @@ export const tick: GameAction = (state) => {
   }
   // resources.electricity -= totalElectricityConsumption
   // needs workers as state machines; only workers that have all their inputs fulfilled can consume
-  // worker state machine first draft :
-  `arrange [Inactive Working];
+  // worker state machine second draft :
+  `Awaiting_Input 'start working' => Working 'work' => Working 'finish task' => Awaiting_Input;
+[Awaiting_Input Working] 'turn off' ~> Turned_Off 'turn on' ~> Awaiting_Input;
+[Awaiting_Input Working] 'circuit broken' -> Awaiting_Power 'circuit unbroken' -> Awaiting_Input;`;
 
-    Inactive 'turn on' ~> Waiting_for_Input 'turn off' ~> Inactive;
-    Waiting_for_Input 'input mats' -> Waiting_for_Input;
-    Waiting_for_Input 'has all mats' => Working 'work' => Working;
-    Working 'finished working' => Waiting_for_Input;`;
-
-  // const consumers = Object.keys(tickConsumption);
   const resources = { ...state.resources };
   const workingWorkerCount = Object.entries(state.working)
     .filter(([_, on]) => on)

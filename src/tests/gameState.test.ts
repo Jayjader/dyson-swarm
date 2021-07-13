@@ -27,6 +27,13 @@ function randConsumingProducer(): Producer & Consumer {
   }
   return producer;
 }
+function randMaterialConsumingProducer(): Producer & Consumer {
+  let producer = randConsumingProducer();
+  while (["miner"].includes(producer)) {
+    producer = randConsumingProducer();
+  }
+  return producer;
+}
 
 function elementwiseAdd(
   obj1: Record<string, number>,
@@ -191,21 +198,26 @@ describe("update/tick", function () {
 
   test("breaker is tripped before attempting to consume more elec than we have", () => {
     // Arrange
+    const count = randInt(9, 29);
+    const worker = randConsumingProducer();
+    const initialElectricity = tickConsumption[worker].electricity * count - 1; // _just_ not enough to satisfy projected consumption
     const state: GameState = {
       ...initialState,
       buildings: {
         ...initialState.buildings,
-        miner: randInt(1, 20),
-        refiner: randInt(1, 4),
-        satelliteFactory: randInt(1, 9),
+        [worker]: count,
       },
       resources: {
         ...initialState.resources,
-        electricity:
-          tickConsumption.miner.electricity +
-          tickConsumption.refiner.electricity +
-          tickConsumption.satelliteFactory.electricity -
-          1, // _just_ not enough to satisfy projected consumption
+        electricity: initialElectricity,
+        ...Object.fromEntries(
+          Object.entries(tickConsumption[worker])
+            .filter(([resource, _]) => resource !== "electricity")
+            .map(([consumed_resource, consumed_amount]) => [
+              consumed_resource,
+              consumed_amount * count,
+            ])
+        ),
       },
     };
 
@@ -213,6 +225,7 @@ describe("update/tick", function () {
     const nextState = tick(state);
 
     // Assert
+    console.log({ worker, count });
     expect(nextState).toEqual({
       ...state,
       breaker: { tripped: true },
@@ -352,10 +365,11 @@ describe("update/tick", function () {
   test("if only some workers are input-satisfied, they should still consume/produce", () => {
     // Arrange
     const count = randInt(9, 29);
-    const worker = randConsumingProducer();
+    const worker = randMaterialConsumingProducer();
     const resources: Resources = {
       ...initialState.resources,
       ...elementwiseMult(count - 5, tickConsumption[worker] ?? {}),
+      electricity: count * tickConsumption[worker]?.electricity,
     };
     const state: GameState = {
       ...initialState,
@@ -367,12 +381,12 @@ describe("update/tick", function () {
     const nextState = tick(state);
 
     // Assert
-    Object.entries(tickProduction[worker] ?? {}).forEach(
-      ([resource, amount]) => {
+    Object.entries(tickProduction[worker] ?? {})
+      .filter(([resource, _]) => resource !== "electricity")
+      .forEach(([resource, amount]) => {
         expect(nextState.resources[resource]).toEqual(
           (count - 5) * amount + state.resources[resource]
         );
-      }
-    );
+      });
   });
 });

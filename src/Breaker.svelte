@@ -8,7 +8,7 @@
 >
   <label data-augmented-ui-inlay class:tripped>
     Circuit Breaker
-    <input type="checkbox" hidden bind:checked={tripped} on:change />
+    <input type="checkbox" hidden checked={tripped} on:change />
     {tripped ? "(tripped)" : ""}
   </label>
 </div>

@@ -1,3 +1,4 @@
+<!-- @component Launch a packaged satellite into orbit -->
 <button
   class="satellite-launch-control"
   data-augmented-ui="tl-clip br-clip"
