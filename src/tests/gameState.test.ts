@@ -1,37 +1,46 @@
-import type { GameState, Worker, Resources } from "../types";
 import { tick, tickConsumption, tickProduction } from "../gameStateStore";
-import type { Consumer, Producer } from "../gameStateStore";
+import {
+  __CONSUMERS,
+  __PRODUCERS,
+  Building,
+  Consumer,
+  GameState,
+  isProducer,
+  Producer,
+  Resource,
+  Worker,
+} from "../types";
 
 function randInt(from: number, to: number): number {
   return Math.floor(Math.random() * (to - from + 1) + from);
 }
 
 function randWorker(): Worker {
-  return ["solarCollector", "miner", "refiner", "satelliteFactory", "swarm"][
-    randInt(0, 4)
-  ] as Worker;
+  return [
+    Building.SOLAR_COLLECTOR,
+    Building.MINER,
+    Building.REFINERY,
+    Building.SATELLITE_FACTORY,
+    "swarm",
+  ][randInt(0, 4)] as Worker;
 }
 
-const consumers = Object.keys(tickConsumption) as Worker[];
-function randConsumer(): Worker {
-  return consumers[randInt(0, consumers.length - 1)];
+const randConsumer = (): Consumer =>
+  __CONSUMERS[randInt(0, __CONSUMERS.length - 1)] as Consumer;
+const randProducer = (): Producer =>
+  __PRODUCERS[randInt(0, __PRODUCERS.length - 1)] as Producer;
+function randConsumingProducer(): Consumer & Producer {
+  let consumer: Consumer & Producer;
+  do {
+    consumer = randConsumer();
+  } while (!isProducer(consumer));
+  return consumer;
 }
-const producers = Object.keys(tickProduction) as Worker[];
-function randProducer(): Worker {
-  return producers[randInt(0, producers.length - 1)];
-}
-function randConsumingProducer(): Producer & Consumer {
-  let producer = randProducer();
-  while (["swarm", "solarCollector"].includes(producer)) {
-    producer = randProducer();
-  }
-  return producer;
-}
-function randMaterialConsumingProducer(): Producer & Consumer {
-  let producer = randConsumingProducer();
-  while (["miner"].includes(producer)) {
+function randMaterialConsumingProducer(): Consumer & Producer {
+  let producer: Consumer & Producer;
+  do {
     producer = randConsumingProducer();
-  }
+  } while (![Building.REFINERY, Building.SATELLITE_FACTORY].includes(producer));
   return producer;
 }
 
@@ -44,60 +53,58 @@ function elementwiseAdd(
     Array.from(keys).map((key: string) => [key, obj1?.[key] + obj1?.[key]])
   ) as Record<string, number>;
 }
-function elementwiseMult(
+function elementwiseMult<key extends string | number>(
   n: number,
-  obj: Record<string, number>
-): Record<string, number> {
-  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, n * v]));
+  obj: Map<key, number>
+): Map<key, number> {
+  return new Map([...obj].map(([k, v]) => [k, n * v]));
 }
 
 describe("update/tick", function () {
-  const initialState: GameState = {
+  const initialState: () => GameState = () => ({
     breaker: { tripped: false },
     buildings: {
-      solarCollector: 0,
-      miner: 0,
-      refiner: 0,
-      satelliteFactory: 0,
-      satelliteLauncher: 0,
+      [Building.SOLAR_COLLECTOR]: 0,
+      [Building.MINER]: 0,
+      [Building.REFINERY]: 0,
+      [Building.SATELLITE_FACTORY]: 0,
+      [Building.SATELLITE_LAUNCHER]: 0,
     },
     resources: {
-      electricity: randInt(100, 200),
-      metal: randInt(5, 30),
-      packagedSatellites: randInt(2, 200),
-      ore: randInt(3, 500),
+      [Resource.ELECTRICITY]: randInt(100, 200),
+      [Resource.ORE]: randInt(3, 500),
+      [Resource.METAL]: randInt(5, 30),
+      [Resource.PACKAGED_SATELLITE]: randInt(2, 200),
     },
     swarm: { satellites: 0 },
     working: {
-      miner: true,
-      solarCollector: true,
-      refiner: true,
-      satelliteFactory: true,
+      [Building.SOLAR_COLLECTOR]: true,
+      [Building.MINER]: true,
+      [Building.REFINERY]: true,
+      [Building.SATELLITE_FACTORY]: true,
       swarm: true,
     },
-  };
+  });
 
   test("tick returns new object", () => {
     // Arrange
-    const state: GameState = { ...initialState };
+    const state: GameState = initialState();
 
     // Act
     const nextState = tick(state);
 
     // Assert
     expect(nextState).not.toBe(state);
-    Object.entries(nextState).forEach(([name, value]) => {
-      expect(value).not.toBe(state[name]);
-    });
   });
 
   test("single solar collector production", () => {
     // Arrange
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
+      ...zeroState,
       buildings: {
-        ...initialState.buildings,
-        solarCollector: 1,
+        ...zeroState.buildings,
+        [Building.SOLAR_COLLECTOR]: 1,
       },
     };
 
@@ -105,25 +112,20 @@ describe("update/tick", function () {
     const nextState = tick(state);
 
     // Assert
-    expect(nextState).toEqual({
-      ...state,
-      resources: {
-        ...state.resources,
-        electricity:
-          state.resources.electricity +
-          tickProduction.solarCollector.electricity,
-      },
+    expect(nextState.resources).toEqual({
+      ...state.resources,
+      [Resource.ELECTRICITY]:
+        state.resources[Resource.ELECTRICITY] +
+        tickProduction[Building.SOLAR_COLLECTOR].get(Resource.ELECTRICITY),
     });
   });
 
   test("single miner consumption + production", () => {
     // Arrange
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: {
-        ...initialState.buildings,
-        miner: 1,
-      },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.MINER]: 1 },
     };
 
     // Act
@@ -134,21 +136,22 @@ describe("update/tick", function () {
       ...state,
       resources: {
         ...state.resources,
-        electricity:
-          state.resources.electricity - tickConsumption.miner.electricity,
-        ore: state.resources.ore + tickProduction.miner.ore,
+        [Resource.ELECTRICITY]:
+          state.resources[Resource.ELECTRICITY] -
+          tickConsumption[Building.MINER].get(Resource.ELECTRICITY),
+        [Resource.ORE]:
+          state.resources[Resource.ORE] +
+          tickProduction[Building.MINER].get(Resource.ORE),
       },
     });
   });
 
   test("single refiner consumption + production", () => {
     // Arrange
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: {
-        ...initialState.buildings,
-        refiner: 1,
-      },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.REFINERY]: 1 },
     };
 
     // Act
@@ -159,21 +162,28 @@ describe("update/tick", function () {
       ...state,
       resources: {
         ...state.resources,
-        electricity:
-          state.resources.electricity - tickConsumption.refiner.electricity,
-        ore: state.resources.ore - tickConsumption.refiner.ore,
-        metal: state.resources.metal + tickProduction.refiner.metal,
+        [Resource.ELECTRICITY]:
+          state.resources[Resource.ELECTRICITY] -
+          tickConsumption[Building.REFINERY].get(Resource.ELECTRICITY),
+        [Resource.ORE]:
+          state.resources[Resource.ORE] -
+          tickConsumption[Building.REFINERY].get(Resource.ORE),
+        [Resource.METAL]:
+          state.resources[Resource.METAL] +
+          tickProduction[Building.REFINERY].get(Resource.METAL),
       },
     });
   });
 
   test("single satellite factory consumption + production", () => {
     // Arrange
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: {
-        ...initialState.buildings,
-        satelliteFactory: 1,
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.SATELLITE_FACTORY]: 1 },
+      resources: {
+        ...zeroState.resources,
+        ...Object.fromEntries([...tickConsumption[Building.SATELLITE_FACTORY]]),
       },
     };
 
@@ -185,13 +195,17 @@ describe("update/tick", function () {
       ...state,
       resources: {
         ...state.resources,
-        electricity:
-          state.resources.electricity -
-          tickConsumption.satelliteFactory.electricity,
-        metal: state.resources.metal - tickConsumption.satelliteFactory.metal,
-        packagedSatellites:
-          state.resources.packagedSatellites +
-          tickProduction.satelliteFactory.packagedSatellites,
+        [Resource.ELECTRICITY]:
+          state.resources[Resource.ELECTRICITY] -
+          tickConsumption[Building.SATELLITE_FACTORY].get(Resource.ELECTRICITY),
+        [Resource.METAL]:
+          state.resources[Resource.METAL] -
+          tickConsumption[Building.SATELLITE_FACTORY].get(Resource.METAL),
+        [Resource.PACKAGED_SATELLITE]:
+          state.resources[Resource.PACKAGED_SATELLITE] +
+          tickProduction[Building.SATELLITE_FACTORY].get(
+            Resource.PACKAGED_SATELLITE
+          ),
       },
     });
   });
@@ -199,25 +213,30 @@ describe("update/tick", function () {
   test("breaker is tripped before attempting to consume more elec than we have", () => {
     // Arrange
     const count = randInt(9, 29);
+    // const count = 1;
     const worker = randConsumingProducer();
-    const initialElectricity = tickConsumption[worker].electricity * count - 1; // _just_ not enough to satisfy projected consumption
+    const workerConsumption = tickConsumption[worker];
+    const initialElectricity =
+      workerConsumption.get(Resource.ELECTRICITY) * count - 1; // _just_ not enough to satisfy projected consumption
+    let initialOtherResources = [
+      ...[...workerConsumption].filter(
+        ([resource, _]: [Resource, number]) => resource !== Resource.ELECTRICITY
+      ),
+    ];
+    initialOtherResources = initialOtherResources.map(
+      ([consumed_resource, consumed_amount]: [Resource, number]) => [
+        consumed_resource,
+        consumed_amount * count,
+      ]
+    );
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: {
-        ...initialState.buildings,
-        [worker]: count,
-      },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [worker as Building]: count },
       resources: {
-        ...initialState.resources,
-        electricity: initialElectricity,
-        ...Object.fromEntries(
-          Object.entries(tickConsumption[worker])
-            .filter(([resource, _]) => resource !== "electricity")
-            .map(([consumed_resource, consumed_amount]) => [
-              consumed_resource,
-              consumed_amount * count,
-            ])
-        ),
+        ...zeroState.resources,
+        [Resource.ELECTRICITY]: initialElectricity,
+        ...initialOtherResources,
       },
     };
 
@@ -225,7 +244,6 @@ describe("update/tick", function () {
     const nextState = tick(state);
 
     // Assert
-    console.log({ worker, count });
     expect(nextState).toEqual({
       ...state,
       breaker: { tripped: true },
@@ -235,7 +253,7 @@ describe("update/tick", function () {
   test("swarm satellite by itself does nothing", () => {
     // Arrange
     const state: GameState = {
-      ...initialState,
+      ...initialState(),
       swarm: { satellites: 1 },
     };
     // Act
@@ -247,11 +265,13 @@ describe("update/tick", function () {
 
   test("swarm satellite correctly supplements solar collector elec production", () => {
     // Arrange
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
+      ...zeroState,
       swarm: { satellites: 1 },
-      buildings: { ...initialState.buildings, solarCollector: 1 },
+      buildings: { ...zeroState.buildings, [Building.SOLAR_COLLECTOR]: 1 },
     };
+
     // Act
     const nextState = tick(state);
 
@@ -260,10 +280,10 @@ describe("update/tick", function () {
       ...state,
       resources: {
         ...state.resources,
-        electricity:
-          state.resources.electricity +
-          tickProduction.solarCollector.electricity +
-          tickProduction.swarm.electricity,
+        [Resource.ELECTRICITY]:
+          state.resources[Resource.ELECTRICITY] +
+          tickProduction[Building.SOLAR_COLLECTOR].get(Resource.ELECTRICITY) +
+          tickProduction.swarm.get(Resource.ELECTRICITY),
       },
     });
   });
@@ -271,9 +291,10 @@ describe("update/tick", function () {
   test("multiple of 1 building produce in proportion to their number", () => {
     // Arrange
     const count = randInt(2, 25);
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: { ...initialState.buildings, solarCollector: count },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.SOLAR_COLLECTOR]: count },
     };
 
     // Act
@@ -284,46 +305,53 @@ describe("update/tick", function () {
       ...state,
       resources: {
         ...state.resources,
-        electricity:
-          state.resources.electricity +
-          count * tickProduction.solarCollector.electricity,
+        [Resource.ELECTRICITY]:
+          state.resources[Resource.ELECTRICITY] +
+          count *
+            tickProduction[Building.SOLAR_COLLECTOR].get(Resource.ELECTRICITY),
       },
     });
   });
 
-  test("multiple of 1 building consume in proportion to their number", () => {
+  test("multiples of 1 building type consume in proportion to their number", () => {
     // Arrange
     const count = randInt(2, 5);
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: { ...initialState.buildings, miner: count },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.MINER]: count },
+      resources: {
+        ...zeroState.resources,
+        ...[...tickConsumption[Building.MINER]].map(([resource, amount]) => [
+          resource,
+          amount * count,
+        ]),
+      },
     };
 
     // Act
     const nextState = tick(state);
 
     // Assert
-    expect(nextState).toEqual({
-      ...state,
-      resources: {
-        ...state.resources,
-        electricity:
-          state.resources.electricity -
-          count * tickConsumption.miner.electricity,
-        ore: state.resources.ore + count * tickProduction.miner.ore,
-      },
+    expect(nextState.resources).toMatchObject({
+      ...[...tickConsumption[Building.MINER]].map(([resource, amount]) => [
+        resource,
+        amount * count,
+      ]),
     });
   });
 
   test("resource consumption cannot result in negative count of a stored resource", () => {
     // Arrange
     const count = randInt(2, 29);
+    const zeroState = initialState();
     const state: GameState = {
-      ...initialState,
-      buildings: { ...initialState.buildings, refiner: count },
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [Building.REFINERY]: count },
       resources: {
-        ...initialState.resources,
-        ore: count * tickConsumption.refiner.ore - 1,
+        ...zeroState.resources,
+        [Resource.ORE]:
+          count * tickConsumption[Building.REFINERY].get(Resource.ORE) - 1,
       },
     };
 
@@ -339,26 +367,28 @@ describe("update/tick", function () {
   test("workers should consume what resources are available even if supply cannot meet demand for all", () => {
     // Arrange
     const count = randInt(9, 29);
+    const zeroState = initialState();
     const worker = randConsumer();
 
-    const resources: Resources = {
-      ...initialState.resources,
-      ...elementwiseMult(count, tickConsumption[worker] ?? {}),
-    };
     const state: GameState = {
-      ...initialState,
-      buildings: { ...initialState.buildings, [worker]: count },
-      resources,
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [worker]: count },
+      resources: {
+        ...zeroState.resources,
+        ...elementwiseMult(count, tickConsumption[worker]),
+      },
     };
 
     // Act
     const nextState = tick(state);
 
     // Assert
-    Object.entries(tickConsumption[worker] ?? {}).forEach(
-      ([resource, _amount]) => {
-        expect(nextState.resources[resource]).toEqual(0);
-      }
+    expect(nextState.resources).toEqual(
+      expect.objectContaining({
+        ...Object.entries(
+          tickConsumption[worker]
+        ).map(([resource, _amount]) => [resource, 0]),
+      })
     );
   });
 
@@ -366,27 +396,35 @@ describe("update/tick", function () {
     // Arrange
     const count = randInt(9, 29);
     const worker = randMaterialConsumingProducer();
-    const resources: Resources = {
-      ...initialState.resources,
-      ...elementwiseMult(count - 5, tickConsumption[worker] ?? {}),
-      electricity: count * tickConsumption[worker]?.electricity,
-    };
+    const zeroState = initialState();
+    const onlySomeResources = elementwiseMult(
+      count - 5,
+      tickConsumption[worker]
+    );
     const state: GameState = {
-      ...initialState,
-      buildings: { ...initialState.buildings, [worker]: count },
-      resources,
+      ...zeroState,
+      buildings: { ...zeroState.buildings, [worker]: count },
+      resources: {
+        ...zeroState.resources,
+        ...Object.fromEntries(onlySomeResources),
+        [Resource.ELECTRICITY]:
+          count * tickConsumption[worker].get(Resource.ELECTRICITY),
+      },
     };
 
     // Act
     const nextState = tick(state);
 
     // Assert
-    Object.entries(tickProduction[worker] ?? {})
-      .filter(([resource, _]) => resource !== "electricity")
-      .forEach(([resource, amount]) => {
-        expect(nextState.resources[resource]).toEqual(
-          (count - 5) * amount + state.resources[resource]
-        );
-      });
+    expect(nextState.resources).toMatchObject(
+      Object.fromEntries(
+        [...tickProduction[worker]]
+          .filter(([resource, _]) => resource !== Resource.ELECTRICITY)
+          .map(([resource, amount]) => [
+            resource,
+            (count - 5) * amount + state.resources[resource],
+          ])
+      )
+    );
   });
 });

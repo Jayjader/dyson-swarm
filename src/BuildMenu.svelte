@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createFsm, state as fsmState } from "./fsmStore";
   import { build } from "./actions";
-  import type { BuildChoice, Building, GameAction } from "./types";
+  import type { BuildChoice, GameAction } from "./types";
+  import { Building } from "./types";
   import type { TransitionConfig } from "svelte/transition";
   import Tile from "./Tile.svelte";
 
@@ -89,16 +90,19 @@
       case "Manual":
         return [
           { label: "Nothing", action: () => sm.action("Nothing") },
-          { label: "Collector", action: () => manualBuild("solarCollector") },
-          { label: "Miner", action: () => manualBuild("miner") },
-          { label: "Refiner", action: () => manualBuild("refiner") },
+          {
+            label: "Collector",
+            action: () => manualBuild(Building.SOLAR_COLLECTOR),
+          },
+          { label: "Miner", action: () => manualBuild(Building.MINER) },
+          { label: "Refiner", action: () => manualBuild(Building.REFINERY) },
           {
             label: "Sat. Factory",
-            action: () => manualBuild("satelliteFactory"),
+            action: () => manualBuild(Building.SATELLITE_FACTORY),
           },
           {
             label: "Sat. Launcher",
-            action: () => manualBuild("satelliteLauncher"),
+            action: () => manualBuild(Building.SATELLITE_LAUNCHER),
           },
           { label: "Auto", action: () => sm.action("Auto") },
         ];
@@ -110,17 +114,20 @@
           },
           {
             label: "Collector",
-            action: () => chooseAutoBuild("solarCollector"),
+            action: () => chooseAutoBuild(Building.SOLAR_COLLECTOR),
           },
-          { label: "Miner", action: () => chooseAutoBuild("miner") },
-          { label: "Refiner", action: () => chooseAutoBuild("refiner") },
+          { label: "Miner", action: () => chooseAutoBuild(Building.MINER) },
+          {
+            label: "Refiner",
+            action: () => chooseAutoBuild(Building.REFINERY),
+          },
           {
             label: "Sat. Factory",
-            action: () => chooseAutoBuild("satelliteFactory"),
+            action: () => chooseAutoBuild(Building.SATELLITE_FACTORY),
           },
           {
             label: "Sat. Launcher",
-            action: () => chooseAutoBuild("satelliteLauncher"),
+            action: () => chooseAutoBuild(Building.SATELLITE_LAUNCHER),
           },
           {
             label: "Manual",

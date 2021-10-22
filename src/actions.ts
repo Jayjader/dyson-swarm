@@ -1,17 +1,33 @@
-import type { Building, GameAction, GameState, Input } from "./types";
+import type { GameAction, GameState, Input } from "./types";
+import { Resource, Building } from "./types";
 
 export const constructionCosts: Record<Building, Input> = {
-  miner: { electricity: 150, metal: 30 },
-  refiner: { electricity: 500, metal: 45 },
-  satelliteFactory: { electricity: 2 * 10 ** 3, metal: 170 },
-  satelliteLauncher: { electricity: 10 ** 4, metal: 13 * 10 ** 2 },
-  solarCollector: { electricity: 100, metal: 10 },
+  [Building.MINER]: new Map([
+    [Resource.ELECTRICITY, 150],
+    [Resource.METAL, 30],
+  ]),
+  [Building.REFINERY]: new Map([
+    [Resource.ELECTRICITY, 500],
+    [Resource.METAL, 45],
+  ]),
+  [Building.SATELLITE_FACTORY]: new Map([
+    [Resource.ELECTRICITY, 2 * 10 ** 3],
+    [Resource.METAL, 170],
+  ]),
+  [Building.SATELLITE_LAUNCHER]: new Map([
+    [Resource.ELECTRICITY, 10 ** 4],
+    [Resource.METAL, 13 * 10 ** 2],
+  ]),
+  [Building.SOLAR_COLLECTOR]: new Map([
+    [Resource.ELECTRICITY, 100],
+    [Resource.METAL, 10],
+  ]),
 };
 
 export const build = (building: Building) => (state: GameState) => {
   const cost = constructionCosts[building];
   const { resources, buildings } = state;
-  const notEnough = Object.entries(cost).filter(
+  const notEnough = [...cost].filter(
     ([resource, amount]) => resources[resource] < amount
   );
   notEnough.forEach(([resource, amount]) => {
@@ -20,7 +36,7 @@ export const build = (building: Building) => (state: GameState) => {
     );
   });
   if (notEnough.length === 0) {
-    Object.entries(cost).forEach(([resource, amount]) => {
+    [...cost].forEach(([resource, amount]) => {
       resources[resource] -= amount;
     });
     buildings[building] += 1;
@@ -28,7 +44,10 @@ export const build = (building: Building) => (state: GameState) => {
   return { ...state, resources, buildings };
 };
 
-const launchCost: Input = { electricity: 1.4 * 10 ** 3, packagedSatellites: 1 };
+const launchCost: Input = new Map([
+  [Resource.ELECTRICITY, 1.4 * 10 ** 3],
+  [Resource.PACKAGED_SATELLITE, 1],
+]);
 export const launchSatellite: GameAction = (state) => {
   return Object.entries(launchCost).filter(
     ([resource, amount]) => state.resources[resource] < amount
@@ -38,8 +57,9 @@ export const launchSatellite: GameAction = (state) => {
         ...state,
         resources: {
           ...state.resources,
-          electricity: state.resources.electricity - 1,
-          packagedSatellites: state.resources.packagedSatellites - 1,
+          [Resource.ELECTRICITY]: state.resources[Resource.ELECTRICITY] - 1,
+          [Resource.PACKAGED_SATELLITE]:
+            state.resources[Resource.PACKAGED_SATELLITE] - 1,
         },
         swarm: { ...state.swarm, satellites: state.swarm.satellites + 1 },
       };

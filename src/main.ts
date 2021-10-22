@@ -1,32 +1,34 @@
 import App from "./App.svelte";
-import type {
+import {
+  Building,
   Buildings,
   CircuitBreaker,
+  Resource,
   Resources,
   Swarm,
   Working,
 } from "./types";
 
 const resources: Resources = {
-  electricity: 10 ** 3,
-  ore: 0,
-  metal: 2 * 10 ** 2,
-  packagedSatellites: 0,
+  [Resource.ELECTRICITY]: 10 ** 3,
+  [Resource.ORE]: 0,
+  [Resource.METAL]: 2 * 10 ** 2,
+  [Resource.PACKAGED_SATELLITE]: 0,
 };
 const buildings: Buildings = {
-  solarCollector: 10,
-  miner: 0,
-  refiner: 0,
-  satelliteFactory: 0,
-  satelliteLauncher: 0,
+  [Building.SOLAR_COLLECTOR]: 10,
+  [Building.MINER]: 0,
+  [Building.REFINERY]: 0,
+  [Building.SATELLITE_FACTORY]: 0,
+  [Building.SATELLITE_LAUNCHER]: 0,
 };
 const swarm: Swarm = { satellites: 0 };
 const breaker: CircuitBreaker = { tripped: false };
 const working: Working = {
-  miner: true,
-  refiner: true,
-  satelliteFactory: true,
-  solarCollector: true,
+  [Building.MINER]: true,
+  [Building.REFINERY]: true,
+  [Building.SOLAR_COLLECTOR]: true,
+  [Building.SATELLITE_FACTORY]: true,
   swarm: true,
 };
 

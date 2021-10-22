@@ -88,7 +88,7 @@
       {#each Object.entries(constructionCosts) as [building, costs] (building)}
         <tr>
           <th>{building}</th>
-          {#each Object.entries(costs) as [resource, amount] (resource)}
+          {#each [...costs] as [resource, amount] (resource)}
             <td>{resource}: {amount}</td>
           {/each}
         </tr>
@@ -99,7 +99,7 @@
       {#each Object.entries(tickConsumption) as [building, inputs] (building)}
         <tr>
           <th>{building}</th>
-          {#each Object.entries(inputs) as [resource, amount] (resource)}
+          {#each [...inputs] as [resource, amount] (resource)}
             <td>{resource}: {amount}</td>
           {/each}
         </tr>
@@ -110,7 +110,7 @@
       {#each Object.entries(tickProduction) as [building, outputs] (building)}
         <tr>
           <th>{building}</th>
-          {#each Object.entries(outputs) as [resource, amount] (resource)}
+          {#each [...outputs] as [resource, amount] (resource)}
             <td>{resource}: {amount}</td>
           {/each}
         </tr>

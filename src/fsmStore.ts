@@ -22,5 +22,5 @@ export function createFsm(fsmDsl: string) {
 type FsmStore = ReturnType<typeof createFsm>;
 
 export function state<States extends string>($fsm: FsmStore) {
-  return derived($fsm, ($fsm) => $fsm.state() as States);
+  return derived($fsm, ($fsm_) => $fsm_.state() as States);
 }
