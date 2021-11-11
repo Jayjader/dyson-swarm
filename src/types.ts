@@ -1,3 +1,7 @@
+type Some<T> = T;
+type Optional<T> = Some<T> | null;
+const some = <T>(o: Optional<T>): o is Some<T> => false;
+
 export enum Resource {
   ELECTRICITY = "elec",
   ORE = "ore",
