@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { derived, writable } from "svelte/store";
 import {
   Building,
   CircuitBreaker,
@@ -165,5 +165,13 @@ export function createGameState(init: GameState) {
     subscribe,
     tick: () => update(($state) => tick($state)),
     action: (a: GameAction) => update(($state) => a($state)),
+    resourceEntries: () =>
+      subscribe(
+        ($state) => Object.entries($state.resources) as [Resource, number][]
+      ),
   };
 }
+export type GameStateStore = ReturnType<typeof createGameState>;
+
+export const resourceArray = (s: GameStateStore) =>
+  derived(s, ($s) => Object.entries($s.resources) as [Resource, number][]);

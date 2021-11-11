@@ -12,19 +12,22 @@
     tripBreaker,
   } from "./actions";
   import { onDestroy } from "svelte";
-  import SwarmDisplay from "./Swarm.svelte";
   import BuildMenu from "./BuildMenu.svelte";
   import {
     createGameState,
+    resourceArray,
     tickConsumption,
     tickProduction,
   } from "./gameStateStore";
+  import ResourceHud from "./ResourceHud.svelte";
   import LaunchButton from "./LaunchButton.svelte";
+  import SwarmHud from "./SwarmHud.svelte";
 
   export let init: GameState;
   let autoBuildChoice: BuildChoice = null;
 
   const state = createGameState(init);
+  const resources = resourceArray(state);
 
   const timeStep = 1000;
   let lastTimeStamp = window.performance.now();
@@ -53,22 +56,27 @@
 </script>
 
 <main>
-  <div class="tables">
-    <Table
-      caption="resources"
-      contents={Object.entries($state.resources)}
-      orientation="left"
-    />
-    <SwarmDisplay count={$state.swarm.satellites} />
-    <Table caption="buildings" contents={Object.entries($state.buildings)} />
+  <div class="HUD">
+    <ResourceHud resources={$resources} />
+    <SwarmHud swarm={{ count: $state.swarm.satellites }} />
   </div>
-
-  <LaunchButton on:click={() => state.action(launchSatellite)} />
-  <Breaker
-    tripped={$state.breaker.tripped}
-    on:change={() => state.action(tripBreaker)}
+  <Table
+    caption="resources"
+    contents={Object.entries($state.resources)}
+    orientation="left"
   />
-  <ul class="control-panel">
+  <Table caption="buildings" contents={Object.entries($state.buildings)} />
+
+  <ul style="display: none" class="control-panel">
+    <li>
+      <LaunchButton on:click={() => state.action(launchSatellite)} />
+    </li>
+    <li>
+      <Breaker
+        tripped={$state.breaker.tripped}
+        on:change={() => state.action(tripBreaker)}
+      />
+    </li>
     {#each Object.keys(tickConsumption) as worker (worker)}
       <li>
         <WorkerToggle
@@ -82,7 +90,7 @@
   </ul>
   <BuildMenu dispatch={state.action} bind:autoBuildChoice />
 
-  <div class="tables">
+  <div style="display: none" class="tables">
     <table>
       <caption>Build Costs</caption>
       {#each Object.entries(constructionCosts) as [building, costs] (building)}
@@ -121,11 +129,43 @@
 
 <style>
   main {
+    --col-count: 2;
+    --row-count: 3;
+    display: grid;
+    column-gap: 0.25em;
+    grid-template-columns: 1em repeat(var(--col-count), 1fr) 1em;
+    grid-template-rows: 1em repeat(var(--row-count), 1fr) 1em;
+    grid-template-areas:
+      ". . . ."
+      ". HUD HUD ."
+      ". PanelLeft PanelRight ."
+      ". PanelLeft PanelRight ."
+      ". . . .";
     text-align: center;
     padding: 1em;
-    max-width: 320px;
+    max-width: 90%;
     margin: 0 auto;
     background-color: #dddddd;
+  }
+
+  main > * {
+    grid-row: -2;
+    grid-column: -2;
+  }
+
+  @media (min-width: 650px) {
+    main {
+      --col-count: 6;
+    }
+  }
+
+  .HUD {
+    grid-area: HUD;
+    display: grid;
+    grid-template-columns:
+      minmax(1em, 1fr) minmax(1fr, 30%) minmax(1fr, 10%) minmax(1fr, 30%)
+      minmax(1em, 1fr);
+    grid-template-areas: ". resources swarm buildings .";
   }
 
   .tables {
@@ -138,11 +178,5 @@
     list-style: none;
     display: flex;
     flex-flow: column;
-  }
-
-  @media (min-width: 640px) {
-    main {
-      max-width: 90%;
-    }
   }
 </style>

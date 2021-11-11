@@ -3,13 +3,13 @@
   export let caption: string;
   export let orientation: "right" | "left" = "right";
 
-  $: augUiMixins =
+  const augUiMixins =
     orientation === "right"
       ? "tl-2-clip-x tr-2-clip-y bl-2-clip-x"
       : "tr-2-clip-x tl-2-clip-y br-2-clip-x";
 </script>
 
-<div class="panel" data-augmented-ui={augUiMixins}>
+<div class={`panel ${orientation}`} data-augmented-ui={augUiMixins}>
   <table>
     <caption>{caption}</caption>
     {#each contents as [name, count]}
@@ -23,8 +23,15 @@
     margin: 1rem 0;
     height: min-content;
     min-height: 6rem;
-    width: 250px;
     padding-bottom: 35px;
+    grid-area: PanelLeft;
+  }
+
+  .left {
+    grid-area: PanelLeft;
+  }
+  .right {
+    grid-area: PanelRight;
   }
 
   table {
