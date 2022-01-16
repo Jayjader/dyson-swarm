@@ -139,13 +139,15 @@
       1em;
     grid-template-rows:
       1em
-      minmax(1em, min-content) repeat(var(--panel-row-count), 1fr)
+      minmax(1em, min-content) /* HUD */
+      repeat(var(--panel-row-count), minmax(min-content, auto))
+      max-content /* Build Menu */
       1em;
     grid-template-areas:
       ". . . ."
       ". HUD HUD ."
       ". PanelLeft PanelRight ."
-      ". PanelLeft PanelRight ."
+      ". BuildMenu BuildMenu ."
       ". . . .";
     text-align: center;
     padding: 0;
@@ -158,9 +160,17 @@
     grid-column: -2;
   }
 
+  /* TODO: think about making this to like ~820ish to accomodate for the horizontal empty space needed by the Build Menu when "curled up" */
   @media (min-width: 650px) {
     main {
       --panel-col-count: 6;
+      grid-template-areas:
+        ". . . . . . . ."
+        ". HUD HUD HUD HUD HUD HUD ."
+        ". PanelLeft . . . . PanelRight ."
+        ". PanelLeft . BuildMenu BuildMenu . PanelRight ."
+        ". . . . . . . . ";
+      grid-template-columns: 1em 1fr 1em 1fr 1fr 1em 1fr 1em;
     }
   }
 
