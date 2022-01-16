@@ -129,12 +129,18 @@
 
 <style>
   main {
-    --col-count: 2;
-    --row-count: 3;
+    --panel-col-count: 2;
+    --panel-row-count: 1;
     display: grid;
     column-gap: 0.25em;
-    grid-template-columns: 1em repeat(var(--col-count), 1fr) 1em;
-    grid-template-rows: 1em repeat(var(--row-count), 1fr) 1em;
+    grid-template-columns:
+      1em
+      repeat(var(--panel-col-count), 1fr)
+      1em;
+    grid-template-rows:
+      1em
+      minmax(1em, min-content) repeat(var(--panel-row-count), 1fr)
+      1em;
     grid-template-areas:
       ". . . ."
       ". HUD HUD ."
@@ -142,9 +148,8 @@
       ". PanelLeft PanelRight ."
       ". . . .";
     text-align: center;
-    padding: 1em;
-    max-width: 90%;
-    margin: 0 auto;
+    padding: 0;
+    margin: 0;
     background-color: #dddddd;
   }
 
@@ -155,17 +160,15 @@
 
   @media (min-width: 650px) {
     main {
-      --col-count: 6;
+      --panel-col-count: 6;
     }
   }
 
   .HUD {
     grid-area: HUD;
     display: grid;
-    grid-template-columns:
-      minmax(1em, 1fr) minmax(1fr, 30%) minmax(1fr, 10%) minmax(1fr, 30%)
-      minmax(1em, 1fr);
-    grid-template-areas: ". resources swarm buildings .";
+    grid-template-columns: minmax(30vw, 1fr) 10vw minmax(30vw, 1fr);
+    grid-template-areas: "resources swarm buildings";
   }
 
   .tables {

@@ -21,8 +21,6 @@
 <style>
   .panel {
     margin: 1rem 0;
-    height: min-content;
-    min-height: 6rem;
     padding-bottom: 35px;
     grid-area: PanelLeft;
   }
