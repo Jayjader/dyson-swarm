@@ -67,7 +67,7 @@
   />
   <Table caption="buildings" contents={Object.entries($state.buildings)} />
 
-  <ul style="display: none" class="control-panel">
+  <ul style="" class="control-panel">
     <li>
       <LaunchButton on:click={() => state.action(launchSatellite)} />
     </li>
@@ -90,7 +90,7 @@
   </ul>
   <BuildMenu dispatch={state.action} bind:autoBuildChoice />
 
-  <div style="display: none" class="tables">
+  <div class="tables">
     <table>
       <caption>Build Costs</caption>
       {#each Object.entries(constructionCosts) as [building, costs] (building)}
@@ -142,13 +142,17 @@
       minmax(1em, min-content) /* HUD */
       repeat(var(--panel-row-count), minmax(min-content, auto))
       max-content /* Build Menu */
+      min-content /* Control Panel */
       1em;
     grid-template-areas:
       ". . . ."
       ". HUD HUD ."
-      ". PanelLeft PanelRight ."
       ". BuildMenu BuildMenu ."
+      ". PanelLeft PanelRight ."
+      ". ControlPanel ControlPanel ."
       ". . . .";
+    grid-auto-columns: 100%;
+    grid-auto-rows: max-content;
     text-align: center;
     padding: 0;
     margin: 0;
@@ -168,8 +172,8 @@
       grid-template-areas:
         ". . . . . . . ."
         ". HUD HUD HUD HUD HUD HUD ."
-        ". PanelLeft . . . . PanelRight ."
         ". PanelLeft . BuildMenu BuildMenu . PanelRight ."
+        ". PanelLeft . ControlPanel ControlPanel . PanelRight ."
         ". . . . . . . . ";
       grid-template-columns: 1em 1fr 1em 1fr 1fr 1em 1fr 1em;
     }
@@ -186,11 +190,17 @@
     display: flex;
     flex-flow: row wrap;
     justify-content: space-evenly;
+    /* TODO: implement this more cleanly */
+    grid-column: 1/-1;
+    grid-row: calc(
+      5 + var(--panel-row-count) + 1
+    ); /* place after last row in template*/
   }
 
   .control-panel {
     list-style: none;
     display: flex;
     flex-flow: column;
+    grid-area: ControlPanel;
   }
 </style>
