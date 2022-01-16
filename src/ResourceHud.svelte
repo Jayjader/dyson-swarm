@@ -2,26 +2,39 @@
 <script lang="ts">
   import type { Resource } from "./types";
   export let resources: [Resource, number][];
+
+  const resourceNames: Record<Resource, string> = {
+    elec: "Electricity",
+    metal: "Refined Metal",
+    ore: "Raw metallic ore",
+    pkg_sat: "Packaged satellites",
+  };
 </script>
 
 <ul>
   {#each resources as [resource, amount] (resource)}
-    <li title={resource} data-icon={resource}>{amount}</li>
+    <li title={resourceNames[resource]} data-icon={resource}>{amount}</li>
   {/each}
 </ul>
 
 <style>
   ul {
     grid-area: resources;
-    list-style-position: outside;
+    list-style-position: inside;
     list-style-type: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-flow: row wrap;
+    align-content: start;
   }
 
   ul li {
-    display: inline list-item;
-    max-width: 1em;
+    display: list-item;
+    flex: 0 0 max-content;
+  }
+  ul li:nth-child(n-4) {
+    padding-right: 1ch;
   }
   li[data-icon="ore"] {
     list-style-image: url("/ore.svg");
@@ -40,6 +53,6 @@
   }
 
   ul li::marker {
-    font-size: clamp(1em, calc(100vw / 16), 6em);
+    font-size: 2em;
   }
 </style>
