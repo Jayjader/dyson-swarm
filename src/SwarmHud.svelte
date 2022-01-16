@@ -3,12 +3,14 @@
   export let swarm: { count: number };
 </script>
 
-<ul><li data-icon="satellite">{swarm.count}</li></ul>
+<ul>
+  <li title="Satellites deployed" data-icon="satellite">{swarm.count}</li>
+</ul>
 
 <style>
   ul {
     grid-area: swarm;
-    list-style-position: outside;
+    list-style-position: inside;
     list-style-type: none;
     padding: 0;
     margin: 0;
@@ -19,6 +21,6 @@
   }
 
   ul li::marker {
-    font-size: clamp(1em, calc(100vw / 16), 6em);
+    font-size: 2em;
   }
 </style>
