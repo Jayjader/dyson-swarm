@@ -154,11 +154,11 @@
   <ul>
     {#each items as item, index (index)}
       {#if index === 0}
-        <li class="action center">
+        <li class="center">
           <Tile on:click={item.action}>{item.label}</Tile>
         </li>
       {:else}
-        <li class="action" transition:pivot={{ corner: cornerForIndex(index) }}>
+        <li transition:pivot={{ corner: cornerForIndex(index) }}>
           <Tile on:click={item.action}>{item.label}</Tile>
         </li>
       {/if}
@@ -186,38 +186,38 @@
     position: static;
     grid-area: BuildMenu;
   }
-  .action {
+  li {
     display: block;
     transform-origin: 50% 50%;
     transform: scale(2, 2);
     z-index: 1;
   }
-  .action.center {
+  li.center {
     grid-row-start: 2;
     grid-column: 3/5;
     z-index: 2;
   }
-  .action:nth-child(2) {
+  li:nth-child(2) {
     grid-row-start: 1;
     grid-column: 2/4;
   }
-  .action:nth-child(3) {
+  li:nth-child(3) {
     grid-row-start: 1;
     grid-column: 4/6;
   }
-  .action:nth-child(4) {
+  li:nth-child(4) {
     grid-row-start: 2;
     grid-column: 5/7;
   }
-  .action:nth-child(5) {
+  li:nth-child(5) {
     grid-row-start: 3;
     grid-column: 4/6;
   }
-  .action:nth-child(6) {
+  li:nth-child(6) {
     grid-row-start: 3;
     grid-column: 2/4;
   }
-  .action:nth-child(7) {
+  li:nth-child(7) {
     grid-row-start: 2;
     grid-column: 1/3;
   }
