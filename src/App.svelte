@@ -156,6 +156,7 @@
   }
 
   main > * {
+    /* Prevent unexpected grid elements from triggering auto-flow (and creating new rows/columns) */
     grid-row: -2;
     grid-column: -2;
   }
