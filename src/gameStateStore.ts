@@ -1,17 +1,15 @@
+import type { Readable } from "svelte/store";
 import { derived, writable } from "svelte/store";
-import {
-  Building,
+import type {
   CircuitBreaker,
   Consumption,
   GameAction,
   GameState,
-  isConsumer,
-  isProducer,
   Production,
-  Resource,
   Resources,
   Worker,
 } from "./types";
+import { Building, isConsumer, isProducer, Resource } from "./types";
 
 export const tickConsumption: Consumption = {
   [Building.MINER]: new Map([[Resource.ELECTRICITY, 3]]),
@@ -159,19 +157,21 @@ Awaiting_Input 'start working' => Working 'work' => Working 'finish task' => Awa
   };
 };
 
-export function createGameState(init: GameState) {
+type GameStateStoreActions = {
+  tick: () => void;
+  action: (a: GameAction) => void;
+};
+export function createGameStateStore(
+  init: GameState
+): Readable<GameState> & GameStateStoreActions {
   const { subscribe, update } = writable(init);
   return {
     subscribe,
     tick: () => update(($state) => tick($state)),
     action: (a: GameAction) => update(($state) => a($state)),
-    resourceEntries: () =>
-      subscribe(
-        ($state) => Object.entries($state.resources) as [Resource, number][]
-      ),
   };
 }
-export type GameStateStore = ReturnType<typeof createGameState>;
+export type GameStateStore = ReturnType<typeof createGameStateStore>;
 
 export const resourceArray = (s: GameStateStore) =>
   derived(s, ($s) => Object.entries($s.resources) as [Resource, number][]);

@@ -13,8 +13,9 @@
   } from "./actions";
   import { onDestroy } from "svelte";
   import BuildMenu from "./BuildMenu.svelte";
+  import type { GameStateStore } from "./gameStateStore";
   import {
-    createGameState,
+    createGameStateStore,
     resourceArray,
     tickConsumption,
     tickProduction,
@@ -23,10 +24,10 @@
   import LaunchButton from "./LaunchButton.svelte";
   import SwarmHud from "./SwarmHud.svelte";
 
-  export let init: GameState;
+  export let init: GameState = undefined;
   let autoBuildChoice: BuildChoice = null;
 
-  const state = createGameState(init);
+  const state = createGameStateStore(init);
   const resources = resourceArray(state);
 
   const timeStep = 1000;
@@ -60,11 +61,7 @@
     <ResourceHud resources={$resources} />
     <SwarmHud swarm={{ count: $state.swarm.satellites }} />
   </div>
-  <Table
-    caption="resources"
-    contents={Object.entries($state.resources)}
-    orientation="left"
-  />
+  <Table caption="resources" contents={$resources} orientation="left" />
   <Table caption="buildings" contents={Object.entries($state.buildings)} />
 
   <ul style="" class="control-panel">

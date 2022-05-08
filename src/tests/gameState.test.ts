@@ -1,14 +1,11 @@
 import { tick, tickConsumption, tickProduction } from "../gameStateStore";
+import type { Producer, Worker, Consumer, GameState } from "../types";
 import {
   __CONSUMERS,
   __PRODUCERS,
   Building,
-  Consumer,
-  GameState,
   isProducer,
-  Producer,
   Resource,
-  Worker,
 } from "../types";
 
 function randInt(from: number, to: number): number {

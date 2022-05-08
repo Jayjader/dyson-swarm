@@ -1,13 +1,12 @@
 import App from "./App.svelte";
-import {
-  Building,
+import type {
   Buildings,
   CircuitBreaker,
-  Resource,
   Resources,
   Swarm,
   Working,
 } from "./types";
+import { Building, Resource } from "./types";
 
 const resources: Resources = {
   [Resource.ELECTRICITY]: 10 ** 3,
