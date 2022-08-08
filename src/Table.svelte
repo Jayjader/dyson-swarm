@@ -1,7 +1,20 @@
 <script lang="ts">
-  export let contents: ArrayLike<[string, number]>;
+  export let contents: Array<[string, number]>;
   export let caption: string;
   export let orientation: "right" | "left" = "right";
+  let old: null | [string, number][] = null;
+  const diff = new Map();
+  $: {
+    const localContents = [...contents];
+    if (old !== null) {
+      // calculate new diff
+      old.forEach(([key, value], index) =>
+        diff.set(key, localContents[index][1] - value)
+      );
+    }
+    // store new as old for next change
+    old = localContents;
+  }
 
   const augUiMixins =
     orientation === "right"
@@ -9,11 +22,25 @@
       : "tr-2-clip-x tl-2-clip-y br-2-clip-x";
 </script>
 
-<div class={`panel ${orientation}`} data-augmented-ui={augUiMixins}>
+<div
+  class="panel"
+  class:left={orientation === "left"}
+  class:right={orientation === "right"}
+  data-augmented-ui={augUiMixins}
+>
   <table>
     <caption>{caption}</caption>
-    {#each contents as [name, count]}
-      <tr><th>{name}</th><td>{count}</td></tr>
+    {#each contents as [name, count] (name)}
+      <tr
+        ><th>{name}</th><td>{count}</td>
+        <td class="diff">
+          {diff.get(name)
+            ? diff.get(name) > 0
+              ? `+${diff.get(name)}`
+              : diff.get(name)
+            : ""}
+        </td>
+      </tr>
     {/each}
   </table>
 </div>
@@ -59,5 +86,10 @@
 
   td:nth-child(n + 1) {
     min-width: 5rem;
+  }
+
+  td.diff {
+    border: none;
+    text-align: left;
   }
 </style>
