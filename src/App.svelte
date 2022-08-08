@@ -107,7 +107,7 @@
 
   <div class="tables">
     <table>
-      <caption>Build Costs</caption>
+      <caption>Fabrication Costs</caption>
       {#each Object.entries(constructionCosts) as [building, costs] (building)}
         <tr>
           <th>{building}</th>
@@ -118,7 +118,7 @@
       {/each}
     </table>
     <table>
-      <caption>Building Consumption (per tick)</caption>
+      <caption>Construct Consumption (per tick)</caption>
       {#each Object.entries(tickConsumption) as [building, inputs] (building)}
         <tr>
           <th>{building}</th>
@@ -129,7 +129,7 @@
       {/each}
     </table>
     <table>
-      <caption>Building Production (per tick)</caption>
+      <caption>Construct Production (per tick)</caption>
       {#each Object.entries(tickProduction) as [building, outputs] (building)}
         <tr>
           <th>{building}</th>
