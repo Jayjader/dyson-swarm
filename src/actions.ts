@@ -2,6 +2,10 @@ import type { GameAction, GameState, Input } from "./types";
 import { Resource, Building } from "./types";
 
 export const constructionCosts: Record<Building, Input> = {
+  [Building.SOLAR_COLLECTOR]: new Map([
+    [Resource.ELECTRICITY, 100],
+    [Resource.METAL, 10],
+  ]),
   [Building.MINER]: new Map([
     [Resource.ELECTRICITY, 150],
     [Resource.METAL, 30],
@@ -10,17 +14,13 @@ export const constructionCosts: Record<Building, Input> = {
     [Resource.ELECTRICITY, 500],
     [Resource.METAL, 45],
   ]),
-  [Building.SATELLITE_FACTORY]: new Map([
+  [Building.SATELLITE_LAUNCHER]: new Map([
     [Resource.ELECTRICITY, 2 * 10 ** 3],
     [Resource.METAL, 170],
   ]),
-  [Building.SATELLITE_LAUNCHER]: new Map([
+  [Building.SATELLITE_FACTORY]: new Map([
     [Resource.ELECTRICITY, 10 ** 4],
     [Resource.METAL, 13 * 10 ** 2],
-  ]),
-  [Building.SOLAR_COLLECTOR]: new Map([
-    [Resource.ELECTRICITY, 100],
-    [Resource.METAL, 10],
   ]),
 };
 
