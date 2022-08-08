@@ -79,28 +79,17 @@ const workingWorkers = (state: GameState): Map<Worker, number> =>
   );
 
 export const tick: GameAction = (state) => {
+  const working = Array.from(workingWorkers(state).entries());
   // to correctly trip breaker before overconsumption of electricity in the network,
   // we need to know how much elec we're about to consume (& how much we're about to produce)
-  const totalProjectedElectricityConsumption = Object.entries(
-    state.working
-  ).reduce(
-    (accu, [worker, on]: [Worker, boolean]) =>
-      accu +
-      (on && isConsumer(worker)
-        ? workerCount(state, worker) *
-          (tickConsumption[worker].get(Resource.ELECTRICITY) ?? 0)
-        : 0),
+  const totalProjectedElectricityConsumption = working.reduce(
+    (accu, [worker, count]) =>
+      accu + count * (tickConsumption[worker]?.get(Resource.ELECTRICITY) ?? 0),
     0
   );
-  const totalProjectedElectricityProduction = Object.entries(
-    state.working
-  ).reduce(
-    (accu, [worker, on]: [Worker, boolean]) =>
-      accu +
-      (on && isProducer(worker)
-        ? workerCount(state, worker) *
-          (tickProduction[worker].get(Resource.ELECTRICITY) ?? 0)
-        : 0),
+  const totalProjectedElectricityProduction = working.reduce(
+    (accu, [worker, count]) =>
+      accu + count * (tickProduction[worker]?.get(Resource.ELECTRICITY) ?? 0),
     0
   );
   const breakerShouldTrip =
