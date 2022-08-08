@@ -1,7 +1,3 @@
-type Some<T> = T;
-type Optional<T> = Some<T> | null;
-const some = <T>(o: Optional<T>): o is Some<T> => false;
-
 export enum Resource {
   ELECTRICITY = "elec",
   ORE = "ore",
@@ -76,6 +72,66 @@ export type Consumption = Record<Consumer, Input>;
 
 export type BuildChoice = null | Building;
 
+// export interface Constructs {
+//   buildings: Buildings;
+//   swarm: Swarm;
+// }
+// export interface Inventory {
+//   resources: Resources;
+// }
+// export type Clock = { tick: (n?: number) => void; reset: () => void };
+// export type Planet = { mass: number };
+// export type Star = { mass: number; output: number };
+// export type Radiation = {
+//   total: number;
+//   towardsCollectors: (area: number, radius: number) => number;
+// };
+// export interface Environment {
+//   planet: Planet;
+//   radiation: Radiation;
+//   star: Star;
+//   clock: Clock;
+// }
+// export interface WorldState {
+//   constructs: Constructs;
+//   inventory: Inventory;
+//   environment: Environment;
+// }
+export type Time = "play" | "pause";
+export type SwarmHUD = {
+  satellites: number;
+};
+export interface HUD {
+  swarm: SwarmHUD;
+  buildings: Buildings;
+}
+type Repeat<count extends number, bo extends SingleBuildOrder> = count extends 1
+  ? never
+  : {
+      count: count;
+    } & SingleBuildOrder;
+type AutoBuildOrder = SingleBuildOrder & { auto: true };
+export type BuildOrder =
+  | SingleBuildOrder
+  | Repeat<number, SingleBuildOrder>
+  | AutoBuildOrder;
+
+export function isRepeat(
+  bo: BuildOrder
+): bo is Repeat<number, SingleBuildOrder> {
+  return (bo as Repeat<number, SingleBuildOrder>).count !== undefined;
+}
+export function isAuto(bo: BuildOrder): bo is AutoBuildOrder {
+  return (bo as AutoBuildOrder).auto;
+}
+export interface BuildQueue {
+  state: Array<BuildOrder>;
+}
+export interface UiState {
+  time: Time;
+  hud: HUD;
+  buildQueue: BuildQueue;
+}
 export interface GameState {
   resources: Resources;
   buildings: Buildings;
@@ -85,3 +141,6 @@ export interface GameState {
 }
 
 export type GameAction = (state: GameState) => GameState;
+type SingleBuildOrder = {
+  building: Building;
+};

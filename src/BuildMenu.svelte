@@ -1,15 +1,12 @@
 <script lang="ts">
   import { createFsm, state as fsmState } from "./fsmStore";
-  import { build } from "./actions";
-  import type { BuildChoice, GameAction } from "./types";
+  import type { BuildChoice } from "./types";
   import { Building } from "./types";
   import type { TransitionConfig } from "svelte/transition";
   import Tile from "./Tile.svelte";
+  import { store } from "./store/buildQueue";
 
   type BuildMenuStates = "Inactive" | "Manual" | "Auto" | "Building";
-
-  export let dispatch: (action: GameAction) => void;
-  export let autoBuildChoice: BuildChoice = null;
 
   const buildMenu = createFsm(`
   Inactive 'Open' => Manual;
@@ -21,14 +18,16 @@
   const state = fsmState<BuildMenuStates>(buildMenu);
 
   function manualBuild(building: Building) {
-    // $: manualBuild = (building: Building) => {
-    dispatch(build(building));
+    store.push({ building });
     buildMenu.action("Build");
   }
   function chooseAutoBuild(building: Building) {
-    // $: chooseAutoBuild = (building: Building) => {
-    autoBuildChoice = building;
+    store.push({ building, auto: true });
     buildMenu.action("Choose");
+  }
+  function clearAutoBuild() {
+    store.clear({ onlyAuto: true });
+    buildMenu.action("Nothing");
   }
 
   /*    1
@@ -110,7 +109,7 @@
         return [
           {
             label: "Nothing",
-            action: () => sm.action("Nothing"),
+            action: () => clearAutoBuild(),
           },
           {
             label: "Collector",
@@ -139,7 +138,6 @@
           {
             label: `Building ${currentlyBuilding}`,
             action: () => {
-              autoBuildChoice = null;
               sm.action("Open");
             },
           },
@@ -147,7 +145,7 @@
     }
   }
 
-  $: items = menuItems($state, buildMenu, autoBuildChoice);
+  $: items = menuItems($state, buildMenu, $store.auto);
 </script>
 
 <div class="actions" class:auto={$state === "Auto" || $state === "Building"}>

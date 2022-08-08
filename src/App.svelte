@@ -26,12 +26,20 @@
   import ResourceHud from "./ResourceHud.svelte";
   import LaunchButton from "./LaunchButton.svelte";
   import SwarmHud from "./SwarmHud.svelte";
+  import BuildQueueControl from "./components/BuildQueue.svelte";
+  import { store } from "./store/buildQueue";
+  // import { writable } from "svelte/store";
+  // import TimeHud from "./TimeHud.svelte";
 
   export let init: GameState = undefined;
-  let autoBuildChoice: BuildChoice = null;
 
   const state = createGameStateStore(init);
   const resources = resourceArray(state);
+
+  let queueHead: null | BuildOrder;
+  store.subscribe(({ head }) => {
+    queueHead = head;
+  });
 
   const timeStep = 1000;
   let lastTimeStamp = window.performance.now();
@@ -53,9 +61,11 @@
     let delta = timeElapsed;
     while (delta > timeStep) {
       delta -= timeStep;
-      if (autoBuildChoice !== null) {
-        console.debug(`building ${autoBuildChoice}`);
-        state.action(build(autoBuildChoice));
+      if (
+        queueHead !== null &&
+        canBuild(constructionCosts[queueHead.building], $state.resources)
+      ) {
+        state.action(build(store.pop().building));
       }
       if (autoLaunch) {
         new Array($state.buildings[Building.SATELLITE_LAUNCHER])
@@ -117,7 +127,8 @@
       </li>
     {/each}
   </ul>
-  <BuildMenu dispatch={state.action} bind:autoBuildChoice />
+  <BuildMenu />
+  <BuildQueueControl resources={$state.resources} />
 
   <div class="tables">
     <table>
@@ -178,7 +189,7 @@
       ". HUD HUD ."
       ". BuildMenu BuildMenu ."
       ". PanelLeft PanelRight ."
-      ". ControlPanel ControlPanel ."
+      ". ControlPanel BuildQueue ."
       ". . . .";
     grid-auto-columns: 100%;
     grid-auto-rows: max-content;
@@ -202,7 +213,7 @@
         ". . . . . . . ."
         ". HUD HUD HUD HUD HUD HUD ."
         ". PanelLeft . BuildMenu BuildMenu . PanelRight ."
-        ". PanelLeft . ControlPanel ControlPanel . PanelRight ."
+        ". PanelLeft . ControlPanel BuildQueue . PanelRight ."
         ". . . . . . . . ";
       grid-template-columns: 1em 1fr 1em 1fr 1fr 1em 1fr 1em;
     }
