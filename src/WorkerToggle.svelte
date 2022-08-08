@@ -23,6 +23,10 @@
     margin: 0 auto;
   }
 
+  .worker-toggle :hover {
+    --aug-inlay-bg: lightgrey;
+  }
+
   .worker-toggle .paused {
     --aug-inlay-bg: grey;
   }
