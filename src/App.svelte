@@ -40,6 +40,11 @@
   let autoLaunch = false;
 
   function mainLoop(nextTimeStamp: number) {
+    if ($state.swarm.satellites >= 2 ** 50) {
+      return alert(
+        "🎉 You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
+      );
+    }
     animationFrame = window.requestAnimationFrame(mainLoop);
     const timeElapsed = nextTimeStamp - lastTimeStamp;
     if (timeElapsed < timeStep) {
@@ -51,6 +56,15 @@
       if (autoBuildChoice !== null) {
         console.debug(`building ${autoBuildChoice}`);
         state.action(build(autoBuildChoice));
+      }
+      if (autoLaunch) {
+        new Array($state.buildings[Building.SATELLITE_LAUNCHER])
+          .fill(undefined)
+          .forEach(() => {
+            if (canBuild(launchCost, $state.resources)) {
+              state.action(launchSatellite);
+            }
+          });
       }
       state.tick();
     }
