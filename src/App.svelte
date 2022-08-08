@@ -3,10 +3,13 @@
   import Table from "./Table.svelte";
   import Breaker from "./Breaker.svelte";
   import WorkerToggle from "./WorkerToggle.svelte";
-  import type { BuildChoice, GameState } from "./types";
+  import type { BuildOrder, GameState } from "./types";
+  import { Building, Resource } from "./types";
   import {
     build,
+    canBuild,
     constructionCosts,
+    launchCost,
     launchSatellite,
     toggleWorker,
     tripBreaker,
@@ -33,6 +36,8 @@
   const timeStep = 1000;
   let lastTimeStamp = window.performance.now();
   let animationFrame: number;
+
+  let autoLaunch = false;
 
   function mainLoop(nextTimeStamp: number) {
     animationFrame = window.requestAnimationFrame(mainLoop);
@@ -66,7 +71,20 @@
 
   <ul style="" class="control-panel">
     <li>
-      <LaunchButton on:click={() => state.action(launchSatellite)} />
+      <LaunchButton
+        visible={$state.buildings[Building.SATELLITE_LAUNCHER] > 0}
+        disabled={!canBuild(launchCost, $state.resources)}
+        bind:auto={autoLaunch}
+        on:click={() => {
+          console.log("launch");
+          state.action(launchSatellite);
+        }}
+        max={launchCost.get(Resource.ELECTRICITY)}
+        value={Math.min(
+          launchCost.get(Resource.ELECTRICITY),
+          $state.resources[Resource.ELECTRICITY]
+        )}
+      />
     </li>
     <li>
       <Breaker

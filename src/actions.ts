@@ -1,5 +1,5 @@
-import type { GameAction, GameState, Input } from "./types";
-import { Resource, Building } from "./types";
+import type { GameAction, GameState, Input, Resources } from "./types";
+import { Building, Resource } from "./types";
 
 export const constructionCosts: Record<Building, Input> = {
   [Building.SOLAR_COLLECTOR]: new Map([
@@ -24,45 +24,40 @@ export const constructionCosts: Record<Building, Input> = {
   ]),
 };
 
-export const build = (building: Building) => (state: GameState) => {
-  const cost = constructionCosts[building];
-  const { resources, buildings } = state;
-  const notEnough = [...cost].filter(
-    ([resource, amount]) => resources[resource] < amount
-  );
-  notEnough.forEach(([resource, amount]) => {
-    console.warn(
-      `not enough ${resource} to build ${building}: have ${resources[resource]}, need ${amount}`
-    );
-  });
-  if (notEnough.length === 0) {
-    [...cost].forEach(([resource, amount]) => {
-      resources[resource] -= amount;
-    });
-    buildings[building] += 1;
-  }
-  return { ...state, resources, buildings };
-};
+export function canBuild(cost: Input, resources: Resources): boolean {
+  return [...cost].every(([resource, amount]) => resources[resource] >= amount);
+}
+export function build(building: Building) {
+  return (state: GameState) => {
+    const cost = constructionCosts[building];
+    const { resources, buildings } = state;
+    if (canBuild(cost, resources)) {
+      [...cost].forEach(([resource, amount]) => {
+        resources[resource] -= amount;
+      });
+      buildings[building] += 1;
+    }
+    return { ...state, resources, buildings };
+  };
+}
 
-const launchCost: Input = new Map([
+export const launchCost: Input = new Map([
   [Resource.ELECTRICITY, 1.4 * 10 ** 3],
   [Resource.PACKAGED_SATELLITE, 1],
 ]);
 export const launchSatellite: GameAction = (state) => {
-  return Object.entries(launchCost).filter(
-    ([resource, amount]) => state.resources[resource] < amount
-  ).length > 0
-    ? state
-    : {
-        ...state,
-        resources: {
-          ...state.resources,
-          [Resource.ELECTRICITY]: state.resources[Resource.ELECTRICITY] - 1,
-          [Resource.PACKAGED_SATELLITE]:
-            state.resources[Resource.PACKAGED_SATELLITE] - 1,
-        },
-        swarm: { ...state.swarm, satellites: state.swarm.satellites + 1 },
-      };
+  return {
+    ...state,
+    resources: {
+      ...state.resources,
+      [Resource.ELECTRICITY]:
+        state.resources[Resource.ELECTRICITY] -
+        launchCost.get(Resource.ELECTRICITY),
+      [Resource.PACKAGED_SATELLITE]:
+        state.resources[Resource.PACKAGED_SATELLITE] - 1,
+    },
+    swarm: { ...state.swarm, satellites: state.swarm.satellites + 1 },
+  };
 };
 export const tripBreaker: GameAction = (state) => ({
   ...state,
