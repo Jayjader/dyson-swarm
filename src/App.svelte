@@ -28,8 +28,8 @@
   import SwarmHud from "./SwarmHud.svelte";
   import BuildQueueControl from "./components/BuildQueue.svelte";
   import { store } from "./store/buildQueue";
-  // import { writable } from "svelte/store";
-  // import TimeHud from "./TimeHud.svelte";
+  import { writable } from "svelte/store";
+  import TimeHud from "./TimeHud.svelte";
 
   export let init: GameState = undefined;
 
@@ -41,7 +41,11 @@
     queueHead = head;
   });
 
-  const timeStep = 1000;
+  let speed = writable(1);
+  let timeStep = 1000;
+  $: timeStep =
+    $speed === 0 ? Number.POSITIVE_INFINITY : Math.floor(1000 / $speed);
+
   let lastTimeStamp = window.performance.now();
   let animationFrame: number;
 
@@ -89,6 +93,7 @@
   <div class="HUD">
     <ResourceHud resources={$resources} />
     <SwarmHud swarm={{ count: $state.swarm.satellites }} />
+    <TimeHud {speed} />
   </div>
   <Table caption="resources" contents={$resources} orientation="left" />
   <Table caption="buildings" contents={Object.entries($state.buildings)} />
