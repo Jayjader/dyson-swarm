@@ -23,26 +23,33 @@
   $: elecProgress.set(elecCurrent / elecTotal);
 </script>
 
-<li
+<span
+  title={$elecProgress < 1 ? "Not enough electricity" : undefined}
   style="--elec-progress: {$elecProgress}; --mats-progress: {$matsProgress}"
   class:not-enough-elec={$elecProgress < 1}
 >
-  <span title={$elecProgress < 1 ? "Not enough electricity" : null}>
-    {#if $elecProgress < 1}<img
-        src="/electric.svg"
-        alt="Not enough electricity"
-      />{/if}{#if isAuto(buildOrder)}{buildOrder.building} - 🗘 Auto{:else}{buildOrder.building}{/if}{#if $elecProgress < 1}<img
-        src="/electric.svg"
-        alt="Not enough electricity"
-      />{/if}</span
-  >{#if $matsProgress < 1}<progress
-      class="mats"
-      aria-label="Materials availability to complete this build order"
-      max={matsTotal}
-      value={matsCurrent}
-      >Materials Need Satisfied: {Math.floor($matsProgress * 100)}%</progress
-    >{/if}
-</li>
+  {#if $elecProgress < 1}
+    <img src="/electric.svg" alt="Not enough electricity" />
+  {/if}
+  {#if isAuto(buildOrder)}
+    {buildOrder.building} - 🗘 Auto
+  {:else}
+    {buildOrder.building}
+  {/if}
+  {#if $elecProgress < 1}
+    <img src="/electric.svg" alt="Not enough electricity" />
+  {/if}
+</span>
+{#if $matsProgress < 1}
+  <progress
+    class="mats"
+    aria-label="Materials availability to complete this build order"
+    max={matsTotal}
+    value={matsCurrent}
+  >
+    Materials Need Satisfied: {Math.floor($matsProgress * 100)}%
+  </progress>
+{/if}
 
 <style>
   .not-enough-elec {
