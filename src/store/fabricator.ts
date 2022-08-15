@@ -4,11 +4,7 @@ import type { BuildOrder, GameAction, SingleBuildOrder } from "../types";
 import { Building, isAuto } from "../types";
 import { build, canBuild, constructionCosts } from "../actions";
 
-const queueData: Writable<Array<BuildOrder>> = writable([
-  { building: Building.MINER, count: 3 },
-  { building: Building.REFINERY },
-  { building: Building.SOLAR_COLLECTOR, auto: true },
-]);
+const queueData: Writable<Array<BuildOrder>> = writable([]);
 type Actions = {
   push: (bo: BuildOrder) => void;
   pop: () => undefined | BuildOrder;
