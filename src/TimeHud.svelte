@@ -2,24 +2,33 @@
   import type { Writable } from "svelte/types/runtime/store";
 
   export let speed: Writable<number>;
-  let oldSpeed;
+  let speedBeforePause = 1;
 </script>
 
 <div>
   <label for="speed"
-    >Speed: <output for="speed">{$speed} tick{$speed === 1 ? "s" : ""}/s</output
+    >Speed: <output for="speed">{$speed} tick{$speed !== 1 ? "" : "s"}/s</output
     ></label
   >
   <div>
-    <button
-      disabled={$speed === 0}
-      on:click={() => {
-        oldSpeed = $speed;
-        speed.set(0);
-      }}>Pause</button
+    <label
+      >Pause<input
+        type="radio"
+        value="pause"
+        checked={$speed === 0}
+        on:click={() => {
+          speedBeforePause = $speed;
+          speed.set(0);
+        }}
+      /></label
     >
-    <button disabled={$speed > 0} on:click={() => speed.set(oldSpeed)}
-      >Play</button
+    <label
+      >Play<input
+        type="radio"
+        value="play"
+        checked={$speed > 0}
+        on:click={() => speed.set(speedBeforePause)}
+      /></label
     >
   </div>
   <input
@@ -36,5 +45,8 @@
 <style>
   div {
     text-align: right;
+  }
+  input[type="radio"] {
+    margin: 0 0.25rem;
   }
 </style>
