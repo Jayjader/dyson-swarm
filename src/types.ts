@@ -141,6 +141,6 @@ export interface GameState {
 }
 
 export type GameAction = (state: GameState) => GameState;
-type SingleBuildOrder = {
+export type SingleBuildOrder = {
   building: Building;
 };

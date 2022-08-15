@@ -4,7 +4,7 @@
   import { Building } from "./types";
   import type { TransitionConfig } from "svelte/transition";
   import Tile from "./Tile.svelte";
-  import { store } from "./store/buildQueue";
+  import { buildQueue, store as fabricator } from "./store/fabricator";
 
   type BuildMenuStates = "Inactive" | "Manual" | "Auto" | "Building";
 
@@ -18,15 +18,15 @@
   const state = fsmState<BuildMenuStates>(buildMenu);
 
   function manualBuild(building: Building) {
-    store.push({ building });
+    buildQueue.push({ building });
     buildMenu.action("Build");
   }
   function chooseAutoBuild(building: Building) {
-    store.push({ building, auto: true });
+    buildQueue.push({ building, auto: true });
     buildMenu.action("Choose");
   }
   function clearAutoBuild() {
-    store.clear({ onlyAuto: true });
+    buildQueue.clear({ onlyAuto: true });
     buildMenu.action("Nothing");
   }
 
@@ -145,7 +145,7 @@
     }
   }
 
-  $: items = menuItems($state, buildMenu, $store.auto);
+  $: items = menuItems($state, buildMenu, $fabricator.auto);
 </script>
 
 <div class="actions" class:auto={$state === "Auto" || $state === "Building"}>

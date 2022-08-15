@@ -3,10 +3,9 @@
   import Table from "./Table.svelte";
   import Breaker from "./Breaker.svelte";
   import WorkerToggle from "./WorkerToggle.svelte";
-  import type { BuildOrder, GameState } from "./types";
+  import type { GameState } from "./types";
   import { Building, Resource } from "./types";
   import {
-    build,
     canBuild,
     constructionCosts,
     launchCost,
@@ -16,7 +15,6 @@
   } from "./actions";
   import { onDestroy } from "svelte";
   import BuildMenu from "./BuildMenu.svelte";
-  import type { GameStateStore } from "./gameStateStore";
   import {
     createGameStateStore,
     resourceArray,
@@ -27,7 +25,7 @@
   import LaunchButton from "./LaunchButton.svelte";
   import SwarmHud from "./SwarmHud.svelte";
   import BuildQueueControl from "./components/BuildQueue.svelte";
-  import { store } from "./store/buildQueue";
+  import { store as fabricator } from "./store/fabricator";
   import { writable } from "svelte/store";
   import TimeHud from "./TimeHud.svelte";
 
@@ -35,11 +33,6 @@
 
   const state = createGameStateStore(init);
   const resources = resourceArray(state);
-
-  let queueHead: null | BuildOrder;
-  store.subscribe(({ head }) => {
-    queueHead = head;
-  });
 
   let speed = writable(1);
   let timeStep = 1000;
@@ -54,7 +47,7 @@
   function mainLoop(nextTimeStamp: number) {
     if ($state.swarm.satellites >= 2 ** 50) {
       return alert(
-        "🎉 You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
+        "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
       );
     }
     animationFrame = window.requestAnimationFrame(mainLoop);
@@ -65,11 +58,9 @@
     let delta = timeElapsed;
     while (delta > timeStep) {
       delta -= timeStep;
-      if (
-        queueHead !== null &&
-        canBuild(constructionCosts[queueHead.building], $state.resources)
-      ) {
-        state.action(build(store.pop().building));
+      const action = $fabricator.work($state.resources);
+      if (action) {
+        state.action(action);
       }
       if (autoLaunch) {
         new Array($state.buildings[Building.SATELLITE_LAUNCHER])

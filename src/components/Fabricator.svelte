@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { BuildOrder } from "../types";
-  import { isAuto } from "../types";
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
+  import BuildQueueItem from "./BuildQueueItem.svelte";
+  import { currentJob } from "../store/fabricator";
 
   const matsProgress = tweened<number>(0, {
     duration: 150,
@@ -14,13 +15,22 @@
     easing: cubicOut,
     interpolate: (from, to) => (t) => from + Math.round(t * (to - from)),
   });
-  export let buildOrder: BuildOrder;
   export let matsTotal = 1,
     matsCurrent = 0;
   export let elecTotal = 1,
     elecCurrent = 1;
-  $: matsProgress.set(matsCurrent / matsTotal);
-  $: elecProgress.set(elecCurrent / elecTotal);
+  let buildOrder: null | BuildOrder;
+  $: {
+    buildOrder = $currentJob;
+    if (buildOrder) {
+      console.debug("new build order");
+      matsProgress.set(0);
+      elecProgress.set(0);
+    }
+  }
+  $: matsProgress.set(Math.min(matsCurrent / matsTotal, 1));
+  $: elecProgress.set(Math.min(elecCurrent / elecTotal, 1));
+  $: console.debug({ buildOrder });
 </script>
 
 <span
@@ -28,19 +38,19 @@
   style="--elec-progress: {$elecProgress}; --mats-progress: {$matsProgress}"
   class:not-enough-elec={$elecProgress < 1}
 >
-  {#if $elecProgress < 1}
+  {#if buildOrder && $elecProgress < 1}
     <img src="/electric.svg" alt="Not enough electricity" />
   {/if}
-  {#if isAuto(buildOrder)}
-    {buildOrder.building} - 🗘 Auto
+  {#if buildOrder === null}
+    Empty
   {:else}
-    {buildOrder.building}
+    <BuildQueueItem {buildOrder} />
   {/if}
-  {#if $elecProgress < 1}
+  {#if buildOrder && $elecProgress < 1}
     <img src="/electric.svg" alt="Not enough electricity" />
   {/if}
 </span>
-{#if $matsProgress < 1}
+{#if buildOrder && $matsProgress < 1}
   <progress
     class="mats"
     aria-label="Materials availability to complete this build order"
