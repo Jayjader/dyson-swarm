@@ -8,7 +8,7 @@
   const matsProgress = tweened<number>(0, {
     duration: 150,
     easing: cubicOut,
-    interpolate: (from, to) => (t) => from + Math.floor(t * (to - from)),
+    interpolate: (from, to) => (t) => from + Math.round(t * (to - from)),
   });
   const elecProgress = tweened<number>(1, {
     duration: 150,
