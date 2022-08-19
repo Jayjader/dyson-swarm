@@ -24,7 +24,7 @@
   import ResourceHud from "./ResourceHud.svelte";
   import LaunchButton from "./LaunchButton.svelte";
   import SwarmHud from "./SwarmHud.svelte";
-  import BuildQueueControl from "./components/BuildQueue.svelte";
+  import Fabricator from "./fabricator/Fabricator.svelte";
   import { store as fabricator } from "./store/fabricator";
   import { writable } from "svelte/store";
   import TimeHud from "./TimeHud.svelte";
@@ -124,7 +124,7 @@
     {/each}
   </ul>
   <BuildMenu />
-  <BuildQueueControl resources={$state.resources} />
+  <Fabricator resources={$state.resources} />
 
   <div class="tables">
     <table>

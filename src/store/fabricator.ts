@@ -47,7 +47,7 @@ export const buildQueue: Actions & Readable<Array<BuildOrder>> = {
     }
   },
 };
-export const currentJob = writable<null | SingleBuildOrder>(null);
+export const currentJob = writable<undefined | SingleBuildOrder>();
 type Exposed = Readable<{
   head: null | BuildOrder;
   auto: null | Building;
@@ -61,15 +61,14 @@ export const store: Exposed = derived(
     auto: queue.find((bo) => isAuto(bo))?.building ?? null,
     job,
     work: (resources) => {
-      if (job) {
-        console.debug({ job });
-        if (canBuild(constructionCosts[job.building], resources)) {
-          console.debug("building...");
-          currentJob.set(null);
-          return build(job.building);
-        }
-      } else {
+      if (!job) {
         currentJob.set(buildQueue.pop());
+      }
+      console.debug({ fabricator: { job } });
+      if (job && canBuild(constructionCosts[job.building], resources)) {
+        console.debug({ fabricator: "building..." });
+        currentJob.set(undefined);
+        return build(job.building);
       }
     },
   })

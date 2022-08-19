@@ -8,18 +8,17 @@
   const matsProgress = tweened<number>(0, {
     duration: 150,
     easing: cubicOut,
-    interpolate: (from, to) => (t) => from + Math.round(t * (to - from)),
   });
   const elecProgress = tweened<number>(1, {
     duration: 150,
     easing: cubicOut,
     interpolate: (from, to) => (t) => from + Math.round(t * (to - from)),
   });
-  export let matsTotal = 1,
-    matsCurrent = 0;
-  export let elecTotal = 1,
-    elecCurrent = 1;
-  let buildOrder: null | BuildOrder;
+  export let matsTotal = 1;
+  export let matsCurrent = 0;
+  export let elecTotal = 1;
+  export let elecCurrent = 1;
+  let buildOrder: undefined | BuildOrder;
   $: {
     buildOrder = $currentJob;
     if (buildOrder) {
@@ -28,34 +27,35 @@
       elecProgress.set(0);
     }
   }
-  $: matsProgress.set(Math.min(matsCurrent / matsTotal, 1));
-  $: elecProgress.set(Math.min(elecCurrent / elecTotal, 1));
-  $: console.debug({ buildOrder });
+  $: matsProgress.set(matsCurrent);
+  $: elecProgress.set(elecCurrent);
+  $: console.debug({ buildOrder, mprog: $matsProgress });
 </script>
 
 <span
-  title={$elecProgress < 1 ? "Not enough electricity" : undefined}
-  style="--elec-progress: {$elecProgress}; --mats-progress: {$matsProgress}"
-  class:not-enough-elec={$elecProgress < 1}
+  title={elecCurrent < elecTotal ? "Not enough electricity" : undefined}
+  style="--elec-progress: {$elecProgress /
+    elecTotal}; --mats-progress: {$matsProgress}"
+  class:not-enough-elec={elecCurrent < elecTotal}
 >
-  {#if buildOrder && $elecProgress < 1}
+  {#if buildOrder && elecCurrent < elecTotal}
     <img src="/electric.svg" alt="Not enough electricity" />
   {/if}
-  {#if buildOrder === null}
+  {#if buildOrder === undefined}
     Empty
   {:else}
     <BuildQueueItem {buildOrder} />
   {/if}
-  {#if buildOrder && $elecProgress < 1}
+  {#if buildOrder && elecCurrent < elecTotal}
     <img src="/electric.svg" alt="Not enough electricity" />
   {/if}
 </span>
-{#if buildOrder && $matsProgress < 1}
+{#if buildOrder && matsCurrent < matsTotal}
   <progress
     class="mats"
     aria-label="Materials availability to complete this build order"
     max={matsTotal}
-    value={matsCurrent}
+    value={$matsProgress}
   >
     Materials Need Satisfied: {Math.floor($matsProgress * 100)}%
   </progress>

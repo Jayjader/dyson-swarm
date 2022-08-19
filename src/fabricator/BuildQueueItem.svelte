@@ -2,11 +2,14 @@
   import type { BuildOrder } from "../types";
   import { isAuto, isRepeat } from "../types";
 
-  export let buildOrder: BuildOrder;
+  export let buildOrder: undefined | BuildOrder;
 </script>
 
 <span class:repeat={isRepeat(buildOrder) || isAuto(buildOrder)}>
-  <img src="http://via.placeholder.com/24.png" alt={buildOrder.building} />
+  <img
+    src="http://via.placeholder.com/24.png"
+    alt={buildOrder ? buildOrder.building : "No build order"}
+  />
   {#if isRepeat(buildOrder)}
     {buildOrder.building} x {buildOrder.count}
   {:else if isAuto(buildOrder)}
