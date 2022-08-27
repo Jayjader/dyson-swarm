@@ -2,17 +2,15 @@
   "name": "dyson-swarm",
   "version": "1.0.0",
   "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c -w",
-    "start": "sirv public",
+    "build": "vite build",
+    "dev": "vite",
+    "start": "vite preview",
     "validate": "svelte-check --tsconfig ./tsconfig.json --use-new-transformation",
     "test": "jest src",
     "test:watch": "npm run test -- --watch"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^22.0.0",
-    "@rollup/plugin-node-resolve": "^13.3.0",
-    "@rollup/plugin-typescript": "^8.3.2",
+    "@sveltejs/vite-plugin-svelte": "^1.0.2",
     "@testing-library/jest-dom": "^5.16.4",
     "@tsconfig/svelte": "^3.0.0",
     "@types/css-font-loading-module": "0.0.7",
@@ -23,21 +21,14 @@
     "jssm": "^5.53.0",
     "prettier": "^2.6.2",
     "prettier-plugin-svelte": "^2.7.0",
-    "rollup": "^2.72.1",
-    "rollup-plugin-import-css": "^3.0.3",
-    "rollup-plugin-livereload": "^2.0.5",
-    "rollup-plugin-svelte": "^7.1.0",
-    "rollup-plugin-terser": "^7.0.2",
     "svelte": "^3.49.0",
     "svelte-check": "^2.7.0",
     "svelte-jester": "^2.3.2",
     "svelte-preprocess": "^4.10.6",
     "ts-jest": "^28.0.2",
     "tslib": "^2.1.0",
-    "typescript": "^4.6.4"
-  },
-  "dependencies": {
-    "sirv-cli": "^1.0.11"
+    "typescript": "^4.6.4",
+    "vite": "^3.0.9"
   },
   "jest": {
     "transform": {
