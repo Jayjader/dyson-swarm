@@ -5,5 +5,6 @@ export default {
     lang: {
       script: "typescript",
     },
+    postcss: true,
   }),
 };

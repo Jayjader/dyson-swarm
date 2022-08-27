@@ -23,13 +23,13 @@
 </script>
 
 <div
-  class="panel"
+  class="panel my-4 mx-0 pb-9"
   class:left={orientation === "left"}
   class:right={orientation === "right"}
   data-augmented-ui={augUiMixins}
 >
   <table>
-    <caption>{caption}</caption>
+    <caption class="capitalize font-bold">{caption}</caption>
     {#each contents as [name, count] (name)}
       <tr
         ><th>{name}</th><td>{count}</td>
@@ -47,8 +47,6 @@
 
 <style>
   .panel {
-    margin: 1rem 0;
-    padding-bottom: 35px;
     grid-area: PanelLeft;
   }
 
@@ -66,9 +64,7 @@
   }
 
   caption {
-    text-transform: capitalize;
     color: purple;
-    font-weight: bold;
   }
 
   tr > * {
