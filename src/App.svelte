@@ -52,6 +52,11 @@
       );
     }
     animationFrame = window.requestAnimationFrame(mainLoop);
+    // don't observe passage of real time if game paused
+    if (timeStep === Number.POSITIVE_INFINITY) {
+      lastTimeStamp = nextTimeStamp;
+      return;
+    }
     const timeElapsed = nextTimeStamp - lastTimeStamp;
     if (timeElapsed < timeStep) {
       return;
