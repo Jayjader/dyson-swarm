@@ -23,7 +23,7 @@
 </script>
 
 <div
-  class="panel my-4 mx-0 pb-9"
+  class="panel my-4 mx-0 pb-9 bg-purple-300"
   class:left={orientation === "left"}
   class:right={orientation === "right"}
   data-augmented-ui={augUiMixins}

@@ -86,7 +86,7 @@
   mainLoop(lastTimeStamp);
 </script>
 
-<main>
+<main class="grid gap-x-1 p-0 m-0">
   <div class="HUD">
     <ResourceHud resources={$resources} />
     <SwarmHud swarm={{ count: $state.swarm.satellites }} />
@@ -95,7 +95,7 @@
   <Table caption="resources" contents={$resources} orientation="left" />
   <Table caption="buildings" contents={Object.entries($state.buildings)} />
 
-  <ul style="" class="control-panel">
+  <ul style="" class="control-panel list-none flex flex-col">
     <li>
       <LaunchButton
         visible={$state.buildings[Building.SATELLITE_LAUNCHER] > 0}
@@ -132,9 +132,9 @@
   <BuildMenu />
   <Fabricator resources={$state.resources} />
 
-  <div class="tables">
+  <div class="tables flex flex-row justify-evenly">
     <table>
-      <caption>Fabrication Costs</caption>
+      <caption class="font-bold">Fabrication Costs</caption>
       {#each Object.entries(constructionCosts) as [building, costs] (building)}
         <tr>
           <th>{building}</th>
@@ -145,7 +145,7 @@
       {/each}
     </table>
     <table>
-      <caption>Construct Consumption (per tick)</caption>
+      <caption class="font-bold">Construct Consumption (per tick)</caption>
       {#each Object.entries(tickConsumption) as [building, inputs] (building)}
         <tr>
           <th>{building}</th>
@@ -156,7 +156,7 @@
       {/each}
     </table>
     <table>
-      <caption>Construct Production (per tick)</caption>
+      <caption class="font-bold">Construct Production (per tick)</caption>
       {#each Object.entries(tickProduction) as [building, outputs] (building)}
         <tr>
           <th>{building}</th>
@@ -173,8 +173,6 @@
   main {
     --panel-col-count: 2;
     --panel-row-count: 1;
-    display: grid;
-    column-gap: 0.25em;
     grid-template-columns:
       1em
       repeat(var(--panel-col-count), 1fr)
@@ -196,12 +194,10 @@
     grid-auto-columns: 100%;
     grid-auto-rows: max-content;
     text-align: center;
-    padding: 0;
-    margin: 0;
-    background-color: #dddddd;
   }
 
   main > * {
+    background-color: #dddddd;
     /* Prevent unexpected grid elements from triggering auto-flow (and creating new rows/columns) */
     grid-row: -2;
     grid-column: -2;
@@ -229,9 +225,6 @@
   }
 
   .tables {
-    display: flex;
-    flex-flow: row wrap;
-    justify-content: space-evenly;
     /* TODO: implement this more cleanly */
     grid-column: 1/-1;
     grid-row: calc(
@@ -240,9 +233,6 @@
   }
 
   .control-panel {
-    list-style: none;
-    display: flex;
-    flex-flow: column;
     grid-area: ControlPanel;
   }
 </style>
