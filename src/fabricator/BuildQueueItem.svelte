@@ -1,30 +1,20 @@
 <script lang="ts">
   import type { BuildOrder } from "../types";
-  import { isAuto, isRepeat } from "../types";
+  import { isRepeat, isInfinite } from "../types";
 
   export let buildOrder: undefined | BuildOrder;
 </script>
 
-<span class:repeat={isRepeat(buildOrder) || isAuto(buildOrder)}>
-  <img
-    src="http://via.placeholder.com/24.png"
-    alt={buildOrder ? buildOrder.building : "No build order"}
-  />
-  {#if isRepeat(buildOrder)}
-    {buildOrder.building} x {buildOrder.count}
-  {:else if isAuto(buildOrder)}
-    {buildOrder.building} - 🗘 Auto
-  {:else}
+<span class="text-slate-100 min-w-min inline-block">
+  {#if !isRepeat(buildOrder)}
+    <img src="http://via.placeholder.com/24.png" alt={buildOrder.building} />
     {buildOrder.building}
+  {:else}
+    <ul>
+      {#if isInfinite(buildOrder)}🗘 Forever{:else}{buildOrder.count}{/if}
+      {#each buildOrder.repeat as bo, i ([bo, i])}
+        <svelte:self buildOrder={bo} />
+      {/each}
+    </ul>
   {/if}
 </span>
-
-<style>
-  span {
-    display: inline-block;
-    width: 100%;
-  }
-  .repeat {
-    border: 1px solid black;
-  }
-</style>

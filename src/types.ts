@@ -72,31 +72,6 @@ export type Consumption = Record<Consumer, Input>;
 
 export type BuildChoice = null | Building;
 
-// export interface Constructs {
-//   buildings: Buildings;
-//   swarm: Swarm;
-// }
-// export interface Inventory {
-//   resources: Resources;
-// }
-// export type Clock = { tick: (n?: number) => void; reset: () => void };
-// export type Planet = { mass: number };
-// export type Star = { mass: number; output: number };
-// export type Radiation = {
-//   total: number;
-//   towardsCollectors: (area: number, radius: number) => number;
-// };
-// export interface Environment {
-//   planet: Planet;
-//   radiation: Radiation;
-//   star: Star;
-//   clock: Clock;
-// }
-// export interface WorldState {
-//   constructs: Constructs;
-//   inventory: Inventory;
-//   environment: Environment;
-// }
 export type Time = "play" | "pause";
 export type SwarmHUD = {
   satellites: number;
@@ -105,24 +80,19 @@ export interface HUD {
   swarm: SwarmHUD;
   buildings: Buildings;
 }
-type Repeat<count extends number, bo extends SingleBuildOrder> = count extends 1
-  ? never
-  : {
-      count: count;
-    } & SingleBuildOrder;
-type AutoBuildOrder = SingleBuildOrder & { auto: true };
-export type BuildOrder =
-  | SingleBuildOrder
-  | Repeat<number, SingleBuildOrder>
-  | AutoBuildOrder;
+type Repeat = {
+  count: number;
+  repeat: [BuildOrder, ...BuildOrder[]];
+};
+export type BuildOrder = SingleBuildOrder | Repeat;
 
-export function isRepeat(
-  bo: BuildOrder
-): bo is Repeat<number, SingleBuildOrder> {
-  return (bo as Repeat<number, SingleBuildOrder>).count !== undefined;
+export function isRepeat(bo: BuildOrder): bo is Repeat {
+  return (bo as Repeat).repeat !== undefined;
 }
-export function isAuto(bo: BuildOrder): bo is AutoBuildOrder {
-  return (bo as AutoBuildOrder).auto;
+export function isInfinite(
+  bo: BuildOrder
+): bo is Repeat & { count: typeof Number.POSITIVE_INFINITY } {
+  return isRepeat(bo) && !Number.isFinite(bo.count);
 }
 export interface BuildQueue {
   state: Array<BuildOrder>;
