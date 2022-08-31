@@ -39,23 +39,18 @@ export const buildQueue: Actions & Readable<Array<BuildOrder>> = {
 };
 export const currentJob = writable<undefined | SingleBuildOrder>();
 type Exposed = Readable<{
-  head: null | BuildOrder;
   work: (state) => void | GameAction;
 }>;
 
-export const store: Exposed = derived(
-  [buildQueue, currentJob],
-  ([queue, job]) => ({
-    head: queue?.[0] ?? null,
-    job,
-    work: (resources) => {
-      if (!job) {
-        currentJob.set(buildQueue.pop());
-      }
-      if (job && canBuild(constructionCosts[job.building], resources)) {
-        currentJob.set(undefined);
-        return build(job.building);
-      }
-    },
-  })
-);
+export const store: Exposed = derived([buildQueue, currentJob], ([, job]) => ({
+  job,
+  work: (resources) => {
+    if (!job) {
+      currentJob.set(buildQueue.pop());
+    }
+    if (job && canBuild(constructionCosts[job.building], resources)) {
+      currentJob.set(undefined);
+      return build(job.building);
+    }
+  },
+}));

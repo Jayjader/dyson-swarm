@@ -15,7 +15,6 @@
     tripBreaker,
   } from "./actions";
   import { onDestroy } from "svelte";
-  import BuildMenu from "./BuildMenu.svelte";
   import {
     createGameStateStore,
     resourceArray,
@@ -129,7 +128,6 @@
       </li>
     {/each}
   </ul>
-  <BuildMenu />
   <Fabricator resources={$state.resources} />
 
   <div class="tables flex flex-row justify-evenly">

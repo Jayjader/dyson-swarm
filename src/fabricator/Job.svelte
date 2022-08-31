@@ -29,7 +29,6 @@
   }
   $: matsProgress.set(matsCurrent);
   $: elecProgress.set(elecCurrent);
-  $: console.debug({ buildOrder, mprog: $matsProgress });
 </script>
 
 <span
