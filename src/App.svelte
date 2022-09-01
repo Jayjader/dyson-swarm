@@ -25,7 +25,7 @@
   import LaunchButton from "./LaunchButton.svelte";
   import SwarmHud from "./SwarmHud.svelte";
   import Fabricator from "./fabricator/Fabricator.svelte";
-  import { store as fabricator } from "./store/fabricator";
+  import { fabricator } from "./fabricator/store";
   import { writable } from "svelte/store";
   import TimeHud from "./TimeHud.svelte";
 

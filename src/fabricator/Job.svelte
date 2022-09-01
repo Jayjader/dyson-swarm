@@ -2,8 +2,8 @@
   import type { BuildOrder } from "../types";
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
-  import BuildQueueItem from "./BuildQueueItem.svelte";
-  import { currentJob } from "../store/fabricator";
+  import BuildQueueItem from "./SingleBuildOrder.svelte";
+  import { currentJob } from "./store";
 
   const matsProgress = tweened<number>(0, {
     duration: 150,
