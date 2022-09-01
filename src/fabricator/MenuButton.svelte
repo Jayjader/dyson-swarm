@@ -4,7 +4,7 @@
 </script>
 
 <button
-  class="border-2 rounded-sm border-indigo-300 text-indigo-300 px-1 disabled:border-dashed"
+  class="border-2 rounded-sm border-indigo-300 text-indigo-300 px-1 disabled:border-dashed disabled:text-slate-500 disabled:border-slate-500"
   on:click
   {disabled}
 >
