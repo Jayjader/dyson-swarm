@@ -12,7 +12,6 @@
   const elecProgress = tweened<number>(1, {
     duration: 150,
     easing: cubicOut,
-    interpolate: (from, to) => (t) => from + Math.round(t * (to - from)),
   });
   export let matsTotal = 1;
   export let matsCurrent = 0;
