@@ -5,10 +5,25 @@
   import { buildQueue, mode, uiState } from "./store";
   import { Building, isRepeat } from "../types";
   import BuildQueueItem from "./BuildQueueItem.svelte";
+  import { createEventDispatcher } from "svelte";
+
+  const dispatch = createEventDispatcher();
 
   let queue: BuildOrder[] = [];
+
+  function enterEdit() {
+    dispatch("enterEdit");
+    uiState.enterEdit(queue);
+  }
+  function saveEdits() {
+    dispatch("saveEdits");
+    uiState.saveEdits();
+  }
+  function cancelEdits() {
+    dispatch("cancelEdits");
+    uiState.cancelEdits();
+  }
   $: {
-    console.debug("updating...");
     if ($mode === "read-only") {
       queue = $buildQueue;
     } else {
@@ -21,7 +36,6 @@
         queue = [];
       }
     }
-    console.debug({ queue });
   }
 </script>
 
@@ -44,9 +58,7 @@
       Order Queue
       <button
         class="text-indigo-300 border-2 border-indigo-300 -my-0.5 hover:bg-stone-700 active:bg-stone-900 hover:text-indigo-300 active:text-indigo-300"
-        on:click={() => {
-          uiState.enterEdit(queue);
-        }}
+        on:click={enterEdit}
       >
         Edit
       </button>
@@ -97,7 +109,7 @@
       <MenuButton text="Add Repeat" disabled={true} />
     </div>
     <div class="flex flex-row gap-0.5 justify-between col-start-1 col-span-3">
-      <MenuButton text="Cancel Edits" on:click={uiState.cancelEdits} />
+      <MenuButton text="Cancel Edits" on:click={cancelEdits} />
       <div class="flex flex-row gap-0.5 justify-center">
         <MenuButton
           text="Undo"
@@ -112,7 +124,7 @@
       </div>
       <MenuButton
         text="Save Edits"
-        on:click={uiState.saveEdits}
+        on:click={saveEdits}
         disabled={$uiState?.[0]?.past?.length === 0}
       />
     </div>

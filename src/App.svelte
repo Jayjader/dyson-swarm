@@ -26,70 +26,106 @@
   import SwarmHud from "./SwarmHud.svelte";
   import Fabricator from "./fabricator/Fabricator.svelte";
   import { fabricator } from "./fabricator/store";
-  import { writable } from "svelte/store";
-  import TimeHud from "./TimeHud.svelte";
+  import TimeHud from "./time/TimeHud.svelte";
+  import { clock } from "./time/store";
+  import type { Clock } from "./time/store";
 
   export let init: GameState = undefined;
 
   const state = createGameStateStore(init);
   const resources = resourceArray(state);
 
-  let speed = writable(1);
-  let timeStep = 1000;
-  $: timeStep =
-    $speed === 0 ? Number.POSITIVE_INFINITY : Math.floor(1000 / $speed);
-
   let lastTimeStamp = window.performance.now();
   let animationFrame: number;
 
   let autoLaunch = false;
 
-  function mainLoop(nextTimeStamp: number) {
+  function continueUpdating(callback) {
+    animationFrame = window.requestAnimationFrame(callback);
+    console.info({ command: "continue-updating", animationFrame });
+  }
+  function stopUpdating() {
+    window.cancelAnimationFrame(animationFrame);
+    console.info({ command: "stop-updating", animationFrame });
+  }
+  function advanceClock(nextTimeStamp: DOMHighResTimeStamp, resume = false) {
+    console.info({ command: "advance-clock", nextTimeStamp, resume });
     if ($state.swarm.satellites >= 2 ** 50) {
+      stopUpdating();
       return alert(
         "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
       );
     }
-    animationFrame = window.requestAnimationFrame(mainLoop);
+    continueUpdating(advanceClock);
     // don't observe passage of real time if game paused
-    if (timeStep === Number.POSITIVE_INFINITY) {
+    if (resume) {
       lastTimeStamp = nextTimeStamp;
       return;
     }
     const timeElapsed = nextTimeStamp - lastTimeStamp;
-    if (timeElapsed < timeStep) {
-      return;
+    const ticks = Math.floor(timeElapsed / (1000 / $clock.speed));
+    for (let tick = 0; tick < ticks; tick++) {
+      clock.increment();
     }
-    let delta = timeElapsed;
-    while (delta > timeStep) {
-      delta -= timeStep;
-      const action = $fabricator.work($state.resources);
-      if (action) {
-        state.action(action);
-      }
-      if (autoLaunch) {
-        new Array($state.buildings[Building.SATELLITE_LAUNCHER])
-          .fill(undefined)
-          .forEach(() => {
-            if (canBuild(launchCost, $state.resources)) {
-              state.action(launchSatellite);
-            }
-          });
-      }
-      state.tick();
+    if (ticks > 0) {
+      console.info({
+        command: "clock-increment",
+        timeElapsed,
+        ticks,
+        lastTimeStamp,
+        nextTimeStamp,
+      });
+      lastTimeStamp = nextTimeStamp;
     }
-    lastTimeStamp = nextTimeStamp - delta;
   }
 
+  function play() {
+    clock.play();
+    continueUpdating((timeStamp) => advanceClock(timeStamp, true));
+  }
+  function pause() {
+    clock.pause();
+    stopUpdating();
+  }
+  function setSpeed(event) {
+    clock.setSpeed(event.detail);
+  }
+  function mainLoop(clockSnapshot: Clock) {
+    if (clockSnapshot.mode === "pause") {
+      return;
+    }
+    const action = $fabricator.work($state.resources);
+    if (action) {
+      state.action(action);
+    }
+    if (autoLaunch) {
+      new Array($state.buildings[Building.SATELLITE_LAUNCHER])
+        .fill(undefined)
+        .forEach(() => {
+          if (canBuild(launchCost, $state.resources)) {
+            state.action(launchSatellite);
+          }
+        });
+    }
+    state.tick();
+  }
+
+  clock.subscribe((nextState: Clock) => {
+    mainLoop(nextState);
+  });
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
-  mainLoop(lastTimeStamp);
 </script>
 
 <main class="grid gap-x-1 p-0 m-0">
-  <div class="HUD">
+  <div style="grid-area: HUD" class="flex flex-row justify-between">
     <ResourceHud resources={$resources} />
     <SwarmHud swarm={{ count: $state.swarm.satellites }} />
-    <TimeHud {speed} />
+    <TimeHud
+      clock={$clock}
+      on:play={play}
+      on:pause={pause}
+      on:setSpeed={setSpeed}
+    />
   </div>
   <Table caption="resources" contents={$resources} orientation="left" />
   <Table caption="buildings" contents={Object.entries($state.buildings)} />
@@ -128,7 +164,12 @@
       </li>
     {/each}
   </ul>
-  <Fabricator resources={$state.resources} />
+  <Fabricator
+    resources={$state.resources}
+    on:enterEdit={pause}
+    on:saveEdits={play}
+    on:cancelEdits={play}
+  />
 
   <div class="tables flex flex-row justify-evenly">
     <table>
@@ -196,6 +237,7 @@
 
   main > * {
     background-color: #dddddd;
+    /*background: linear-gradient(white, black);*/
     /* Prevent unexpected grid elements from triggering auto-flow (and creating new rows/columns) */
     grid-row: -2;
     grid-column: -2;
@@ -213,13 +255,6 @@
         ". . . . . . . . ";
       grid-template-columns: 1em 1fr 1em 1fr 1fr 1em 1fr 1em;
     }
-  }
-
-  .HUD {
-    grid-area: HUD;
-    display: grid;
-    grid-template-columns: minmax(30vw, 1fr) 10vw minmax(30vw, 1fr);
-    grid-template-areas: "resources swarm buildings";
   }
 
   .tables {

@@ -40,5 +40,5 @@
     elecCurrent={resources[Resource.ELECTRICITY]}
     elecTotal={costs ? costs.get(Resource.ELECTRICITY) : 1}
   />
-  <BuildQueue />
+  <BuildQueue on:enterEdit on:saveEdits on:cancelEdits />
 </section>

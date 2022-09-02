@@ -26,7 +26,7 @@
     margin: 0;
     display: flex;
     flex-flow: row wrap;
-    align-content: start;
+    align-content: flex-start;
   }
 
   ul li {
