@@ -23,7 +23,7 @@
   } from "./gameStateStore";
   import ResourceHud from "./ResourceHud.svelte";
   import LaunchButton from "./LaunchButton.svelte";
-  import SwarmHud from "./SwarmHud.svelte";
+  import SwarmHud from "./hud/SwarmHud.svelte";
   import Fabricator from "./fabricator/Fabricator.svelte";
   import { fabricator } from "./fabricator/store";
   import TimeHud from "./time/TimeHud.svelte";
