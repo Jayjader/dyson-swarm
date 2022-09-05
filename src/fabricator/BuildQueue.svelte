@@ -1,26 +1,24 @@
 <script lang="ts">
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import MenuButton from "./MenuButton.svelte";
-  import type { BuildOrder } from "../types";
-  import { buildQueue, mode, uiState } from "./store";
-  import { Building, isRepeat } from "../types";
   import BuildQueueItem from "./BuildQueueItem.svelte";
-  import { createEventDispatcher } from "svelte";
-
-  const dispatch = createEventDispatcher();
+  import type { BuildOrder } from "../types";
+  import { Building, isRepeat } from "../types";
+  import { buildQueue, mode, uiState } from "./store";
+  import { clock } from "../time/store";
 
   let queue: BuildOrder[] = [];
 
   function enterEdit() {
-    dispatch("enterEdit");
+    clock.startIndirectPause();
     uiState.enterEdit(queue);
   }
   function saveEdits() {
-    dispatch("saveEdits");
+    clock.stopIndirectPause();
     uiState.saveEdits();
   }
   function cancelEdits() {
-    dispatch("cancelEdits");
+    clock.stopIndirectPause();
     uiState.cancelEdits();
   }
   $: {

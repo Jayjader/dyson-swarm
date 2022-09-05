@@ -15,7 +15,7 @@
         [0, slidingWindow[0]]
       );
     estimatedRatePerTick = averageRate / 9;
-    console.info({
+    console.debug({
       command: "calculate-new-rate-per-tick",
       slidingWindow,
       averageRate,

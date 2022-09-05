@@ -1,35 +1,52 @@
 import { derived, writable } from "svelte/store";
 
-export type Clock = ({ mode: "play" } | { mode: "pause" }) & {
+type Primitive = {
   speed: number;
   tick: number;
 };
+export type Play = [Primitive];
+export type Pause = ["pause", Primitive];
+type IndirectPause = ["indirect-pause", Primitive];
+export type Clock = Play | Pause | IndirectPause;
+export function isPlay(c: Clock): c is Play {
+  return c.length === 1;
+}
+export function isPause(c: Clock): c is Pause {
+  return c[0] === "pause";
+}
+export function isIndirectPause(c: Clock): c is IndirectPause {
+  return c[0] === "indirect-pause";
+}
 
-const clockData = writable<Clock>({ mode: "pause", speed: 1, tick: 0 });
+const clockData = writable<Clock>(["pause", { speed: 1, tick: 0 }]);
 export const clock = {
   ...derived(clockData, (data) => data),
   increment: () =>
+    // TODO: investigate allowing to increment by several ticks at once; will need to persist tick count pre-increment for game engine to properly catch up
     clockData.update((data) =>
-      data.mode === "play"
-        ? { mode: "play", speed: data.speed, tick: data.tick + 1 }
-        : { mode: "pause", speed: data.speed, tick: data.tick }
+      isPlay(data)
+        ? [{ mode: "play", speed: data[0].speed, tick: data[0].tick + 1 }]
+        : data
     ),
-  play: () =>
-    clockData.update((data) => ({
-      mode: "play",
-      speed: data.speed,
-      tick: data.tick,
-    })),
+  play: () => clockData.update((data) => (isPause(data) ? [data[1]] : data)),
   pause: () =>
-    clockData.update((data) => ({
-      mode: "pause",
-      speed: data.speed,
-      tick: data.tick,
-    })),
+    clockData.update((data) => (isPlay(data) ? ["pause", data[0]] : data)),
   setSpeed: (newSpeed: number) =>
-    clockData.update((data) => ({
-      mode: data.mode,
-      speed: newSpeed,
-      tick: data.tick,
-    })),
+    clockData.update((data) =>
+      isPlay(data)
+        ? [{ tick: data[0].tick, speed: newSpeed }]
+        : [
+            data[0],
+            {
+              tick: data[1].tick,
+              speed: newSpeed,
+            },
+          ]
+    ),
+  startIndirectPause: () =>
+    clockData.update((data) =>
+      isPlay(data) ? ["indirect-pause", data[0]] : data
+    ),
+  stopIndirectPause: () =>
+    clockData.update((data) => (isIndirectPause(data) ? [data[1]] : data)),
 };

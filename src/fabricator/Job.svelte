@@ -21,7 +21,7 @@
   $: {
     buildOrder = $currentJob;
     if (buildOrder) {
-      console.debug("new build order");
+      console.debug({ command: "new-job-received", buildOrder }); // TODO: verify log level
       matsProgress.set(0);
       elecProgress.set(0);
     }

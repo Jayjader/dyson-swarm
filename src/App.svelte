@@ -4,6 +4,12 @@
   import Table from "./Table.svelte";
   import Breaker from "./Breaker.svelte";
   import WorkerToggle from "./WorkerToggle.svelte";
+  import ResourceHud from "./ResourceHud.svelte";
+  import LaunchButton from "./LaunchButton.svelte";
+  import SwarmHud from "./hud/SwarmHud.svelte";
+  import Fabricator from "./fabricator/Fabricator.svelte";
+  import TimeControl from "./time/TimeControl.svelte";
+  import BuildQueue from "./fabricator/BuildQueue.svelte";
   import type { GameState } from "./types";
   import { Building, Resource } from "./types";
   import {
@@ -21,81 +27,91 @@
     tickConsumption,
     tickProduction,
   } from "./gameStateStore";
-  import ResourceHud from "./ResourceHud.svelte";
-  import LaunchButton from "./LaunchButton.svelte";
-  import SwarmHud from "./hud/SwarmHud.svelte";
-  import Fabricator from "./fabricator/Fabricator.svelte";
   import { fabricator } from "./fabricator/store";
-  import TimeHud from "./time/TimeHud.svelte";
-  import { clock } from "./time/store";
-  import type { Clock } from "./time/store";
+  import type { Clock, Play } from "./time/store";
+  import { clock, isPlay } from "./time/store";
+  import { derived, writable } from "svelte/store";
 
   export let init: GameState = undefined;
 
   const state = createGameStateStore(init);
   const resources = resourceArray(state);
+  const uiStateStack = writable([]);
+  const uiPanelsState = {
+    ...derived(uiStateStack, (stack) => stack),
+    openFabricator: () => {
+      console.info({ command: "open-fabricator" });
+      uiStateStack.set(["fabricator"]);
+    },
+    openOverview: () => {
+      console.info({ command: "open-overview" });
+      uiStateStack.set(["overview"]);
+    },
+    closePanels: () => {
+      console.info({ command: "close-panels" });
+      uiStateStack.set([]);
+    },
+  };
 
-  let lastTimeStamp = window.performance.now();
-  let animationFrame: number;
+  let timeStampOfLastTick = window.performance.now();
+  let animationFrame: number = 0;
 
   let autoLaunch = false;
 
-  function continueUpdating(callback) {
+  function scheduleCallback(callback) {
     animationFrame = window.requestAnimationFrame(callback);
-    console.info({ command: "continue-updating", animationFrame });
+    console.debug({ command: "schedule-callback", animationFrame });
   }
-  function stopUpdating() {
+  function cancelCallback() {
+    console.debug({ command: "cancel-callback", animationFrame });
     window.cancelAnimationFrame(animationFrame);
-    console.info({ command: "stop-updating", animationFrame });
+    animationFrame = 0;
   }
-  function advanceClock(nextTimeStamp: DOMHighResTimeStamp, resume = false) {
-    console.info({ command: "advance-clock", nextTimeStamp, resume });
+
+  function advanceClock(
+    nextTimeStamp: DOMHighResTimeStamp,
+    options: { resume: boolean } = { resume: false }
+  ) {
+    console.debug({ command: "advance-clock", nextTimeStamp, options });
     if ($state.swarm.satellites >= 2 ** 50) {
-      stopUpdating();
+      cancelCallback();
       return alert(
         "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
       );
     }
-    continueUpdating(advanceClock);
-    // don't observe passage of real time if game paused
-    if (resume) {
-      lastTimeStamp = nextTimeStamp;
-      return;
+    // TODO: investigate if it's better to schedule the next frame *after* we're done processing this one
+    scheduleCallback(advanceClock);
+    // don't catch up passed time if clock was paused
+    if (options.resume) {
+      timeStampOfLastTick = nextTimeStamp;
     }
-    const timeElapsed = nextTimeStamp - lastTimeStamp;
-    const timeStep = Math.floor(1000 / $clock.speed);
+    const timeElapsed = Math.floor(nextTimeStamp - timeStampOfLastTick);
+    const timeStep = Math.floor(1000 / ($clock.slice(-1) as Play)[0].speed);
     const ticks = Math.floor(timeElapsed / timeStep);
     for (let tick = 0; tick < ticks; tick++) {
       clock.increment();
     }
     if (ticks > 0) {
-      lastTimeStamp += ticks * timeStep;
+      timeStampOfLastTick += ticks * timeStep;
       console.info({
-        command: "clock-increment",
+        command: "clock-increments",
         timeElapsed,
         ticks,
         timeStep,
-        nextTimeStamp,
-        lastTimeStamp,
+        timeStampOfLastTick,
+      });
+    } else {
+      console.debug({
+        command: "clock-increments",
+        timeElapsed,
+        ticks,
+        timeStep,
+        timeStampOfLastTick,
       });
     }
   }
 
-  function play() {
-    clock.play();
-    continueUpdating((timeStamp) => advanceClock(timeStamp, true));
-  }
-  function pause() {
-    clock.pause();
-    stopUpdating();
-  }
-  function setSpeed(event) {
-    clock.setSpeed(event.detail);
-  }
-  function mainLoop(clockSnapshot: Clock) {
-    if (clockSnapshot.mode === "pause") {
-      return;
-    }
+  function mainLoop() {
     const action = $fabricator.work($state.resources);
     if (action) {
       state.action(action);
@@ -113,66 +129,112 @@
   }
 
   clock.subscribe((nextState: Clock) => {
-    mainLoop(nextState);
+    console.debug({ command: "app->clock.subscribe", nextState });
+    if (isPlay(nextState)) {
+      console.time("main loop");
+      mainLoop();
+      console.timeEnd("main loop");
+      if (!animationFrame) {
+        scheduleCallback((nextTimeStamp) =>
+          advanceClock(nextTimeStamp, { resume: true })
+        );
+      }
+    } else {
+      if (animationFrame) {
+        cancelCallback();
+        return;
+      }
+    }
   });
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
 </script>
 
-<main class="grid gap-x-1 p-0 m-0">
-  <div style="grid-area: HUD" class="flex flex-row justify-between">
+<main class="height-parent grid grid-auto gap-1 p-0 m-0 grid-flow-row-dense">
+  <div class="span-entire-row flex flex-row justify-between text-stone-200">
     <ResourceHud resources={$resources} />
     <SwarmHud swarm={{ count: $state.swarm.satellites }} />
-    <TimeHud
-      clock={$clock}
-      on:play={play}
-      on:pause={pause}
-      on:setSpeed={setSpeed}
-    />
   </div>
-  <Table caption="resources" contents={$resources} orientation="left" />
-  <Table caption="buildings" contents={Object.entries($state.buildings)} />
 
-  <ul style="" class="control-panel list-none flex flex-col">
-    <li>
-      <LaunchButton
-        visible={$state.buildings[Building.SATELLITE_LAUNCHER] > 0}
-        disabled={!canBuild(launchCost, $state.resources)}
-        bind:auto={autoLaunch}
-        on:click={() => {
-          console.log("launch");
-          state.action(launchSatellite);
-        }}
-        max={launchCost.get(Resource.ELECTRICITY)}
-        value={Math.min(
-          launchCost.get(Resource.ELECTRICITY),
-          $state.resources[Resource.ELECTRICITY]
-        )}
-      />
-    </li>
-    <li>
-      <Breaker
-        tripped={$state.breaker.tripped}
-        on:change={() => state.action(tripBreaker)}
-      />
-    </li>
-    {#each Object.keys(tickConsumption) as worker (worker)}
+  {#if $uiPanelsState?.[0] === "overview"}
+    <!--      TODO: Harmonize ?    -->
+    <div class="flex flex-col">
+      <Table caption="resources" contents={$resources} orientation="left" />
+      <Table caption="buildings" contents={Object.entries($state.buildings)} />
+    </div>
+  {:else if $uiPanelsState?.[0] === "fabricator"}
+    <Fabricator resources={$state.resources} />
+  {/if}
+
+  <div class="span-entire-row flex flex-row justify-center">
+    <button
+      class={"border-2 rounded " +
+        ($uiPanelsState?.[0] === "fabricator"
+          ? "border-stone-400 text-stone-300"
+          : "border-stone-600 text-stone-500")}
+      on:click={$uiPanelsState?.[0] === "fabricator"
+        ? uiPanelsState.closePanels
+        : uiPanelsState.openFabricator}
+    >
+      Fabricator
+    </button>
+    <button
+      class={"border-2 rounded " +
+        ($uiPanelsState?.[0] === "overview"
+          ? "border-stone-400 text-stone-300"
+          : "border-stone-600 text-stone-500")}
+      on:click={$uiPanelsState?.[0] === "overview"
+        ? uiPanelsState.closePanels
+        : uiPanelsState.openOverview}
+    >
+      Overview
+    </button>
+  </div>
+
+  {#if $uiPanelsState?.[0] === "overview"}
+    <ul style="" class="control-panel list-none flex flex-col">
       <li>
-        <WorkerToggle
-          paused={!$state.working[worker]}
-          on:change={() => state.action(toggleWorker(worker))}
-        >
-          {worker}
-        </WorkerToggle>
+        <LaunchButton
+          visible={$state.buildings[Building.SATELLITE_LAUNCHER] > 0}
+          disabled={!canBuild(launchCost, $state.resources)}
+          bind:auto={autoLaunch}
+          on:click={() => {
+            console.log("launch");
+            state.action(launchSatellite);
+          }}
+          max={launchCost.get(Resource.ELECTRICITY)}
+          value={Math.min(
+            launchCost.get(Resource.ELECTRICITY),
+            $state.resources[Resource.ELECTRICITY]
+          )}
+        />
       </li>
-    {/each}
-  </ul>
-  <Fabricator
-    resources={$state.resources}
-    on:enterEdit={pause}
-    on:saveEdits={play}
-    on:cancelEdits={play}
-  />
-
+      <li>
+        <Breaker
+          tripped={$state.breaker.tripped}
+          on:change={() => state.action(tripBreaker)}
+        />
+      </li>
+      <li>
+        <ul>
+          {#each Object.keys(tickConsumption) as worker (worker)}
+            <li>
+              <WorkerToggle
+                paused={!$state.working[worker]}
+                on:change={() => state.action(toggleWorker(worker))}
+              >
+                {worker}
+              </WorkerToggle>
+            </li>
+          {/each}
+        </ul>
+      </li>
+      <li>
+        <TimeControl />
+      </li>
+    </ul>
+  {:else if $uiPanelsState?.[0] === "fabricator"}
+    <BuildQueue />
+  {/if}
   <div class="tables flex flex-row justify-evenly">
     <table>
       <caption class="font-bold">Fabrication Costs</caption>
@@ -211,63 +273,14 @@
 </main>
 
 <style>
-  main {
-    --panel-col-count: 2;
-    --panel-row-count: 1;
-    grid-template-columns:
-      1em
-      repeat(var(--panel-col-count), 1fr)
-      1em;
-    grid-template-rows:
-      1em
-      minmax(1em, min-content) /* HUD */
-      repeat(var(--panel-row-count), minmax(min-content, auto))
-      max-content /* Build Menu */
-      min-content /* Control Panel */
-      1em;
-    grid-template-areas:
-      ". . . ."
-      ". HUD HUD ."
-      ". BuildMenu BuildMenu ."
-      ". PanelLeft PanelRight ."
-      ". ControlPanel BuildQueue ."
-      ". . . .";
-    grid-auto-columns: 100%;
-    grid-auto-rows: max-content;
-    text-align: center;
-  }
-
-  main > * {
-    background-color: #dddddd;
-    /*background: linear-gradient(white, black);*/
-    /* Prevent unexpected grid elements from triggering auto-flow (and creating new rows/columns) */
-    grid-row: -2;
-    grid-column: -2;
-  }
-
-  /* TODO: think about making this to like ~820ish to accomodate for the horizontal empty space needed by the Build Menu when "curled up" */
-  @media (min-width: 650px) {
-    main {
-      --panel-col-count: 6;
-      grid-template-areas:
-        ". . . . . . . ."
-        ". HUD HUD HUD HUD HUD HUD ."
-        ". PanelLeft . BuildMenu BuildMenu . PanelRight ."
-        ". PanelLeft . ControlPanel BuildQueue . PanelRight ."
-        ". . . . . . . . ";
-      grid-template-columns: 1em 1fr 1em 1fr 1fr 1em 1fr 1em;
-    }
-  }
-
-  .tables {
-    /* TODO: implement this more cleanly */
+  .span-entire-row {
     grid-column: 1/-1;
-    grid-row: calc(
-      5 + var(--panel-row-count) + 1
-    ); /* place after last row in template*/
   }
-
-  .control-panel {
-    grid-area: ControlPanel;
+  .grid-auto {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-rows: repeat(auto-fill, minmax(1em, 1fr));
+  }
+  .height-parent {
+    height: 100%;
   }
 </style>

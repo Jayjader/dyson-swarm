@@ -4,7 +4,6 @@
   import { currentJob } from "./store";
   import { constructionCosts } from "../actions";
   import Job from "./Job.svelte";
-  import BuildQueue from "./BuildQueue.svelte";
 
   let costs: null | Input = null;
   currentJob.subscribe((job) => {
@@ -14,7 +13,7 @@
   export let resources;
 </script>
 
-<section style="grid-area: BuildQueue">
+<section>
   <h2>Fabricator</h2>
   <h3>Current Job</h3>
   <button
@@ -41,5 +40,4 @@
     elecCurrent={resources[Resource.ELECTRICITY]}
     elecTotal={costs ? costs.get(Resource.ELECTRICITY) : 1}
   />
-  <BuildQueue on:enterEdit on:saveEdits on:cancelEdits />
 </section>
