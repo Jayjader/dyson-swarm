@@ -17,9 +17,10 @@
 <section style="grid-area: BuildQueue">
   <h2>Fabricator</h2>
   <h3>Current Job</h3>
-  {#if $currentJob !== undefined}
-    <button on:click={() => currentJob.set(undefined)}>Clear Job</button>
-  {/if}
+  <button
+    on:click={currentJob.set.bind(this, undefined)}
+    disabled={costs === undefined}>Clear Job</button
+  >
   <Job
     matsCurrent={costs
       ? [...costs].reduce(
