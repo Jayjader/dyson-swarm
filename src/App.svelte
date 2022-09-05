@@ -63,19 +63,21 @@
       return;
     }
     const timeElapsed = nextTimeStamp - lastTimeStamp;
-    const ticks = Math.floor(timeElapsed / (1000 / $clock.speed));
+    const timeStep = Math.floor(1000 / $clock.speed);
+    const ticks = Math.floor(timeElapsed / timeStep);
     for (let tick = 0; tick < ticks; tick++) {
       clock.increment();
     }
     if (ticks > 0) {
+      lastTimeStamp += ticks * timeStep;
       console.info({
         command: "clock-increment",
         timeElapsed,
         ticks,
-        lastTimeStamp,
+        timeStep,
         nextTimeStamp,
+        lastTimeStamp,
       });
-      lastTimeStamp = nextTimeStamp;
     }
   }
 
