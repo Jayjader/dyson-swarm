@@ -15,7 +15,7 @@
 </script>
 
 <section
-  class="flex flex-row flex-wrap max-w-md gap-1 p-1 border-2 rounded border-slate-100"
+  class="flex flex-row flex-wrap gap-1 p-1 border-2 rounded border-slate-100"
 >
   <h3 class="text-slate-100 font-bold text-center basis-full">Constructs</h3>
   <div

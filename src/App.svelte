@@ -135,12 +135,25 @@
 </main>
 
 <style>
-  .span-entire-row {
-    grid-column: 1/-1;
-  }
   .grid-auto {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    grid-template-rows: repeat(auto-fill, minmax(1em, 1fr));
+    /*
+    thank you css tricks for the following implementation of a grid with:
+     - max number of columns (this is grid columns, not "columns of content" => +1)
+     - min width of column content
+     https://css-tricks.com/an-auto-filling-css-grid-with-max-columns/
+    */
+    --item-min-width: 16rem;
+    --max-columns: 3;
+    --gap: calc(1 * 0.25rem); /* calculate tailwind-standardized size*/
+    --item-max-width: calc(
+      (100% - ((var(--max-columns) - 1) * var(--gap))) /
+        (var(--max-columns) - 1)
+    );
+    grid-template-columns: repeat(
+      auto-fill,
+      minmax(max(var(--item-min-width), var(--item-max-width)), 1fr)
+    );
+    grid-template-rows: repeat(auto-fill, 1fr);
   }
   .height-parent {
     height: 100%;

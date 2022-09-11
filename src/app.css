@@ -24,3 +24,7 @@ h1, h2, h3, h4, h5, caption {
 ol, li {
     list-style: none;
 }
+
+.span-entire-row {
+    grid-column: 1/-1;
+}
