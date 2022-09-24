@@ -114,3 +114,11 @@ export type GameAction = (state: GameState) => GameState;
 export type SingleBuildOrder = {
   building: Building;
 };
+
+// huge thanks to https://fettblog.eu/typescript-array-includes/
+export function includes<T extends U, U>(
+  collection: ReadonlySet<T>,
+  element: U
+): element is T {
+  return collection.has(element as T);
+}
