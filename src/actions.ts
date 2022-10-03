@@ -1,24 +1,25 @@
-import type { GameAction, GameState, Input, Resources } from "./types";
-import { Building, Resource } from "./types";
+import type { Input } from "./types";
+import type { GameAction, GameState, Resources } from "./gameStateStore";
+import { Construct, Resource } from "./gameStateStore";
 
-export const constructionCosts: Record<Building, Input> = {
-  [Building.SOLAR_COLLECTOR]: new Map([
+export const constructionCosts: Record<Construct, Input> = {
+  [Construct.SOLAR_COLLECTOR]: new Map([
     [Resource.ELECTRICITY, 100],
     [Resource.METAL, 10],
   ]),
-  [Building.MINER]: new Map([
+  [Construct.MINER]: new Map([
     [Resource.ELECTRICITY, 150],
     [Resource.METAL, 30],
   ]),
-  [Building.REFINERY]: new Map([
+  [Construct.REFINERY]: new Map([
     [Resource.ELECTRICITY, 500],
     [Resource.METAL, 45],
   ]),
-  [Building.SATELLITE_LAUNCHER]: new Map([
+  [Construct.SATELLITE_LAUNCHER]: new Map([
     [Resource.ELECTRICITY, 2 * 10 ** 3],
     [Resource.METAL, 170],
   ]),
-  [Building.SATELLITE_FACTORY]: new Map([
+  [Construct.SATELLITE_FACTORY]: new Map([
     [Resource.ELECTRICITY, 10 ** 4],
     [Resource.METAL, 13 * 10 ** 2],
   ]),
@@ -27,7 +28,7 @@ export const constructionCosts: Record<Building, Input> = {
 export function canBuild(cost: Input, resources: Resources): boolean {
   return [...cost].every(([resource, amount]) => resources[resource] >= amount);
 }
-export function build(building: Building) {
+export function build(building: Construct): GameAction {
   return (state: GameState) => {
     const cost = constructionCosts[building];
     const { resources, buildings } = state;
@@ -41,10 +42,10 @@ export function build(building: Building) {
   };
 }
 
-export const launchCost: Input = new Map([
+export const launchCost = new Map([
   [Resource.ELECTRICITY, 1.4 * 10 ** 3],
   [Resource.PACKAGED_SATELLITE, 1],
-]);
+] as const);
 export const launchSatellite: GameAction = (state) => {
   return {
     ...state,
@@ -52,7 +53,7 @@ export const launchSatellite: GameAction = (state) => {
       ...state.resources,
       [Resource.ELECTRICITY]:
         state.resources[Resource.ELECTRICITY] -
-        launchCost.get(Resource.ELECTRICITY),
+        (launchCost.get(Resource.ELECTRICITY) as number),
       [Resource.PACKAGED_SATELLITE]:
         state.resources[Resource.PACKAGED_SATELLITE] - 1,
     },
@@ -63,18 +64,3 @@ export const tripBreaker: GameAction = (state) => ({
   ...state,
   breaker: { tripped: !state.breaker.tripped },
 });
-
-export const toggleWorker: (Worker) => GameAction = (worker) => (state) => ({
-  ...state,
-  working: {
-    ...state.working,
-    [worker]: !state.working[worker],
-  },
-});
-
-export default {
-  ...build,
-  launchSatellite,
-  tripBreaker,
-  toggleFactories: toggleWorker,
-};

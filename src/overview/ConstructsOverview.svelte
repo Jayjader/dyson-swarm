@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { Building, Resource } from "../types";
   import ConstructOverview from "./ConstructOverview.svelte";
-  import { tickConsumption, tickProduction } from "../gameStateStore";
+  import type { CircuitBreaker } from "../gameStateStore";
+  import {
+    Construct,
+    Resource,
+    tickConsumption,
+    tickProduction,
+  } from "../gameStateStore";
   import { launchCost } from "../actions";
 
   const wattsPerSquareMeter = "W/m<sup>2</sup>";
@@ -12,6 +17,9 @@
   const ore = "/ore.svg";
   const metal = "/metal-bar.svg";
   const satellite = "/satellite.svg";
+
+  export let constructs = new Map();
+  export let circuitBreaker: CircuitBreaker = { tripped: false };
 </script>
 
 <section
@@ -69,28 +77,34 @@
   >
     <div class="flex flex-row">
       <h5 class="font-bold">Count:</h5>
-      <output>30</output>
+      <output>{constructs.get(Construct.SOLAR_COLLECTOR) ?? 0}</output>
     </div>
   </ConstructOverview>
-  <button
-    class="justify-self-center border-2 rounded-xl border-zinc-300 p-2 text-zinc-300 mx-auto"
-  >
+  <label>
     Circuit Breaker
-  </button>
+    <input
+      type="checkbox"
+      class={"justify-self-center border-2 rounded-xl p-2 mx-auto " +
+        (circuitBreaker.tripped
+          ? "border-red-400 text-red-400"
+          : "border-zinc-300 text-zinc-300")}
+      value={circuitBreaker.tripped}
+    />
+  </label>
   <!-- TODO: Fabricator Overview -->
   <ConstructOverview
     name="miner"
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Building.MINER].get(Resource.ELECTRICITY),
+        value: tickConsumption[Construct.MINER].get(Resource.ELECTRICITY),
         unit: watt,
         icon: energy,
       },
     ]}
     produces={{
       name: "metal ore",
-      value: tickProduction[Building.MINER].get(Resource.ORE),
+      value: tickProduction[Construct.MINER].get(Resource.ORE),
       unit: kilogram,
       icon: ore,
     }}
@@ -99,7 +113,13 @@
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
         <button class="border-2 rounded border-zinc-50">None</button>
-        <input type="number" value="30" style="max-width: 6ch" />
+        <input
+          type="number"
+          max={constructs.get(Construct.MINER) ?? 0}
+          min={0}
+          style="max-width: 6ch"
+        />
+        <output>/{constructs.get(Construct.MINER) ?? 0}</output>
         <button class="border-2 rounded border-zinc-50">All</button>
       </span>
     </div>
@@ -109,20 +129,20 @@
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Building.REFINERY].get(Resource.ELECTRICITY),
+        value: tickConsumption[Construct.REFINERY].get(Resource.ELECTRICITY),
         unit: watt,
         icon: energy,
       },
       {
         name: "ore",
-        value: tickConsumption[Building.REFINERY].get(Resource.ORE),
+        value: tickConsumption[Construct.REFINERY].get(Resource.ORE),
         unit: kilogram,
         icon: ore,
       },
     ]}
     produces={{
       name: "refined metal",
-      value: tickProduction[Building.REFINERY].get(Resource.METAL),
+      value: tickProduction[Construct.REFINERY].get(Resource.METAL),
       unit: kilogram,
       icon: metal,
     }}
@@ -131,7 +151,13 @@
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
         <button class="border-2 rounded border-zinc-50">None</button>
-        <input type="number" value="30" style="max-width: 6ch" />
+        <input
+          type="number"
+          min={0}
+          max={constructs.get(Construct.REFINERY)}
+          style="max-width: 6ch"
+        />
+        <output>/{constructs.get(Construct.REFINERY) ?? 0}</output>
         <button class="border-2 rounded border-zinc-50">All</button>
       </span>
     </div>
@@ -141,7 +167,7 @@
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Building.SATELLITE_FACTORY].get(
+        value: tickConsumption[Construct.SATELLITE_FACTORY].get(
           Resource.ELECTRICITY
         ),
         unit: watt,
@@ -149,14 +175,14 @@
       },
       {
         name: "refined metal",
-        value: tickConsumption[Building.SATELLITE_FACTORY].get(Resource.METAL),
+        value: tickConsumption[Construct.SATELLITE_FACTORY].get(Resource.METAL),
         unit: kilogram,
         icon: metal,
       },
     ]}
     produces={{
       name: "packaged satellite",
-      value: tickProduction[Building.SATELLITE_FACTORY].get(
+      value: tickProduction[Construct.SATELLITE_FACTORY].get(
         Resource.PACKAGED_SATELLITE
       ),
       unit: "(packaged)",
@@ -167,7 +193,13 @@
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
         <button class="border-2 rounded border-zinc-50">None</button>
-        <input type="number" value="30" style="max-width: 6ch" />
+        <input
+          type="number"
+          min={0}
+          max={constructs.get(Construct.SATELLITE_FACTORY)}
+          style="max-width: 6ch"
+        />
+        <output>/{constructs.get(Construct.SATELLITE_FACTORY) ?? 0}</output>
         <button class="border-2 rounded border-zinc-50">All</button>
       </span>
     </div>
@@ -199,7 +231,13 @@
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
         <button class="border-2 rounded border-zinc-50">None</button>
-        <input type="number" value="30" style="max-width: 6ch" />
+        <input
+          type="number"
+          min={0}
+          max={constructs.get(Construct.SATELLITE_LAUNCHER)}
+          style="max-width: 6ch"
+        />
+        <output>/{constructs.get(Construct.SATELLITE_LAUNCHER) ?? 0}</output>
         <button class="border-2 rounded border-zinc-50">All</button>
       </span>
     </div>

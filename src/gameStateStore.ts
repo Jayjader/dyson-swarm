@@ -1,48 +1,112 @@
 import type { Readable } from "svelte/store";
 import { derived, writable } from "svelte/store";
-import type {
-  CircuitBreaker,
-  Consumption,
-  GameAction,
-  GameState,
-  Production,
-  Resources,
-  Worker,
-} from "./types";
-import { Building, isConsumer, isProducer, Resource } from "./types";
+import type { Input } from "./types";
 
+export enum Resource {
+  ELECTRICITY = "elec",
+  ORE = "ore",
+  METAL = "metal",
+  PACKAGED_SATELLITE = "pkg_sat",
+}
+
+export type Resources = Record<Resource, number>;
+
+export enum Construct {
+  SOLAR_COLLECTOR = "collector",
+  MINER = "miner",
+  REFINERY = "refinery",
+  SATELLITE_FACTORY = "factory",
+  SATELLITE_LAUNCHER = "launcher",
+}
+
+const __OUTPUTS = ["flux", "power", "ore", "metal", "satellite"] as const;
+export type Output = typeof __OUTPUTS[number];
+
+export type Buildings = Record<Construct, number>;
+
+export type Swarm = {
+  satellites: number;
+};
+
+export type CircuitBreaker = {
+  tripped: boolean;
+};
+
+/* TODO: try introducing fabricator, star, planet?*/
+export const __PRODUCERS = [
+  "satellite",
+  Construct.MINER,
+  Construct.REFINERY,
+  Construct.SATELLITE_FACTORY,
+  Construct.SATELLITE_LAUNCHER,
+  Construct.SOLAR_COLLECTOR,
+] as const;
+export type Producer = typeof __PRODUCERS[number];
+export const __CONSUMERS = [
+  Construct.MINER,
+  Construct.REFINERY,
+  Construct.SATELLITE_FACTORY,
+  Construct.SATELLITE_LAUNCHER,
+] as const;
+export type Consumer = typeof __CONSUMERS[number];
+export type Actor = Consumer | Producer;
+export function isProducer(w: Actor): w is Producer {
+  return __PRODUCERS.includes(w as Producer);
+}
+export function isConsumer(w: Actor): w is Consumer {
+  return __CONSUMERS.includes(w as Consumer);
+}
+
+export type Working = Map<Actor, number>;
+export type GameState = {
+  resources: Resources;
+  buildings: Buildings;
+  swarm: Swarm;
+  breaker: CircuitBreaker;
+  working: Working;
+};
+
+export type GameAction = (state: GameState) => GameState;
+
+export type Consumption = Record<Consumer, Input>;
+export type Production = Record<Producer, Map<Output, number>>;
 export const tickConsumption: Consumption = {
-  [Building.MINER]: new Map([[Resource.ELECTRICITY, 3]]),
-  [Building.REFINERY]: new Map([
+  launcher: new Map([
+    [Resource.ELECTRICITY, 1.4 * 10 ** 3],
+    [Resource.PACKAGED_SATELLITE, 1],
+  ] as const),
+  miner: new Map([[Resource.ELECTRICITY, 3]]),
+  refinery: new Map([
     [Resource.ELECTRICITY, 5],
     [Resource.ORE, 3],
   ]),
-  [Building.SATELLITE_FACTORY]: new Map([
+  factory: new Map([
     [Resource.ELECTRICITY, 25],
     [Resource.METAL, 2],
   ]),
 };
 
 export const tickProduction: Production = {
-  [Building.MINER]: new Map<Resource, number>([[Resource.ORE, 1]]),
-  [Building.REFINERY]: new Map<Resource, number>([[Resource.METAL, 1]]),
-  [Building.SATELLITE_FACTORY]: new Map([[Resource.PACKAGED_SATELLITE, 1]]),
-  [Building.SOLAR_COLLECTOR]: new Map([[Resource.ELECTRICITY, 1]]),
-  swarm: new Map([[Resource.ELECTRICITY, 20]]),
+  [Construct.MINER]: new Map([["ore", 1]]),
+  [Construct.REFINERY]: new Map([["metal", 1]]),
+  [Construct.SATELLITE_FACTORY]: new Map([["satellite", 1]]),
+  [Construct.SATELLITE_LAUNCHER]: new Map<Output, number>(),
+  [Construct.SOLAR_COLLECTOR]: new Map([["power", 1]]),
+  satellite: new Map([["flux", 1]]),
 };
 
 export const satisfiedWorkers: (
   resources: Resources,
-  workingWorkerCount: Map<Worker, number>
-) => Array<[Worker, number]> = (resources, workingWorkerCount) =>
+  workingWorkerCount: Map<Actor, number>
+) => Array<[Actor, number]> = (resources, workingWorkerCount) =>
   [...workingWorkerCount].map(([worker, count]) => {
     let inputSatisfiedCount: number = count;
     if (!isConsumer(worker)) {
       inputSatisfiedCount =
-        worker !== "swarm"
+        worker !== "satellite"
           ? count
           : effectiveSwarmCount(
-              workingWorkerCount.get(Building.SOLAR_COLLECTOR),
+              workingWorkerCount.get(Construct.SOLAR_COLLECTOR)!,
               count
             );
     } else {
@@ -56,7 +120,7 @@ export const satisfiedWorkers: (
         }
       );
     }
-    return [worker, inputSatisfiedCount] as [Worker, number];
+    return [worker, inputSatisfiedCount] as [Actor, number];
   });
 
 export const effectiveSwarmCount = (
@@ -64,32 +128,32 @@ export const effectiveSwarmCount = (
   swarmCount: number
 ): number => (solarCollectorCount > 0 ? swarmCount : 0);
 
-const workerCount = (s, w): number =>
-  w === "swarm" ? s.swarm.satellites : s.buildings[w];
-
-const workingWorkers = (state: GameState): Map<Worker, number> =>
-  new Map(
-    Object.entries(state.working)
-      .filter(([_, on]) => on) // discard workers that are off
-      .map(
-        // get count for each worker
-        ([worker, _]) =>
-          [worker, workerCount(state, worker as Worker)] as [Worker, number]
-      )
+function workingWorkers(state: GameState): Map<Actor, number> {
+  return new Map(
+    [...state.working.entries()].reduce<[Actor, number][]>(
+      (accu, [worker, count]) =>
+        count > 0 ? [...accu, [worker, count]] : accu,
+      []
+    )
   );
+}
 
 export const tick: GameAction = (state) => {
-  const working = Array.from(workingWorkers(state).entries());
+  const working = [...workingWorkers(state).entries()];
   // to correctly trip breaker before overconsumption of electricity in the network,
   // we need to know how much elec we're about to consume (& how much we're about to produce)
   const totalProjectedElectricityConsumption = working.reduce(
     (accu, [worker, count]) =>
-      accu + count * (tickConsumption[worker]?.get(Resource.ELECTRICITY) ?? 0),
+      accu +
+      count *
+        (isConsumer(worker)
+          ? tickConsumption[worker].get(Resource.ELECTRICITY) ?? 0
+          : 0),
     0
   );
   const totalProjectedElectricityProduction = working.reduce(
     (accu, [worker, count]) =>
-      accu + count * (tickProduction[worker]?.get(Resource.ELECTRICITY) ?? 0),
+      accu + count * (tickProduction[worker]?.get("power") ?? 0),
     0
   );
   const breakerShouldTrip =
@@ -120,22 +184,37 @@ Awaiting_Input 'start working' => Working 'work' => Working 'finish task' => Awa
   const resources = { ...state.resources };
   const workingWorkerCount = satisfiedWorkers(resources, workingWorkers(state));
 
-  workingWorkerCount
-    .filter(([worker, _]) => isConsumer(worker))
-    .forEach(([worker, count]: [Worker, number]) => {
+  workingWorkerCount.forEach(([worker, count]: [Actor, number]) => {
+    if (isConsumer(worker)) {
       [...tickConsumption[worker]].forEach(([input, amount]) => {
         resources[input] -= count * amount;
       });
-    });
+    }
+  });
 
   const buildings = { ...state.buildings };
-  workingWorkerCount
-    .filter(([worker, _]) => isProducer(worker))
-    .forEach(([worker, count]) => {
+  workingWorkerCount.forEach(([worker, count]) => {
+    if (isProducer(worker)) {
       [...tickProduction[worker]].forEach(([output, amount]) => {
-        resources[output] += count * amount;
+        switch (output) {
+          case "flux":
+            break;
+          case "power":
+            resources[Resource.ELECTRICITY] += count * amount;
+            break;
+          case "ore":
+            resources[Resource.ORE] += count * amount;
+            break;
+          case "metal":
+            resources[Resource.METAL] += count * amount;
+            break;
+          case "satellite":
+            resources[Resource.PACKAGED_SATELLITE] += count * amount;
+            break;
+        }
       });
-    });
+    }
+  });
 
   return {
     resources,

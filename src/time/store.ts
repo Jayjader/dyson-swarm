@@ -6,7 +6,7 @@ type Primitive = {
 };
 export type Play = [Primitive];
 export type Pause = ["pause", Primitive];
-type IndirectPause = ["indirect-pause", Primitive];
+export type IndirectPause = ["indirect-pause", Primitive];
 export type Clock = Play | Pause | IndirectPause;
 export function isPlay(c: Clock): c is Play {
   return c.length === 1;
@@ -16,6 +16,13 @@ export function isPause(c: Clock): c is Pause {
 }
 export function isIndirectPause(c: Clock): c is IndirectPause {
   return c[0] === "indirect-pause";
+}
+
+export function getPrimitive(c: Clock): Primitive {
+  return (c.slice(-1) as Play)[0];
+}
+export function setPrimitive(c: Clock, p: Primitive): Clock {
+  return c.splice(-1, 1, p) as Clock;
 }
 
 const clockData = writable<Clock>(["pause", { speed: 1, tick: 0 }]);

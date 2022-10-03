@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { Input } from "../types";
-  import { Resource } from "../types";
   import { currentJob } from "./store";
   import { constructionCosts } from "../actions";
   import Job from "./Job.svelte";
+  import { Resource } from "../gameStateStore";
 
   let costs: null | Input = null;
   currentJob.subscribe((job) => {
@@ -11,9 +11,10 @@
   });
 
   export let resources;
+  export let visible = true;
 </script>
 
-<section>
+<section class:visible>
   <h2>Fabricator</h2>
   <h3>Current Job</h3>
   <button

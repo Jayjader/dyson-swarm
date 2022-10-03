@@ -1,8 +1,9 @@
 import type { Readable } from "svelte/types/runtime/store";
 import { derived, writable } from "svelte/store";
-import type { BuildOrder, GameAction, SingleBuildOrder } from "../types";
-import { Building, isRepeat } from "../types";
+import type { BuildOrder, SingleBuildOrder } from "../types";
+import { isRepeat } from "../types";
 import { build, canBuild, constructionCosts } from "../actions";
+import type { GameAction, Construct, Resources } from "../gameStateStore";
 
 const queueData = writable<BuildOrder[]>([]);
 type Actions = {
@@ -39,13 +40,13 @@ export const buildQueue: Actions & Readable<Array<BuildOrder>> = {
 };
 export const currentJob = writable<undefined | SingleBuildOrder>();
 type Exposed = Readable<{
-  work: (state) => void | GameAction;
+  work: (state: Resources) => void | GameAction;
 }>;
 
 export const fabricator: Exposed = derived(
   [buildQueue, currentJob],
   ([, job]) => ({
-    work: (resources) => {
+    work: (resources: Resources) => {
       if (!job) {
         currentJob.set(buildQueue.pop());
       }
@@ -89,9 +90,9 @@ export const mode = derived<
   const [head] = stack;
   if (!head) return "read-only";
   if (isEditState(head)) return "edit";
-  if ((head as AddBuildMode)?.mode === "add-build-order")
-    return "add-build-order";
   if (head === "remove-build-order") return "remove-build-order";
+  if (head.mode === "add-build-order") return "add-build-order";
+  throw new Error(`unknown fabricator ui stack head value: ${head}`);
 });
 export const uiState = {
   ...derived(uiStateStack, (stack) => stack),
@@ -106,59 +107,57 @@ export const uiState = {
       return [];
     }),
   undoEdit: () =>
-    uiStateStack.update(([first, second]) => {
-      if (isEditState(first)) {
-        const future: EditInTime[] = Array.from(first.future);
-        future.push(first.present);
-        const past: EditInTime[] = Array.from(first.past);
-        const present = past.pop();
-        return [{ future, past, present }];
-      } else {
-        return [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isEditState(head)) return stack;
+      const future: EditInTime[] = Array.from(head.future);
+      future.push(head.present);
+      const past: EditInTime[] = Array.from(head.past);
+      const present = past.pop() ?? { queue: [] };
+      return [{ future, past, present }];
     }),
   redoEdit: () =>
-    uiStateStack.update(([first, second]) => {
-      if (isEditState(first)) {
-        const past: EditInTime[] = Array.from(first.past);
-        past.push(first.present);
-        const future: EditInTime[] = Array.from(first.future);
-        const present = future.pop();
-        return [{ future, past, present }];
-      } else {
-        return [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isEditState(head)) return stack;
+      if (head.future.length === 0) return stack;
+      const past: EditInTime[] = Array.from(head.past);
+      past.push(head.present);
+      const future: EditInTime[] = Array.from(head.future);
+      const present = future.pop() ?? { queue: [] };
+      return [{ future, past, present }];
     }),
   enterAddBuildOrder: () =>
-    uiStateStack.update(([first, second]) =>
-      isEditState(first)
-        ? [{ mode: "add-build-order", remain: false }, first]
-        : [first, second]
-    ),
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isEditState(head)) return stack;
+      return [{ mode: "add-build-order", remain: false }, head];
+    }),
   toggleRemain: () =>
-    uiStateStack.update(([first, second]) => {
-      if (isAddBuildMode(first)) {
-        return [{ mode: "add-build-order", remain: !first.remain }, second];
-      } else {
-        return isEditState(first) ? [first] : [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isAddBuildMode(head)) return stack;
+      return [
+        { mode: "add-build-order", remain: !head.remain },
+        stack[1] as EditState,
+      ];
     }),
   cancelAddBuildOrder: () =>
-    uiStateStack.update(([first, second]) => {
-      if (isAddBuildMode(first)) {
-        return [second];
-      } else {
-        return isEditState(first) ? [first] : [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isAddBuildMode(head)) return stack;
+      return [stack[1] as EditState];
     }),
-  selectNewBuildOrder: (building: Building) =>
+  selectNewBuildOrder: (building: Construct) =>
     uiStateStack.update((stack) => {
       const [first] = stack;
       if (isAddBuildMode(first)) {
         const [, second] = stack;
-        const past: EditInTime[] = Array.from(second.past);
-        const queue: BuildOrder[] = Array.from(second.present.queue);
-        past.push(second.present);
+        const past: EditInTime[] = Array.from(second?.past ?? []);
+        const queue: BuildOrder[] = Array.from(second?.present.queue ?? []);
+        if (second !== undefined) {
+          past.push(second.present);
+        }
         queue.push({ building });
         return [{ future: [], present: { queue }, past }];
       } else {
@@ -166,37 +165,33 @@ export const uiState = {
       }
     }),
   clearQueue: () =>
-    uiStateStack.update(([first, second]) => {
-      if (isEditState(first)) {
-        const past = Array.from<EditInTime>(first.past);
-        past.push(first.present);
-        return [{ future: [], present: { queue: [] }, past }];
-      } else {
-        return first === undefined ? [] : [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (!isEditState(head)) return stack;
+      const past = Array.from<EditInTime>(head.past);
+      past.push(head.present);
+      return [{ future: [], present: { queue: [] }, past }];
     }),
   enterRemoveBuildOrder: () =>
-    uiStateStack.update(([first, second]) =>
-      isEditState(first) ? ["remove-build-order", first] : [first, second]
-    ),
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      return isEditState(head) ? ["remove-build-order", head] : stack;
+    }),
   cancelRemoveBuildOrder: () =>
-    uiStateStack.update(([first, second]) => {
-      if (first === "remove-build-order") {
-        return [second];
-      } else {
-        return isEditState(first) ? [first] : [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (head !== "remove-build-order") return stack;
+      return [stack[1]];
     }),
   removeBuildOrder: (index: number) =>
-    uiStateStack.update(([first, second]) => {
-      if (first === "remove-build-order") {
-        const past = Array.from<EditInTime>(second.past);
-        const queue = Array.from<BuildOrder>(second.present.queue);
-        past.push(second.present);
-        queue.splice(index, 1);
-        return [{ future: [], past, present: { queue } }];
-      } else {
-        return isEditState(first) ? [] : [first, second];
-      }
+    uiStateStack.update((stack) => {
+      const [head] = stack;
+      if (head !== "remove-build-order") return stack;
+      const second = stack[1];
+      const past = Array.from<EditInTime>(second.past);
+      const queue = Array.from<BuildOrder>(second.present.queue);
+      past.push(second.present);
+      queue.splice(index, 1);
+      return [{ future: [], past, present: { queue } }];
     }),
 };

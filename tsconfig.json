@@ -5,7 +5,8 @@
   "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
   "compilerOptions": {
     "types": ["jest", "svelte", "@testing-library/jest-dom"],
-    "target": "ES2019"
+    "target": "ES2019",
+    "strict": true
   }
 }
 

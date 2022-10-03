@@ -1,6 +1,6 @@
 <!-- @component Recap of overall resource state -->
 <script lang="ts">
-  import { Resource } from "./types";
+  import { Resource } from "./gameStateStore";
 
   export let resources: [Resource, number][];
 

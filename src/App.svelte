@@ -5,19 +5,25 @@
   import SwarmHud from "./hud/SwarmHud.svelte";
   import Fabricator from "./fabricator/Fabricator.svelte";
   import BuildQueue from "./fabricator/BuildQueue.svelte";
-  import type { GameState } from "./types";
-  import { Building } from "./types";
   import { canBuild, launchCost, launchSatellite } from "./actions";
   import { onDestroy } from "svelte";
-  import { createGameStateStore, resourceArray } from "./gameStateStore";
+  import type { GameState } from "./gameStateStore";
+  import {
+    Construct,
+    createGameStateStore,
+    resourceArray,
+  } from "./gameStateStore";
   import { fabricator } from "./fabricator/store";
   import type { Clock, Play } from "./time/store";
   import { clock, isPlay } from "./time/store";
-  import PanelControl from "./panel-control/PanelControl.svelte";
+  import PanelSelector from "./panel-control/PanelSelector.svelte";
   import { uiPanelsState } from "./panel-control/store";
+  import TimeControl from "./time/TimeControl.svelte";
+  import ProgressOverview from "./overview/ProgressOverview.svelte";
   import ConstructsOverview from "./overview/ConstructsOverview.svelte";
+  import StorageOverview from "./overview/StorageOverview.svelte";
 
-  export let init: GameState = undefined;
+  export let init: GameState;
 
   const state = createGameStateStore(init);
   const resources = resourceArray(state);
@@ -86,7 +92,7 @@
       state.action(action);
     }
     if (autoLaunch) {
-      new Array($state.buildings[Building.SATELLITE_LAUNCHER])
+      new Array($state.buildings[Construct.SATELLITE_LAUNCHER])
         .fill(undefined)
         .forEach(() => {
           if (canBuild(launchCost, $state.resources)) {
@@ -118,24 +124,52 @@
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
 </script>
 
-<main class="height-parent grid grid-auto gap-1 p-0 m-0 grid-flow-row-dense">
-  <div class="span-entire-row flex flex-row justify-between text-stone-200">
-    <ResourceHud resources={$resources} />
-    <SwarmHud swarm={{ count: $state.swarm.satellites }} />
+<main class="p-0 m-0 flex flex-col flex-nowrap items-stretch justify-between">
+  <div class="flex-grow-0 flex flex-col">
+    <div class="flex flex-row justify-between text-stone-200">
+      <ResourceHud resources={$resources} />
+      <SwarmHud swarm={{ count: $state.swarm.satellites }} />
+    </div>
+
+    <div class="flex flex-row flex-wrap justify-between">
+      <TimeControl />
+      {#if $state.swarm.satellites > 0}
+        <ProgressOverview swarm={{ count: $state.swarm.satellites }} />
+      {/if}
+    </div>
   </div>
 
-  {#if $uiPanelsState?.[0] === "overview"}
-    <!--      TODO: Resource Overview    -->
-    <ConstructsOverview />
-  {:else if $uiPanelsState?.[0] === "fabricator"}
-    <Fabricator resources={$state.resources} />
-    <BuildQueue />
-  {/if}
-  <PanelControl />
+  <div class="panels overflow-y-scroll grid grid-auto" style="--gap: 0.5rem">
+    {#if $uiPanelsState.has("construct-overview")}
+      <ConstructsOverview
+        constructs={$state.working}
+        circuitBreaker={$state.breaker}
+      />
+    {/if}
+    {#if $uiPanelsState.has("storage-overview")}
+      <StorageOverview />
+    {/if}
+    {#if $uiPanelsState.has("fabricator")}
+      <Fabricator resources={$state.resources} />
+    {/if}
+    {#if $uiPanelsState.has("order-queue")}
+      <BuildQueue />
+    {/if}
+  </div>
+  <PanelSelector />
 </main>
 
 <style>
+  main {
+    height: calc(100vh - 1rem);
+    max-height: calc(100vh - 1rem);
+  }
+  .panels {
+    min-height: 10rem;
+  }
   .grid-auto {
+    --gap: initial;
+    gap: var(--gap);
     /*
     thank you css tricks for the following implementation of a grid with:
      - max number of columns (this is grid columns, not "columns of content" => +1)
@@ -144,7 +178,6 @@
     */
     --item-min-width: 16rem;
     --max-columns: 3;
-    --gap: calc(1 * 0.25rem); /* calculate tailwind-standardized size*/
     --item-max-width: calc(
       (100% - ((var(--max-columns) - 1) * var(--gap))) /
         (var(--max-columns) - 1)
@@ -153,9 +186,5 @@
       auto-fill,
       minmax(max(var(--item-min-width), var(--item-max-width)), 1fr)
     );
-    grid-template-rows: repeat(auto-fill, 1fr);
-  }
-  .height-parent {
-    height: 100%;
   }
 </style>

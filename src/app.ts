@@ -5,8 +5,8 @@ import type {
   Resources,
   Swarm,
   Working,
-} from "./types";
-import { Building, Resource } from "./types";
+} from "./gameStateStore";
+import { Construct, Resource } from "./gameStateStore";
 
 const resources: Resources = {
   [Resource.ELECTRICITY]: 10 ** 3,
@@ -23,13 +23,10 @@ const buildings: Buildings = {
 };
 const swarm: Swarm = { satellites: 0 };
 const breaker: CircuitBreaker = { tripped: false };
-const working: Working = {
-  [Building.MINER]: true,
-  [Building.REFINERY]: true,
-  [Building.SOLAR_COLLECTOR]: true,
-  [Building.SATELLITE_FACTORY]: true,
-  swarm: true,
-};
+const working: Working = new Map([
+  ["swarm", swarm.satellites],
+  ...Object.entries(buildings),
+]) as Working;
 
 const app = new App({
   target: document.body,

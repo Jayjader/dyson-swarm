@@ -17,6 +17,11 @@ body {
     font-family: FantasqueSansMonoRegular, monospace;
 }
 
+section {
+    min-height: 50vh;
+    overflow-y: scroll;
+}
+
 h1, h2, h3, h4, h5, caption {
     font-family: datalegreya, sans-serif;
 }

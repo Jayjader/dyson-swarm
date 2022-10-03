@@ -3,9 +3,10 @@
   import MenuButton from "./MenuButton.svelte";
   import BuildQueueItem from "./BuildQueueItem.svelte";
   import type { BuildOrder } from "../types";
-  import { Building, isRepeat } from "../types";
+  import { isRepeat } from "../types";
   import { buildQueue, mode, uiState } from "./store";
   import { clock } from "../time/store";
+  import { Construct } from "../gameStateStore";
 
   let queue: BuildOrder[] = [];
 
@@ -35,11 +36,13 @@
       }
     }
   }
+  export let visible = true;
 </script>
 
 <section
   style="grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
   class="border-2 rounded-sm grid gap-1 p-1"
+  class:visible
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}
   class:border-indigo-400={$mode === "add-build-order"}
@@ -132,16 +135,16 @@
         text="Solar Collector"
         on:click={uiState.selectNewBuildOrder.bind(
           this,
-          Building.SOLAR_COLLECTOR
+          Construct.SOLAR_COLLECTOR
         )}
       />
       <MenuButton
         text="Miner"
-        on:click={uiState.selectNewBuildOrder.bind(this, Building.MINER)}
+        on:click={uiState.selectNewBuildOrder.bind(this, Construct.MINER)}
       />
       <MenuButton
         text="Refiner"
-        on:click={uiState.selectNewBuildOrder.bind(this, Building.REFINERY)}
+        on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINERY)}
       />
     </div>
     <div class="flex flex-col gap-0.5 col-start-3 row-span-2">
@@ -149,14 +152,14 @@
         text="Satellite Launcher"
         on:click={uiState.selectNewBuildOrder.bind(
           this,
-          Building.SATELLITE_LAUNCHER
+          Construct.SATELLITE_LAUNCHER
         )}
       />
       <MenuButton
         text="Satellite Factory"
         on:click={uiState.selectNewBuildOrder.bind(
           this,
-          Building.SATELLITE_FACTORY
+          Construct.SATELLITE_FACTORY
         )}
       />
     </div>

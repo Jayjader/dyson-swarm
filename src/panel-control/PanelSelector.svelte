@@ -1,0 +1,49 @@
+<script lang="ts">
+  import { uiPanelsState } from "./store";
+  import PanelControl from "./PanelControl.svelte";
+</script>
+
+<div class="flex-grow-0 flex flex-row flex-wrap justify-center gap-1">
+  <PanelControl
+    on={$uiPanelsState.size > 0}
+    disabled={$uiPanelsState.size === 0}
+    on:click={uiPanelsState.closeAllPanels}
+  >
+    Close All Panels
+  </PanelControl>
+  <PanelControl
+    on={$uiPanelsState.has("construct-overview")}
+    on:click={$uiPanelsState.has("construct-overview")
+      ? uiPanelsState.closeConstructOverview
+      : uiPanelsState.openConstructOverview}
+  >
+    Constructs
+  </PanelControl>
+  <PanelControl
+    on={$uiPanelsState.has("storage-overview")}
+    on:click={$uiPanelsState.has("storage-overview")
+      ? uiPanelsState.closeStorageOverview
+      : uiPanelsState.openStorageOverview}
+  >
+    Storage
+  </PanelControl>
+  <PanelControl
+    on={$uiPanelsState.has("fabricator")}
+    on:click={$uiPanelsState.has("fabricator")
+      ? uiPanelsState.closeFabricator
+      : uiPanelsState.openFabricator}
+  >
+    Fabricator Job Status
+  </PanelControl>
+  <PanelControl
+    class={"border-2 rounded " +
+      ($uiPanelsState.has("order-queue")
+        ? "border-stone-400 text-stone-300"
+        : "border-stone-600 text-stone-500")}
+    on:click={$uiPanelsState.has("order-queue")
+      ? uiPanelsState.closeQueue
+      : uiPanelsState.openQueue}
+  >
+    Fabricator Order Queue
+  </PanelControl>
+</div>

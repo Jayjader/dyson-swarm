@@ -248,9 +248,9 @@ describe("event bus", () => {
 
     (
       [
-        { tag: "simulation-clock-tick", tick: 1 },
-        { tag: "simulation-clock-tick", tick: 2 },
-        { tag: "simulation-clock-tick", tick: 3 },
+        { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
+        { tag: "simulation-clock-tick", tick: 2 }, // collector produces power from collected flux
+        { tag: "simulation-clock-tick", tick: 3 }, // grid stores power received
       ] as BusEvent[]
     ).forEach((event) => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
