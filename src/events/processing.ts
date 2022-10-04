@@ -1,7 +1,7 @@
 import type { BuildOrder, SingleBuildOrder } from "../types";
 import type { Resource } from "../gameStateStore";
 import type { Clock as ClockState } from "../time/store";
-import { getPrimitive, isPause, isPlay } from "../time/store";
+import { getPrimitive, isIndirectPause, isPause, isPlay } from "../time/store";
 import type { SubscriptionsFor } from "./index";
 import {
   blankSave,
@@ -127,6 +127,24 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
           emitted.push({ tag: "simulation-clock-play" });
         }
         break;
+      case "command-simulation-clock-pause":
+        if (isPlay(clock.data.state)) {
+          clock.data.state = ["pause", clock.data.state[0]];
+          emitted.push({ tag: "simulation-clock-pause" });
+        }
+        break;
+      case "command-simulation-clock-indirect-pause":
+        if (isPlay(clock.data.state)) {
+          clock.data.state = ["indirect-pause", clock.data.state[0]];
+          emitted.push({ tag: "simulation-clock-indirect-pause" });
+        }
+        break;
+      case "command-simulation-clock-indirect-resume":
+        if (isIndirectPause(clock.data.state)) {
+          clock.data.state = [clock.data.state[1]];
+          emitted.push({ tag: "simulation-clock-indirect-resume" });
+        }
+        break;
       case "outside-clock-tick":
         if (!isPlay(clock.data.state)) {
           break;
@@ -147,17 +165,11 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
             tick: tick + ticks,
           },
         ];
-        emitted.push(
-          ...Array(ticks)
-            .fill(undefined) // this weird-looking construct prepares an array that is n ticks in length
-            .map(
-              (_, index) =>
-                ({
-                  tag: "simulation-clock-tick",
-                  tick: tick + index + 1,
-                } as Event)
-            )
-        );
+        for (let index = 1; index <= ticks; index++)
+          emitted.push({
+            tag: "simulation-clock-tick",
+            tick: tick + index,
+          });
         break;
     }
   }

@@ -94,6 +94,80 @@ describe("event bus", () => {
       );
     }
   );
+  test("clock should switch to pause when receiving command while in play", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(
+      simulation,
+      createClock(0, "clock-0", { speed: 1, mode: "play" })
+    );
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "command-simulation-clock-pause" })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual(
+      expect.objectContaining({ tag: "simulation-clock-pause" })
+    );
+  });
+  test("clock should switch to indirect pause when receiving command while in play", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(
+      simulation,
+      createClock(0, "clock-0", { speed: 1, mode: "play" })
+    );
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-simulation-clock-indirect-pause",
+      })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual(
+      expect.objectContaining({ tag: "simulation-clock-indirect-pause" })
+    );
+  });
+  test("clock should switch to play when receiving command for indirect-resume while in indirect pause", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(
+      simulation,
+      createClock(0, "clock-0", { speed: 1, mode: "indirect-pause" })
+    );
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-simulation-clock-indirect-resume",
+      })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual(
+      expect.objectContaining({ tag: "simulation-clock-indirect-resume" })
+    );
+  });
+  test.each<BusEvent[]>([
+    [{ tag: "command-simulation-clock-indirect-pause" }],
+    [{ tag: "command-simulation-clock-indirect-resume" }],
+  ])(
+    "clock should ignore indirect command %j while already in pause",
+    (event) => {
+      let simulation = loadSave(blankSave());
+      insertProcessor(simulation, createMemoryStream());
+      insertProcessor(
+        simulation,
+        createClock(0, "clock-0", { speed: 1, mode: "pause" })
+      );
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+      expect(
+        (simulation.processors.get("stream-0") as EventStream).data.received
+      ).not.toContainEqual(
+        expect.objectContaining({
+          tag: expect.stringMatching(/^simulation-clock-indirect/),
+        })
+      );
+    }
+  );
 
   test.each<BusEvent[][]>([
     [
