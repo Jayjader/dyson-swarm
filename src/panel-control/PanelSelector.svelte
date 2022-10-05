@@ -36,10 +36,7 @@
     Fabricator Job Status
   </PanelControl>
   <PanelControl
-    class={"border-2 rounded " +
-      ($uiPanelsState.has("order-queue")
-        ? "border-stone-400 text-stone-300"
-        : "border-stone-600 text-stone-500")}
+    on={$uiPanelsState.has("order-queue")}
     on:click={$uiPanelsState.has("order-queue")
       ? uiPanelsState.closeQueue
       : uiPanelsState.openQueue}
