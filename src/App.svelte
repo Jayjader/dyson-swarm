@@ -20,7 +20,7 @@
   import { uiPanelsState } from "./panel-control/store";
   import TimeControl from "./time/TimeControl.svelte";
   import ProgressOverview from "./overview/ProgressOverview.svelte";
-  import ConstructsOverview from "./overview/ConstructsOverview.svelte";
+  import ConstructOverview from "./overview/ConstructOverview.svelte";
   import StorageOverview from "./overview/StorageOverview.svelte";
 
   export let init: GameState;
@@ -141,7 +141,7 @@
 
   <div class="panels overflow-y-scroll grid grid-auto" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("construct-overview")}
-      <ConstructsOverview
+      <ConstructOverview
         constructs={$state.working}
         circuitBreaker={$state.breaker}
       />
