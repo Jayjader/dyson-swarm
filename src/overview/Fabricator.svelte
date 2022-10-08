@@ -28,8 +28,8 @@
 >
   <img
     class="self-center max-w-min aspect-square mr-1"
-    src="/fabricator.png"
-    alt="fabricator"
+    src={ICON["fabricator"]}
+    alt="Fabricator"
   />
   <div class="flex-1 flex flex-row flex-wrap justify-between gap-1">
     <div class="flex flex-col gap-1 justify-between">

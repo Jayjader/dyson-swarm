@@ -27,7 +27,7 @@
     >
       <img
         class="max-w-min aspect-square self-center mr-1"
-        src="/star.png"
+        src={ICON["star"]}
         alt="Star"
       />
       <div class="basis-full flex flex-row flex-wrap justify-between">
@@ -53,6 +53,7 @@
         </div>
       </div>
     </div>
+    <!-- TODO: Swarm Overview appears when count > 0 -->
     <div
       class="basis-3/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 text-zinc-300"
     >
@@ -85,7 +86,6 @@
       </div>
     </div>
   </div>
-  <!-- TODO: Swarm Overview when count > 0 -->
   <ConstructOverview
     name="solar collector"
     consumes={[
@@ -116,8 +116,8 @@
     >
       <img
         class="max-w-min aspect-square self-center mr-1"
-        src="/star.png"
-        alt="Star"
+        src={ICON["planet"]}
+        alt="Planet"
       />
       <div class="basis-full flex flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
