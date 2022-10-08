@@ -11,6 +11,7 @@
   import Fabricator from "./Fabricator.svelte";
   import { kilogram, watt, wattsPerSquareMeter } from "../units";
   import { energy, ICON, metal, ore, satellite } from "../icons";
+  import GridBreaker from "./GridBreaker.svelte";
 
   export let constructs = new Map();
   export let circuitBreaker: CircuitBreaker = { tripped: false };
@@ -107,15 +108,7 @@
       <output>{constructs.get(Construct.SOLAR_COLLECTOR) ?? 0}</output>
     </div>
   </ConstructOverview>
-  <label
-    class={"basis-full border-8 rounded-xl flex flex-col justify-center items-stretch text-center " +
-      (circuitBreaker.tripped
-        ? "border-red-400 text-red-400"
-        : "border-sky-400 text-sky-400")}
-  >
-    Circuit Breaker
-    <input type="checkbox" checked={circuitBreaker.tripped} />
-  </label>
+  <GridBreaker open={circuitBreaker.tripped} />
   <Fabricator />
   <div class="flex-grow flex flex-row justify-items-stretch">
     <div
