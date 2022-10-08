@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { BuildOrder } from "../types";
   import { isRepeat, isInfinite } from "../types";
+  import { ICON } from "../icons";
 
   export let buildOrder: undefined | BuildOrder;
 </script>
 
-<span class="text-slate-100 min-w-min inline-block">
+<span class="min-w-min inline-block flex flex-row flex-wrap items-center">
   {#if isRepeat(buildOrder)}
     <ol>
       {#if isInfinite(buildOrder)}🗘 Forever{:else}{buildOrder.count}{/if}
@@ -14,7 +15,7 @@
       {/each}
     </ol>
   {:else}
-    <img src="http://via.placeholder.com/24.png" alt={buildOrder.building} />
-    {buildOrder.building}
+    <img src={ICON[buildOrder.building]} alt={buildOrder.building} />
+    <span class="mx-auto">{buildOrder.building}</span>
   {/if}
 </span>
