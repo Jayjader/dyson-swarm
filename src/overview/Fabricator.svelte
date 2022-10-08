@@ -28,7 +28,7 @@
 >
   <img
     class="self-center max-w-min aspect-square mr-1"
-    src="https://via.placeholder.com/60"
+    src="/fabricator.png"
     alt="fabricator"
   />
   <div class="flex-1 flex flex-row flex-wrap justify-between gap-1">
