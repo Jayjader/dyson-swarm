@@ -14,10 +14,11 @@
     unit: "unit",
     icon: "https://via.placeholder.com/28.png",
   };
+  export let basis: "full" | "2/5" | "3/5" = "full";
 </script>
 
 <div
-  class="basis-full p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 text-zinc-300"
+  class="basis-{basis} p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 text-zinc-300"
 >
   <img
     class="self-center max-w-min aspect-square mr-1"

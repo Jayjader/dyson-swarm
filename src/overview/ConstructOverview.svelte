@@ -20,9 +20,9 @@
   class="flex flex-row flex-wrap gap-1 p-1 border-2 rounded border-slate-100"
 >
   <h3 class="text-slate-100 font-bold text-center basis-full">Constructs</h3>
-  <div class="basis-1/3 flex-grow flex flex-row justify-items-stretch">
+  <div class="flex-grow flex flex-row justify-items-stretch">
     <div
-      class="flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400"
+      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400"
     >
       <img
         class="max-w-min aspect-square self-center mr-1"
@@ -53,7 +53,7 @@
       </div>
     </div>
     <div
-      class="basis-2/3 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 text-zinc-300"
+      class="basis-3/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 text-zinc-300"
     >
       <img
         class="max-h-16 aspect-square self-center mr-1"
@@ -117,38 +117,59 @@
     <input type="checkbox" checked={circuitBreaker.tripped} />
   </label>
   <Fabricator />
-  <ConstructOverview
-    name="miner"
-    consumes={[
-      {
-        name: "energy",
-        value: tickConsumption[Construct.MINER].get(Resource.ELECTRICITY),
-        unit: watt,
-        icon: energy,
-      },
-    ]}
-    produces={{
-      name: "metal ore",
-      value: tickProduction[Construct.MINER].get(Resource.ORE),
-      unit: kilogram,
-      icon: ore,
-    }}
-  >
-    <div class="flex flex-col">
-      <h5 class="font-bold">Working:</h5>
-      <span class="flex flex-row gap-1">
-        <button class="border-2 rounded border-zinc-50">None</button>
-        <input
-          type="number"
-          max={constructs.get(Construct.MINER) ?? 0}
-          min={0}
-          style="max-width: 6ch"
-        />
-        <output>/{constructs.get(Construct.MINER) ?? 0}</output>
-        <button class="border-2 rounded border-zinc-50">All</button>
-      </span>
+  <div class="flex-grow flex flex-row justify-items-stretch">
+    <div
+      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-orange-300 text-amber-300"
+    >
+      <img
+        class="max-w-min aspect-square self-center mr-1"
+        src="/star.png"
+        alt="Star"
+      />
+      <div class="basis-full flex flex-row flex-wrap justify-between">
+        <div class="flex flex-col justify-between">
+          <h4 class="basis-full font-bold">Planet</h4>
+          <div class="flex flex-col">
+            <h5 class="font-bold">Mass:</h5>
+            <output>3.301e23 {kilogram}</output>
+          </div>
+        </div>
+      </div>
     </div>
-  </ConstructOverview>
+    <ConstructOverview
+      name="miner"
+      basis="3/5"
+      consumes={[
+        {
+          name: "energy",
+          value: tickConsumption[Construct.MINER].get(Resource.ELECTRICITY),
+          unit: watt,
+          icon: energy,
+        },
+      ]}
+      produces={{
+        name: "metal ore",
+        value: tickProduction[Construct.MINER].get(Resource.ORE),
+        unit: kilogram,
+        icon: ore,
+      }}
+    >
+      <div class="flex flex-col">
+        <h5 class="font-bold">Working:</h5>
+        <span class="flex flex-row gap-1">
+          <button class="border-2 rounded border-zinc-50">None</button>
+          <input
+            type="number"
+            max={constructs.get(Construct.MINER) ?? 0}
+            min={0}
+            style="max-width: 6ch"
+          />
+          <output>/{constructs.get(Construct.MINER) ?? 0}</output>
+          <button class="border-2 rounded border-zinc-50">All</button>
+        </span>
+      </div>
+    </ConstructOverview>
+  </div>
   <ConstructOverview
     name="refiner"
     consumes={[
