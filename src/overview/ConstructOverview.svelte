@@ -21,9 +21,9 @@
   class="flex flex-row flex-wrap gap-1 p-1 border-2 rounded border-slate-100"
 >
   <h3 class="text-slate-100 font-bold text-center basis-full">Constructs</h3>
-  <div class="flex-grow flex flex-row justify-items-stretch">
+  <div class="flex-grow flex flex-row gap-1 justify-items-stretch">
     <div
-      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400"
+      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400 bg-zinc-600"
     >
       <img
         class="max-w-min aspect-square self-center mr-1"
@@ -39,7 +39,7 @@
           </div>
         </div>
         <div class="flex flex-col-reverse">
-          <div class="text-zinc-300 flex flex-col">
+          <div class="text-zinc-200 flex flex-col">
             <h5 class="font-bold">Produces:</h5>
             <span class="flex flex-row gap-1">
               <img
@@ -55,7 +55,7 @@
     </div>
     <!-- TODO: Swarm Overview appears when count > 0 -->
     <div
-      class="basis-3/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 text-zinc-300"
+      class="basis-3/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 bg-slate-500 text-zinc-50"
     >
       <img
         class="max-h-16 aspect-square self-center mr-1"
@@ -71,7 +71,7 @@
           </div>
         </div>
         <div class="flex flex-col-reverse">
-          <div class="text-zinc-300 flex flex-col">
+          <div class="flex flex-col">
             <h5 class="font-bold">Redirects:</h5>
             <span class="flex flex-row gap-1">
               <img
@@ -110,9 +110,9 @@
   </ConstructOverview>
   <GridBreaker open={circuitBreaker.tripped} />
   <Fabricator />
-  <div class="flex-grow flex flex-row justify-items-stretch">
+  <div class="flex-grow flex flex-row gap-1 justify-items-stretch">
     <div
-      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-orange-300 text-amber-300"
+      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-orange-300 bg-zinc-600 text-amber-300"
     >
       <img
         class="max-w-min aspect-square self-center mr-1"

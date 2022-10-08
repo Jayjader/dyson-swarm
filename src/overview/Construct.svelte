@@ -18,7 +18,7 @@
 </script>
 
 <div
-  class="basis-{basis} p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 text-zinc-300"
+  class="basis-{basis} p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 bg-slate-500 text-zinc-50"
 >
   <img
     class="self-center max-w-min aspect-square mr-1"
