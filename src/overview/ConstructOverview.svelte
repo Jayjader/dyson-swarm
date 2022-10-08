@@ -10,7 +10,7 @@
   import { launchCost } from "../actions";
   import Fabricator from "./Fabricator.svelte";
   import { kilogram, watt, wattsPerSquareMeter } from "../units";
-  import { energy, metal, ore, satellite } from "../icons";
+  import { energy, ICON, metal, ore, satellite } from "../icons";
 
   export let constructs = new Map();
   export let circuitBreaker: CircuitBreaker = { tripped: false };
@@ -20,33 +20,66 @@
   class="flex flex-row flex-wrap gap-1 p-1 border-2 rounded border-slate-100"
 >
   <h3 class="text-slate-100 font-bold text-center basis-full">Constructs</h3>
-  <div
-    class="basis-full p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400"
-  >
-    <img
-      class="max-w-min aspect-square self-center mr-1"
-      src="/star.png"
-      alt="Star"
-    />
-    <div class="basis-full flex flex-row flex-wrap justify-between">
-      <div class="flex flex-col justify-between">
-        <h4 class="basis-full font-bold">Star</h4>
-        <div class="flex flex-col">
-          <h5 class="font-bold">Mass:</h5>
-          <output>1.989e30 {kilogram}</output>
+  <div class="basis-1/3 flex-grow flex flex-row justify-items-stretch">
+    <div
+      class="flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400"
+    >
+      <img
+        class="max-w-min aspect-square self-center mr-1"
+        src="/star.png"
+        alt="Star"
+      />
+      <div class="basis-full flex flex-row flex-wrap justify-between">
+        <div class="flex flex-col justify-between">
+          <h4 class="basis-full font-bold">Star</h4>
+          <div class="flex flex-col">
+            <h5 class="font-bold">Mass:</h5>
+            <output>1.989e30 {kilogram}</output>
+          </div>
+        </div>
+        <div class="flex flex-col-reverse">
+          <div class="text-zinc-300 flex flex-col">
+            <h5 class="font-bold">Produces:</h5>
+            <span class="flex flex-row gap-1">
+              <img
+                class="self-center max-w-min h-4 aspect-square"
+                src={ICON["flux"]}
+                alt="Energy Flux"
+              />
+              <output>6.300e7 {@html wattsPerSquareMeter}</output>
+            </span>
+          </div>
         </div>
       </div>
-      <div class="flex flex-col-reverse">
-        <div class="text-zinc-300 flex flex-col">
-          <h5 class="font-bold">Produces:</h5>
-          <span class="flex flex-row gap-1">
-            <img
-              class="self-center max-w-min aspect-square"
-              src="https://via.placeholder.com/24.png"
-              alt="Energy Flux"
-            />
-            <output>6.300e7 {@html wattsPerSquareMeter}</output>
-          </span>
+    </div>
+    <div
+      class="basis-2/3 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 text-zinc-300"
+    >
+      <img
+        class="max-h-16 aspect-square self-center mr-1"
+        src="/satellite.svg"
+        alt="Satellite"
+      />
+      <div class="basis-full flex flex-row flex-wrap justify-between">
+        <div class="flex flex-col justify-between">
+          <h4 class="basis-full font-bold">Satellite</h4>
+          <div class="flex flex-col">
+            <h5 class="font-bold">Count:</h5>
+            <output>103</output>
+          </div>
+        </div>
+        <div class="flex flex-col-reverse">
+          <div class="text-zinc-300 flex flex-col">
+            <h5 class="font-bold">Redirects:</h5>
+            <span class="flex flex-row gap-1">
+              <img
+                class="self-center max-w-min h-4 aspect-square"
+                src={ICON["flux"]}
+                alt="Energy Flux"
+              />
+              <output>10 {@html wattsPerSquareMeter}</output>
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -59,7 +92,7 @@
         name: "energy-flux",
         value: "1-300",
         unit: wattsPerSquareMeter,
-        icon: "https://via.placeholder.com/28.png",
+        icon: ICON["flux"],
       },
     ]}
     produces={{
@@ -74,16 +107,14 @@
       <output>{constructs.get(Construct.SOLAR_COLLECTOR) ?? 0}</output>
     </div>
   </ConstructOverview>
-  <label>
+  <label
+    class={"basis-full border-8 rounded-xl flex flex-col justify-center items-stretch text-center " +
+      (circuitBreaker.tripped
+        ? "border-red-400 text-red-400"
+        : "border-sky-400 text-sky-400")}
+  >
     Circuit Breaker
-    <input
-      type="checkbox"
-      class={"justify-self-center border-2 rounded-xl p-2 mx-auto " +
-        (circuitBreaker.tripped
-          ? "border-red-400 text-red-400"
-          : "border-zinc-300 text-zinc-300")}
-      value={circuitBreaker.tripped}
-    />
+    <input type="checkbox" checked={circuitBreaker.tripped} />
   </label>
   <Fabricator />
   <ConstructOverview

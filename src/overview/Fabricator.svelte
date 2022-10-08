@@ -2,7 +2,7 @@
   import type { SingleBuildOrder } from "../types";
   import { constructionCosts } from "../actions";
   import { ICON } from "../icons";
-  import { unit } from "../units";
+  import { UNIT } from "../units";
   import { currentJob } from "../fabricator/store";
 
   let buildOrder: SingleBuildOrder | undefined;
@@ -14,7 +14,7 @@
         ([resource, amount]) => ({
           name: resource,
           value: amount,
-          unit: unit[resource],
+          unit: UNIT[resource],
           icon: ICON[resource],
         })
       );

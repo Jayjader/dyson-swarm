@@ -176,7 +176,7 @@
      - min width of column content
      https://css-tricks.com/an-auto-filling-css-grid-with-max-columns/
     */
-    --item-min-width: 16rem;
+    --item-min-width: 22rem;
     --max-columns: 3;
     --item-max-width: calc(
       (100% - ((var(--max-columns) - 1) * var(--gap))) /

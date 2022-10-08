@@ -3,10 +3,10 @@ import { derived, writable } from "svelte/store";
 import type { Input } from "./types";
 
 export enum Resource {
-  ELECTRICITY = "elec",
+  ELECTRICITY = "power",
   ORE = "ore",
   METAL = "metal",
-  PACKAGED_SATELLITE = "pkg_sat",
+  PACKAGED_SATELLITE = "satellite",
 }
 
 export type Resources = Record<Resource, number>;

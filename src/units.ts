@@ -4,7 +4,7 @@ export const wattsPerSquareMeter = "W/m<sup>2</sup>";
 export const kilogram = "kg";
 export const watt = "W";
 
-export const unit = {
+export const UNIT = {
   [Resource.ELECTRICITY]: watt,
   [Resource.ORE]: kilogram,
   [Resource.METAL]: kilogram,

@@ -1,5 +1,6 @@
 import { Construct, Resource } from "./gameStateStore";
 
+export const flux = "/flux.svg";
 export const energy = "/electric.svg";
 export const ore = "/ore.svg";
 export const metal = "/metal-bar.svg";
@@ -12,6 +13,7 @@ export const factory = "/satellite factory.png";
 export const launcher = "/satellite launcher.png";
 
 export const ICON = {
+  flux: flux,
   [Resource.ELECTRICITY]: energy,
   [Resource.ORE]: ore,
   [Resource.METAL]: metal,
