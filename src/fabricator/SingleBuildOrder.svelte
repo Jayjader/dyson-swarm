@@ -15,7 +15,11 @@
       {/each}
     </ol>
   {:else}
-    <img src={ICON[buildOrder.building]} alt={buildOrder.building} />
+    <img
+      src={ICON[buildOrder.building]}
+      alt={buildOrder.building}
+      title={buildOrder.building}
+    />
     <span class="mx-auto">{buildOrder.building}</span>
   {/if}
 </span>

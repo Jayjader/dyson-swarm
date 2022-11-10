@@ -24,6 +24,7 @@
     class="self-center max-w-min aspect-square mr-1"
     src="/{name}.png"
     alt={name}
+    title={name}
   />
   <div class="flex-1 flex flex-row flex-wrap justify-between gap-1">
     <div class="flex flex-col gap-1 justify-between">
@@ -34,13 +35,14 @@
       <div class="flex flex-col">
         <h5 class="font-bold">Consumes:</h5>
         <span class="flex flex-row gap-1">
-          {#each consumes as { name, value, unit, icon } (name)}
+          {#each consumes as c (c.name)}
             <img
-              class="self-center max-w-min h-4 aspect-square"
-              src={icon}
-              alt={name}
+              class="ml-2 mr-1 self-center max-w-min h-4 aspect-square"
+              src={c.icon}
+              alt={c.name}
+              title={c.name}
             />
-            <output>{value} {@html unit}</output>
+            <output>{c.value} {@html c.unit}</output>
           {/each}
         </span>
       </div>
@@ -48,9 +50,10 @@
         <h5 class="font-bold">Produces:</h5>
         <span class="flex flex-row gap-1">
           <img
-            class="self-center max-w-min h-4 aspect-square"
+            class="ml-2 mr-1 self-center max-w-min h-4 aspect-square"
             src={produces.icon}
             alt={produces.name}
+            title={produces.name}
           />
           <output>{produces.value} {@html produces.unit}</output>
         </span>

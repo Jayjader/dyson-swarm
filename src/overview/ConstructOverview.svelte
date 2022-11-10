@@ -29,6 +29,7 @@
         class="max-w-min aspect-square self-center mr-1"
         src={ICON["star"]}
         alt="Star"
+        title="star"
       />
       <div class="basis-full flex flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
@@ -46,6 +47,7 @@
                 class="self-center max-w-min h-4 aspect-square"
                 src={ICON["flux"]}
                 alt="Energy Flux"
+                title="energy flux"
               />
               <output>6.300e7 {@html wattsPerSquareMeter}</output>
             </span>
@@ -61,6 +63,7 @@
         class="max-h-16 aspect-square self-center mr-1"
         src="/satellite.svg"
         alt="Satellite"
+        title="satellite"
       />
       <div class="basis-full flex flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
@@ -78,6 +81,7 @@
                 class="self-center max-w-min h-4 aspect-square"
                 src={ICON["flux"]}
                 alt="Energy Flux"
+                title="energy flux"
               />
               <output>10 {@html wattsPerSquareMeter}</output>
             </span>

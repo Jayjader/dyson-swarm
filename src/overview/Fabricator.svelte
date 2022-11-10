@@ -43,6 +43,7 @@
               class="self-center max-w-min h-4 aspect-square"
               src={icon}
               alt={name}
+              title={name}
             />
             <output>{value} {@html unit}</output>
           {/each}
