@@ -1,11 +1,13 @@
-import type { Id, Processor } from "./processing";
 import {
   clockProcess,
   collectorProcess,
   createClock,
   createMemoryStream,
+  type Id,
   memoryStreamProcess,
+  planetProcess,
   processMiner,
+  type Processor,
   processPowerGrid,
   starProcess,
 } from "./processing";
@@ -35,6 +37,7 @@ export const SUBSCRIPTIONS = {
     "draw-power",
     "supply-power",
     "mine-planet-surface",
+    "supply-ore",
   ] as const),
   clock: new Set([
     "outside-clock-tick",
@@ -44,7 +47,7 @@ export const SUBSCRIPTIONS = {
     "command-simulation-clock-indirect-resume",
   ] as const),
   star: new Set(["simulation-clock-tick"] as const),
-  planet: new Set([] as const),
+  planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
   collector: new Set(["star-flux-emission", "simulation-clock-tick"] as const),
   "power grid": new Set([
     "collector-power-production",
@@ -97,7 +100,7 @@ function process(p: Processor): [Processor, Event[]] {
     case "star":
       return starProcess(p);
     case "planet":
-      return [p, []];
+      return planetProcess(p);
     case "collector":
       return collectorProcess(p);
     case "power grid":

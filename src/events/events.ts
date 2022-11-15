@@ -15,7 +15,8 @@ export type Event =
   | { tag: "collector-power-production"; power: number; receivedTick: number }
   | { tag: "draw-power"; power: number; forId: Id; receivedTick: number }
   | { tag: "supply-power"; power: number; toId: Id; receivedTick: number }
-  | { tag: "mine-planet-surface"; receivedTick: number };
+  | { tag: "mine-planet-surface"; receivedTick: number }
+  | { tag: "supply-ore"; ore: number; receivedTick: number };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags

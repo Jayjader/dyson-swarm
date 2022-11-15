@@ -4,6 +4,7 @@ import {
   createCollector,
   createMemoryStream,
   createMiner,
+  createPlanet,
   createPowerGrid,
   createStar,
 } from "./processing";
@@ -16,7 +17,7 @@ import {
   processUntilSettled,
 } from "./index";
 import type { Event as BusEvent, Events } from "./events";
-import { Resource, tickConsumption } from "../gameStateStore";
+import { Resource, tickConsumption, tickProduction } from "../gameStateStore";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -440,6 +441,30 @@ describe("event bus", () => {
     expect(stream.data.received).toContainEqual({
       tag: "mine-planet-surface",
       receivedTick: 5,
+    });
+  });
+
+  test("planet should supply ore when mined", () => {
+    let simulation = loadSave(blankSave());
+    const planet = createPlanet();
+    insertProcessor(simulation, planet);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: "mine-planet-surface",
+          receivedTick: 2,
+        }),
+        { tag: "simulation-clock-tick", tick: 2 }
+      )
+    );
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "supply-ore",
+      ore: tickProduction.miner.get(Resource.ORE),
+      receivedTick: 3,
     });
   });
 });
