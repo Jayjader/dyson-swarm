@@ -1,3 +1,5 @@
+import type { Id } from "./processing";
+
 export type Event =
   | { tag: "outside-clock-tick"; timeStamp: DOMHighResTimeStamp }
   | { tag: "simulation-clock-tick"; tick: number }
@@ -9,7 +11,12 @@ export type Event =
   | { tag: "simulation-clock-indirect-pause" }
   | { tag: "command-simulation-clock-indirect-resume" }
   | { tag: "simulation-clock-indirect-resume" }
-  | { tag: "star-flux-emission"; flux: number; tick: number }
-  | { tag: "collector-power-production"; power: number; tick: number };
+  | { tag: "star-flux-emission"; flux: number; receivedTick: number }
+  | { tag: "collector-power-production"; power: number; receivedTick: number }
+  | { tag: "draw-power"; power: number; forId: Id; receivedTick: number }
+  | { tag: "supply-power"; power: number; toId: Id; receivedTick: number }
+  | { tag: "mine-planet-surface"; receivedTick: number };
 export type EventTag = Event["tag"];
+
+// helper type to extract a subset of possible events based on just their tags
 export type Events<Tags extends EventTag> = Event & { tag: Tags };

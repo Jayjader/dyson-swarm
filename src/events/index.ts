@@ -5,6 +5,7 @@ import {
   createClock,
   createMemoryStream,
   memoryStreamProcess,
+  processMiner,
   processPowerGrid,
   starProcess,
 } from "./processing";
@@ -31,6 +32,9 @@ export const SUBSCRIPTIONS = {
     "simulation-clock-indirect-resume",
     "star-flux-emission",
     "collector-power-production",
+    "draw-power",
+    "supply-power",
+    "mine-planet-surface",
   ] as const),
   clock: new Set([
     "outside-clock-tick",
@@ -45,7 +49,9 @@ export const SUBSCRIPTIONS = {
   "power grid": new Set([
     "collector-power-production",
     "simulation-clock-tick",
+    "draw-power",
   ] as const),
+  miner: new Set(["simulation-clock-tick", "supply-power"] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
   ProcessorTag extends keyof typeof SUBSCRIPTIONS
@@ -96,6 +102,8 @@ function process(p: Processor): [Processor, Event[]] {
       return collectorProcess(p);
     case "power grid":
       return processPowerGrid(p);
+    case "miner":
+      return processMiner(p);
   }
   console.error({
     command: "process",

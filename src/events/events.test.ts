@@ -3,6 +3,7 @@ import {
   createClock,
   createCollector,
   createMemoryStream,
+  createMiner,
   createPowerGrid,
   createStar,
 } from "./processing";
@@ -15,6 +16,7 @@ import {
   processUntilSettled,
 } from "./index";
 import type { Event as BusEvent, Events } from "./events";
+import { Resource, tickConsumption } from "../gameStateStore";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -265,7 +267,7 @@ describe("event bus", () => {
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toEqual([
       { tag: "simulation-clock-tick", tick: 1 },
-      expect.objectContaining({ tag: "star-flux-emission", tick: 1 }),
+      expect.objectContaining({ tag: "star-flux-emission", receivedTick: 2 }),
     ]);
   });
 
@@ -275,7 +277,7 @@ describe("event bus", () => {
     insertProcessor(simulation, createCollector());
     (
       [
-        { tag: "star-flux-emission", flux: 1, tick: 1 },
+        { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
         { tag: "simulation-clock-tick", tick: 2 },
       ] as BusEvent[]
     ).forEach((event) => {
@@ -284,9 +286,9 @@ describe("event bus", () => {
     expect(
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toEqual([
-      { tag: "star-flux-emission", flux: 1, tick: 1 },
+      { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
       { tag: "simulation-clock-tick", tick: 2 },
-      { tag: "collector-power-production", power: 1, tick: 2 },
+      { tag: "collector-power-production", power: 1, receivedTick: 3 },
     ]);
   });
   test("collector and star over time", () => {
@@ -306,11 +308,11 @@ describe("event bus", () => {
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toEqual([
       { tag: "simulation-clock-tick", tick: 1 },
-      { tag: "star-flux-emission", flux: 1, tick: 1 },
-      { tag: "collector-power-production", power: 0, tick: 1 }, // no flux received during previous tick
+      { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
+      { tag: "collector-power-production", power: 0, receivedTick: 2 }, // no flux received during previous tick
       { tag: "simulation-clock-tick", tick: 2 },
-      { tag: "star-flux-emission", flux: 1, tick: 2 },
-      { tag: "collector-power-production", power: 1, tick: 2 },
+      { tag: "star-flux-emission", flux: 1, receivedTick: 3 },
+      { tag: "collector-power-production", power: 1, receivedTick: 3 },
     ]);
   });
   test("grid should receive power production after 3 ticks", () => {
@@ -334,5 +336,110 @@ describe("event bus", () => {
       (p): p is Processor & { tag: `power grid` } => p.id === "power grid-0"
     )!;
     expect(processor.data.stored).toEqual(1);
+  });
+
+  test("grid should supply power when drawn", () => {
+    let simulation = loadSave(blankSave());
+    const powergrid = createPowerGrid();
+    powergrid.data.stored = 10;
+    insertProcessor(simulation, powergrid);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: "draw-power",
+          power: 1,
+          forId: "miner-1",
+          receivedTick: 2,
+        }),
+        { tag: "simulation-clock-tick", tick: 2 }
+      )
+    );
+
+    const processor = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `power grid` } => p.id === "power grid-0"
+    )!;
+    expect(processor.data.stored).toEqual(9);
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "supply-power",
+      power: 1,
+      receivedTick: 3,
+      toId: "miner-1",
+    });
+  });
+
+  test("miner should draw power on sim clock tick when working", () => {
+    let simulation = loadSave(blankSave());
+    const miner = createMiner();
+    insertProcessor(simulation, miner);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 1 })
+    );
+
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "draw-power",
+      power: tickConsumption.miner.get(Resource.ELECTRICITY),
+      forId: miner.id,
+      receivedTick: 2,
+    });
+  });
+  test("miner should mine planet when supplied with power", () => {
+    let simulation = loadSave(blankSave());
+    const miner = createMiner();
+    insertProcessor(simulation, miner);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: "supply-power",
+          power: tickConsumption.miner.get(Resource.ELECTRICITY)!,
+          toId: miner.id,
+          receivedTick: 4,
+        }),
+        { tag: "simulation-clock-tick", tick: 4 }
+      )
+    );
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "mine-planet-surface",
+      receivedTick: 5,
+    });
+  });
+  test("miner integration", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createStar());
+    insertProcessor(simulation, createCollector("collector-0"));
+    insertProcessor(simulation, createCollector("collector-1"));
+    insertProcessor(simulation, createCollector("collector-2"));
+    insertProcessor(simulation, createPowerGrid());
+    insertProcessor(simulation, createMiner());
+
+    (
+      [
+        { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
+        { tag: "simulation-clock-tick", tick: 2 }, // collectors produce power from collected flux
+        { tag: "simulation-clock-tick", tick: 3 }, // grid stores power received & grid supplies power to miner
+        { tag: "simulation-clock-tick", tick: 4 }, // miner mines planet
+      ] as BusEvent[]
+    ).forEach((event) => {
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+    });
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "mine-planet-surface",
+      receivedTick: 5,
+    });
   });
 });

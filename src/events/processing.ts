@@ -1,7 +1,3 @@
-import type { BuildOrder, SingleBuildOrder } from "../types";
-import type { Resource } from "../gameStateStore";
-import type { Clock as ClockState } from "../time/store";
-import { getPrimitive, isIndirectPause, isPause, isPlay } from "../time/store";
 import type { SubscriptionsFor } from "./index";
 import {
   blankSave,
@@ -11,6 +7,10 @@ import {
   SUBSCRIPTIONS,
 } from "./index";
 import type { Event, Events } from "./events";
+import type { BuildOrder, SingleBuildOrder } from "../types";
+import type { Clock as ClockState } from "../time/store";
+import { getPrimitive, isIndirectPause, isPause, isPlay } from "../time/store";
+import { Resource, tickConsumption } from "../gameStateStore";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -54,13 +54,22 @@ type Collector = EventProcessor<
     >[];
   }
 >;
-export type PowerGrid = EventProcessor<
+type PowerGrid = EventProcessor<
   "power grid",
   {
     stored: number;
     breakerTripped: boolean;
     received: Events<
       Exclude<SubscriptionsFor<"power grid">, "simulation-clock-tick">
+    >[];
+  }
+>;
+type Miner = EventProcessor<
+  "miner",
+  {
+    working: boolean;
+    received: Events<
+      Exclude<SubscriptionsFor<"miner">, "simulation-clock-tick">
     >[];
   }
 >;
@@ -71,7 +80,8 @@ export type Processor =
   | Star
   | Planet
   | Collector
-  | PowerGrid;
+  | PowerGrid
+  | Miner;
 export type Id = Processor["id"];
 
 export function createMemoryStream(
@@ -191,7 +201,7 @@ export function starProcess(star: Star): [Star, Event[]] {
         emitted.push({
           tag: "star-flux-emission",
           flux: 1,
-          tick: event.tick,
+          receivedTick: event.tick + 1,
         });
         break;
     }
@@ -223,7 +233,7 @@ export function collectorProcess(c: Collector): [Collector, Event[]] {
         emitted.push({
           tag: "collector-power-production",
           power: produced,
-          tick: event.tick,
+          receivedTick: event.tick + 1,
         });
         break;
     }
@@ -251,19 +261,82 @@ export function processPowerGrid(grid: PowerGrid): [PowerGrid, Event[]] {
   while ((event = grid.incoming.shift())) {
     switch (event.tag) {
       case "collector-power-production":
+      case "draw-power":
         grid.data.received.push(event);
         break;
       case "simulation-clock-tick":
-        grid.data.stored += grid.data.received.reduce(
+        const [produced, toSupply] = grid.data.received.reduce(
+          (accu, next) =>
+            next.tag === "collector-power-production"
+              ? [accu[0] + next.power, accu[1]]
+              : [accu[0], accu[1].add(next)],
+          [0, new Set<Events<"draw-power">>()]
+        );
+        grid.data.stored += produced;
+        const totalRequestedSupply = Array.from(toSupply).reduce(
           (accu, next) => accu + next.power,
           0
         );
+        if (grid.data.stored >= totalRequestedSupply) {
+          grid.data.stored -= totalRequestedSupply;
+          for (let drawRequest of toSupply) {
+            emitted.push({
+              tag: "supply-power",
+              power: drawRequest.power,
+              receivedTick: event.tick + 1,
+              toId: drawRequest.forId,
+            });
+          }
+        }
         grid.data.received = [];
-        emitted.push();
         break;
     }
   }
   return [grid, emitted];
+}
+
+export function createMiner(id: Miner["id"] = "miner-0"): Miner {
+  return {
+    id,
+    tag: "miner",
+    incoming: [],
+    data: {
+      working: true,
+      received: [],
+    },
+  };
+}
+export function processMiner(miner: Miner): [Miner, Event[]] {
+  let event;
+  const emitted = [] as Event[];
+  while ((event = miner.incoming.shift())) {
+    switch (event.tag) {
+      case "supply-power":
+        if (event.toId === miner.id) {
+          miner.data.received.push(event);
+        }
+        break;
+      case "simulation-clock-tick":
+        emitted.push({
+          tag: "draw-power",
+          power: tickConsumption.miner.get(Resource.ELECTRICITY)!,
+          forId: miner.id,
+          receivedTick: event.tick + 1,
+        });
+        // spend all the power we were supplied on mining (if excess, waste it)
+        const supplied = miner.data.received.reduce(
+          (sum, e) => sum + e.power,
+          0
+        );
+        if (supplied > 0) {
+          emitted.push({
+            tag: "mine-planet-surface",
+            receivedTick: event.tick + 1,
+          });
+        }
+    }
+  }
+  return [miner, emitted];
 }
 
 /* ================================= */
@@ -300,7 +373,6 @@ type Fabricator = {
   job: SingleBuildOrder;
   queue: BuildOrder[];
 } & Processor;
-type Miner = { tag: "miner"; working: boolean } & Processor;
 type Refiner = { tag: "refiner"; working: boolean } & Processor;
 type Factory = { tag: "factory"; working: boolean } & Processor;
 type Launcher = { tag: "launcher"; working: boolean } & Processor;
