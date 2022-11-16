@@ -1,4 +1,5 @@
 import type { Id } from "./processing";
+import type { Resource } from "../gameStateStore";
 
 export type Event =
   | { tag: "outside-clock-tick"; timeStamp: DOMHighResTimeStamp }
@@ -16,7 +17,11 @@ export type Event =
   | { tag: "draw-power"; power: number; forId: Id; receivedTick: number }
   | { tag: "supply-power"; power: number; toId: Id; receivedTick: number }
   | { tag: "mine-planet-surface"; receivedTick: number }
-  | { tag: "supply-ore"; ore: number; receivedTick: number };
+  | {
+      tag: `produce-${Exclude<Resource, Resource.ELECTRICITY>}`;
+      amount: number;
+      receivedTick: number;
+    };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags

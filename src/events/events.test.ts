@@ -7,6 +7,7 @@ import {
   createPlanet,
   createPowerGrid,
   createStar,
+  createStorage,
 } from "./processing";
 import type { SubscriptionsFor } from "./index";
 import {
@@ -462,9 +463,36 @@ describe("event bus", () => {
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
     expect(stream.data.received).toContainEqual({
-      tag: "supply-ore",
-      ore: tickProduction.miner.get(Resource.ORE),
+      tag: "produce-ore",
+      amount: tickProduction.miner.get(Resource.ORE),
       receivedTick: 3,
     });
+  });
+
+  test.each<Exclude<Resource, Resource.ELECTRICITY>[]>([
+    [Resource.ORE],
+    [Resource.METAL],
+    [Resource.PACKAGED_SATELLITE],
+  ])("%p storage should store what is produced", (resource) => {
+    let simulation = loadSave(blankSave());
+    const storage = createStorage(resource);
+    insertProcessor(simulation, storage);
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: `produce-${resource}`,
+          amount: 1,
+          receivedTick: 2,
+        }),
+        { tag: "simulation-clock-tick", tick: 2 }
+      )
+    );
+    expect(
+      (
+        simulation.processors.get(storage.id)! as Processor & {
+          tag: `storage-${typeof resource}`;
+        }
+      ).data.stored
+    ).toEqual(1);
   });
 });

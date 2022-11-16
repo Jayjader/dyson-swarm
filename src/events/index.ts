@@ -5,13 +5,17 @@ import {
   createMemoryStream,
   type Id,
   memoryStreamProcess,
+  metalStorageProcess,
+  oreStorageProcess,
   planetProcess,
   processMiner,
   type Processor,
   processPowerGrid,
+  satelliteStorageProcess,
   starProcess,
 } from "./processing";
 import type { Event, EventTag } from "./events";
+import { Resource } from "../gameStateStore";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -37,7 +41,7 @@ export const SUBSCRIPTIONS = {
     "draw-power",
     "supply-power",
     "mine-planet-surface",
-    "supply-ore",
+    "produce-ore",
   ] as const),
   clock: new Set([
     "outside-clock-tick",
@@ -55,6 +59,18 @@ export const SUBSCRIPTIONS = {
     "draw-power",
   ] as const),
   miner: new Set(["simulation-clock-tick", "supply-power"] as const),
+  [`storage-${Resource.ORE}`]: new Set([
+    "simulation-clock-tick",
+    `produce-${Resource.ORE}`,
+  ] as const),
+  [`storage-${Resource.METAL}`]: new Set([
+    "simulation-clock-tick",
+    `produce-${Resource.METAL}`,
+  ] as const),
+  [`storage-${Resource.PACKAGED_SATELLITE}`]: new Set([
+    "simulation-clock-tick",
+    `produce-${Resource.PACKAGED_SATELLITE}`,
+  ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
   ProcessorTag extends keyof typeof SUBSCRIPTIONS
@@ -105,6 +121,12 @@ function process(p: Processor): [Processor, Event[]] {
       return collectorProcess(p);
     case "power grid":
       return processPowerGrid(p);
+    case "storage-ore":
+      return oreStorageProcess(p);
+    case "storage-metal":
+      return metalStorageProcess(p);
+    case "storage-satellite":
+      return satelliteStorageProcess(p);
     case "miner":
       return processMiner(p);
   }

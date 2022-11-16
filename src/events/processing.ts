@@ -72,6 +72,15 @@ type PowerGrid = EventProcessor<
     >[];
   }
 >;
+type Storage<R extends string> = EventProcessor<
+  `storage-${R}`,
+  {
+    stored: number;
+    received: Events<
+      Exclude<SubscriptionsFor<`storage-${R}`>, "simulation-clock-tick">
+    >[];
+  }
+>;
 type Miner = EventProcessor<
   "miner",
   {
@@ -89,7 +98,8 @@ export type Processor =
   | Planet
   | Collector
   | PowerGrid
-  | Miner;
+  | Miner
+  | Storage<Exclude<Resource, Resource.ELECTRICITY>>;
 export type Id = Processor["id"];
 
 export function createMemoryStream(
@@ -370,8 +380,8 @@ export function planetProcess(planet: Planet): [Planet, Event[]] {
         if (totalOreMined > 0) {
           planet.data.mass -= totalOreMined;
           emitted.push({
-            tag: "supply-ore",
-            ore: totalOreMined,
+            tag: "produce-ore",
+            amount: totalOreMined,
             receivedTick: event.tick + 1,
           });
         }
@@ -379,6 +389,83 @@ export function planetProcess(planet: Planet): [Planet, Event[]] {
     }
   }
   return [planet, emitted];
+}
+
+export function createStorage<R extends Exclude<Resource, Resource.ELECTRICITY>>(
+  resource: R,
+  customId?: Storage<R>["id"]
+): Storage<R> {
+  const tag = `storage-${resource}`;
+  const id = customId ?? `${tag}-0`;
+  return {
+    id,
+    tag,
+    incoming: [],
+    data: { stored: 0, received: [] },
+  } as unknown as Storage<R>;
+}
+export function oreStorageProcess(
+  storage: Storage<Resource.ORE>
+): [Storage<Resource.ORE>, Event[]] {
+  let event;
+  const emitted = [] as Event[];
+  while ((event = storage.incoming.shift())) {
+    switch (event.tag) {
+      case "produce-ore":
+        storage.data.received.push(event);
+        break;
+      case "simulation-clock-tick":
+        const totalOreReceived = storage.data.received.reduce(
+          (sum, e) => sum + (e as Events<"produce-ore">).amount,
+          0
+        );
+        storage.data.stored += totalOreReceived;
+        storage.data.received = [];
+    }
+  }
+  return [storage, emitted];
+}
+export function metalStorageProcess(
+    storage: Storage<Resource.METAL>
+): [Storage<Resource.METAL>, Event[]] {
+  let event;
+  const emitted = [] as Event[];
+  while ((event = storage.incoming.shift())) {
+    switch (event.tag) {
+      case "produce-metal":
+        storage.data.received.push(event);
+        break;
+      case "simulation-clock-tick":
+        const totalMetalReceived = storage.data.received.reduce(
+            (sum, e) => sum + (e as Events<"produce-metal">).amount,
+            0
+        );
+        storage.data.stored += totalMetalReceived;
+        storage.data.received = [];
+    }
+  }
+  return [storage, emitted];
+}
+export function satelliteStorageProcess(
+    storage: Storage<Resource.PACKAGED_SATELLITE>
+): [Storage<Resource.PACKAGED_SATELLITE>, Event[]] {
+  let event;
+  const emitted = [] as Event[];
+  while ((event = storage.incoming.shift())) {
+    switch (event.tag) {
+      case "produce-satellite":
+        storage.data.received.push(event);
+        break;
+      case "simulation-clock-tick":
+        const totalSatellitesReceived = storage.data.received.reduce(
+            (sum, e) => sum + (e as Events<"produce-satellite">).amount,
+            0
+        );
+        storage.data.stored += totalSatellitesReceived;
+        storage.data.received = [];
+    }
+  }
+  return [storage, emitted];
 }
 
 /* ================================= */
@@ -404,11 +491,6 @@ function App() {
 /* ================================= */
 
 type Satellite = { tag: "satellite"; launched: boolean } & Processor;
-type Storage<R extends Resource> = {
-  tag: "storage";
-  stored: number;
-  resource: R;
-};
 type Fabricator = {
   tag: "fabricator";
   working: boolean;
