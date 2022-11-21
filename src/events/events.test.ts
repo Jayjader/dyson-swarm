@@ -1,14 +1,5 @@
-import type { EventStream, Processor } from "./processing";
-import {
-  createClock,
-  createCollector,
-  createMemoryStream,
-  createMiner,
-  createPlanet,
-  createPowerGrid,
-  createStar,
-  createStorage,
-} from "./processing";
+import type { EventStream, Id, Processor } from "./processes";
+import { createMemoryStream } from "./processes";
 import type { SubscriptionsFor } from "./index";
 import {
   blankSave,
@@ -19,6 +10,14 @@ import {
 } from "./index";
 import type { Event as BusEvent, Events } from "./events";
 import { Resource, tickConsumption, tickProduction } from "../gameStateStore";
+import { createStorage } from "./processes/storage";
+import { createClock } from "./processes/clock";
+import { createPowerGrid } from "./processes/powerGrid";
+import { createMiner } from "./processes/miner";
+import { createPlanet } from "./processes/planet";
+import { createRefiner } from "./processes/refiner";
+import { createStar } from "./processes/star";
+import { createCollector } from "./processes/collector";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -290,7 +289,12 @@ describe("event bus", () => {
     ).toEqual([
       { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
       { tag: "simulation-clock-tick", tick: 2 },
-      { tag: "collector-power-production", power: 1, receivedTick: 3 },
+      {
+        tag: "produce",
+        resource: Resource.ELECTRICITY,
+        amount: 1,
+        receivedTick: 3,
+      },
     ]);
   });
   test("collector and star over time", () => {
@@ -311,10 +315,20 @@ describe("event bus", () => {
     ).toEqual([
       { tag: "simulation-clock-tick", tick: 1 },
       { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
-      { tag: "collector-power-production", power: 0, receivedTick: 2 }, // no flux received during previous tick
+      {
+        tag: "produce",
+        resource: Resource.ELECTRICITY,
+        amount: 0, // no flux received during previous tick
+        receivedTick: 2,
+      },
       { tag: "simulation-clock-tick", tick: 2 },
       { tag: "star-flux-emission", flux: 1, receivedTick: 3 },
-      { tag: "collector-power-production", power: 1, receivedTick: 3 },
+      {
+        tag: "produce",
+        resource: Resource.ELECTRICITY,
+        amount: 1,
+        receivedTick: 3,
+      },
     ]);
   });
   test("grid should receive power production after 3 ticks", () => {
@@ -349,8 +363,9 @@ describe("event bus", () => {
     simulation = processUntilSettled(
       broadcastEvent(
         broadcastEvent(simulation, {
-          tag: "draw-power",
-          power: 1,
+          tag: "draw",
+          resource: Resource.ELECTRICITY,
+          amount: 1,
           forId: "miner-1",
           receivedTick: 2,
         }),
@@ -366,8 +381,9 @@ describe("event bus", () => {
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
     expect(stream.data.received).toContainEqual({
-      tag: "supply-power",
-      power: 1,
+      tag: "supply",
+      resource: Resource.ELECTRICITY,
+      amount: 1,
       receivedTick: 3,
       toId: "miner-1",
     });
@@ -386,8 +402,9 @@ describe("event bus", () => {
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
     expect(stream.data.received).toContainEqual({
-      tag: "draw-power",
-      power: tickConsumption.miner.get(Resource.ELECTRICITY),
+      tag: "draw",
+      resource: Resource.ELECTRICITY,
+      amount: tickConsumption.miner.get(Resource.ELECTRICITY),
       forId: miner.id,
       receivedTick: 2,
     });
@@ -400,8 +417,9 @@ describe("event bus", () => {
     simulation = processUntilSettled(
       broadcastEvent(
         broadcastEvent(simulation, {
-          tag: "supply-power",
-          power: tickConsumption.miner.get(Resource.ELECTRICITY)!,
+          tag: "supply",
+          resource: Resource.ELECTRICITY,
+          amount: tickConsumption.miner.get(Resource.ELECTRICITY)!,
           toId: miner.id,
           receivedTick: 4,
         }),
@@ -445,7 +463,7 @@ describe("event bus", () => {
     });
   });
 
-  test("planet should supply ore when mined", () => {
+  test("planet should produce ore when mined", () => {
     let simulation = loadSave(blankSave());
     const planet = createPlanet();
     insertProcessor(simulation, planet);
@@ -463,7 +481,8 @@ describe("event bus", () => {
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
     expect(stream.data.received).toContainEqual({
-      tag: "produce-ore",
+      tag: "produce",
+      resource: Resource.ORE,
       amount: tickProduction.miner.get(Resource.ORE),
       receivedTick: 3,
     });
@@ -480,7 +499,8 @@ describe("event bus", () => {
     simulation = processUntilSettled(
       broadcastEvent(
         broadcastEvent(simulation, {
-          tag: `produce-${resource}`,
+          tag: "produce",
+          resource,
           amount: 1,
           receivedTick: 2,
         }),
@@ -494,5 +514,151 @@ describe("event bus", () => {
         }
       ).data.stored
     ).toEqual(1);
+  });
+
+  test.each<Exclude<Resource, Resource.ELECTRICITY>[]>([
+    [Resource.ORE],
+    [Resource.METAL],
+    [Resource.PACKAGED_SATELLITE],
+  ])("%p storage should supply when drawn from", (resource) => {
+    let simulation = loadSave(blankSave());
+    const storage = createStorage(resource);
+    storage.data.stored += 20;
+    insertProcessor(simulation, storage);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: "draw",
+          resource,
+          amount: 1,
+          forId: "random-id" as Id,
+          receivedTick: 2,
+        }),
+        { tag: "simulation-clock-tick", tick: 2 }
+      )
+    );
+    expect(
+      (
+        simulation.processors.get("stream-0") as Processor & {
+          tag: `stream`;
+        }
+      ).data.received
+    ).toContainEqual({
+      tag: "supply",
+      resource,
+      amount: 1,
+      toId: "random-id" as Id,
+      receivedTick: 3,
+    });
+    expect(
+      (
+        simulation.processors.get(storage.id)! as Processor & {
+          tag: `storage-${typeof resource}`;
+        }
+      ).data.stored
+    ).toEqual(19);
+  });
+
+  test("refiner should draw power and ore on sim clock tick when working", () => {
+    let simulation = loadSave(blankSave());
+    const refiner = createRefiner("refiner-0", true);
+    insertProcessor(simulation, refiner);
+    insertProcessor(simulation, createMemoryStream());
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 1 })
+    );
+
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "draw",
+      resource: Resource.ELECTRICITY,
+      amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+      forId: refiner.id,
+      receivedTick: 2,
+    });
+    expect(stream.data.received).toContainEqual({
+      tag: "draw",
+      resource: Resource.ORE,
+      amount: tickConsumption.refinery.get(Resource.ORE)!,
+      forId: refiner.id,
+      receivedTick: 2,
+    });
+  });
+  test("refiner should refine ore into metal when supplied with power (and ore)", () => {
+    let simulation = loadSave(blankSave());
+    const refiner = createRefiner("refiner-0", true);
+    insertProcessor(simulation, refiner);
+    insertProcessor(simulation, createMemoryStream());
+    (
+      [
+        {
+          tag: "supply",
+          resource: Resource.ELECTRICITY,
+          amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+          toId: refiner.id,
+          receivedTick: 15,
+        },
+        {
+          tag: "supply",
+          resource: Resource.ORE,
+          amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+          toId: refiner.id,
+          receivedTick: 15,
+        },
+        { tag: "simulation-clock-tick", tick: 15 },
+      ] as const
+    ).forEach((event) => {
+      simulation = broadcastEvent(simulation, event);
+    });
+    simulation = processUntilSettled(simulation);
+
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "produce",
+      resource: Resource.METAL,
+      amount: tickProduction.refinery.get(Resource.METAL),
+      receivedTick: 16,
+    });
+  });
+  test("refiner integration", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createPlanet());
+    const powerGrid = createPowerGrid();
+    powerGrid.data.stored +=
+      10 * tickConsumption.miner.get(Resource.ELECTRICITY)! +
+      10 * tickConsumption.refinery.get(Resource.ELECTRICITY)!;
+    insertProcessor(simulation, powerGrid);
+    insertProcessor(simulation, createMiner("miner-0"));
+    insertProcessor(simulation, createMiner("miner-1"));
+    insertProcessor(simulation, createMiner("miner-2"));
+    insertProcessor(simulation, createStorage(Resource.ORE));
+    insertProcessor(simulation, createRefiner());
+    (
+      [
+        { tag: "simulation-clock-tick", tick: 1 }, // to make constructs draw power
+        { tag: "simulation-clock-tick", tick: 2 }, // to make grid supply power
+        { tag: "simulation-clock-tick", tick: 3 }, // to make miners mine (ie receive power)
+        { tag: "simulation-clock-tick", tick: 4 }, // to make planet produce ore from being mined
+        { tag: "simulation-clock-tick", tick: 5 }, // to make storage store ore received & supply ore to refiner
+        { tag: "simulation-clock-tick", tick: 6 }, // to make refiner produce metal (ie receive power & ore)
+      ] as BusEvent[]
+    ).forEach((event) => {
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+    });
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "produce",
+      resource: Resource.METAL,
+      amount: tickProduction.refinery.get(Resource.METAL),
+      receivedTick: 7,
+    });
   });
 });

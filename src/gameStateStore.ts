@@ -38,7 +38,6 @@ export const __PRODUCERS = [
   Construct.MINER,
   Construct.REFINERY,
   Construct.SATELLITE_FACTORY,
-  Construct.SATELLITE_LAUNCHER,
   Construct.SOLAR_COLLECTOR,
 ] as const;
 export type Producer = typeof __PRODUCERS[number];
@@ -68,32 +67,29 @@ export type GameState = {
 
 export type GameAction = (state: GameState) => GameState;
 
-export type Consumption = Record<Consumer, Input>;
-export type Production = Record<Producer, Map<Output, number>>;
-export const tickConsumption: Consumption = {
+export const tickConsumption = {
   launcher: new Map([
-    [Resource.ELECTRICITY, 1.4 * 10 ** 3],
-    [Resource.PACKAGED_SATELLITE, 1],
+    [Resource.ELECTRICITY, 1.4 * 10 ** 3] as const,
+    [Resource.PACKAGED_SATELLITE, 1] as const,
   ] as const),
-  miner: new Map([[Resource.ELECTRICITY, 3]]),
+  miner: new Map([[Resource.ELECTRICITY, 3] as const] as const),
   refinery: new Map([
-    [Resource.ELECTRICITY, 5],
-    [Resource.ORE, 3],
-  ]),
+    [Resource.ELECTRICITY, 5] as const,
+    [Resource.ORE, 3] as const,
+  ] as const),
   factory: new Map([
-    [Resource.ELECTRICITY, 25],
-    [Resource.METAL, 2],
-  ]),
-};
+    [Resource.ELECTRICITY, 25] as const,
+    [Resource.METAL, 2] as const,
+  ] as const),
+} as const;
 
-export const tickProduction: Production = {
-  [Construct.MINER]: new Map([["ore", 1]]),
-  [Construct.REFINERY]: new Map([["metal", 1]]),
-  [Construct.SATELLITE_FACTORY]: new Map([["satellite", 1]]),
-  [Construct.SATELLITE_LAUNCHER]: new Map<Output, number>(),
-  [Construct.SOLAR_COLLECTOR]: new Map([["power", 1]]),
-  satellite: new Map([["flux", 1]]),
-};
+export const tickProduction = {
+  [Construct.MINER]: new Map([["ore", 1] as const] as const),
+  [Construct.REFINERY]: new Map([["metal", 1] as const] as const),
+  [Construct.SATELLITE_FACTORY]: new Map([["satellite", 1] as const] as const),
+  [Construct.SOLAR_COLLECTOR]: new Map([["power", 1] as const] as const),
+  satellite: new Map([["flux", 1] as const] as const),
+} as const;
 
 export const satisfiedWorkers: (
   resources: Resources,
@@ -153,7 +149,11 @@ export const tick: GameAction = (state) => {
   );
   const totalProjectedElectricityProduction = working.reduce(
     (accu, [worker, count]) =>
-      accu + count * (tickProduction[worker]?.get("power") ?? 0),
+      accu +
+      count *
+        (tickProduction[worker as unknown as keyof typeof tickProduction].get(
+          Resource.ELECTRICITY as never
+        ) ?? 0),
     0
   );
   const breakerShouldTrip =

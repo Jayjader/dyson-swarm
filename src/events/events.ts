@@ -1,4 +1,4 @@
-import type { Id } from "./processing";
+import type { Id } from "./processes";
 import type { Resource } from "../gameStateStore";
 
 export type Event =
@@ -13,13 +13,25 @@ export type Event =
   | { tag: "command-simulation-clock-indirect-resume" }
   | { tag: "simulation-clock-indirect-resume" }
   | { tag: "star-flux-emission"; flux: number; receivedTick: number }
-  | { tag: "collector-power-production"; power: number; receivedTick: number }
-  | { tag: "draw-power"; power: number; forId: Id; receivedTick: number }
-  | { tag: "supply-power"; power: number; toId: Id; receivedTick: number }
   | { tag: "mine-planet-surface"; receivedTick: number }
   | {
-      tag: `produce-${Exclude<Resource, Resource.ELECTRICITY>}`;
+      tag: "produce";
+      resource: Resource;
       amount: number;
+      receivedTick: number;
+    }
+  | {
+      tag: "draw";
+      resource: Resource;
+      amount: number;
+      forId: Id;
+      receivedTick: number;
+    }
+  | {
+      tag: "supply";
+      resource: Resource;
+      amount: number;
+      toId: Id;
       receivedTick: number;
     };
 export type EventTag = Event["tag"];

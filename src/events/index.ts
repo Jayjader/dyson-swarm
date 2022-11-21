@@ -1,21 +1,19 @@
 import {
-  clockProcess,
-  collectorProcess,
-  createClock,
   createMemoryStream,
   type Id,
   memoryStreamProcess,
-  metalStorageProcess,
-  oreStorageProcess,
-  planetProcess,
-  processMiner,
   type Processor,
-  processPowerGrid,
-  satelliteStorageProcess,
-  starProcess,
-} from "./processing";
+} from "./processes";
 import type { Event, EventTag } from "./events";
 import { Resource } from "../gameStateStore";
+import { storageProcess } from "./processes/storage";
+import { clockProcess, createClock } from "./processes/clock";
+import { powerGridProcess } from "./processes/powerGrid";
+import { minerProcess } from "./processes/miner";
+import { planetProcess } from "./processes/planet";
+import { refinerProcess } from "./processes/refiner";
+import { starProcess } from "./processes/star";
+import { collectorProcess } from "./processes/collector";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -25,6 +23,34 @@ export type Simulation = {
   processors: Map<Id, Processor & { id: Id }>;
 };
 export const SUBSCRIPTIONS = {
+  clock: new Set([
+    "outside-clock-tick",
+    "command-simulation-clock-play",
+    "command-simulation-clock-pause",
+    "command-simulation-clock-indirect-pause",
+    "command-simulation-clock-indirect-resume",
+  ] as const),
+  star: new Set(["simulation-clock-tick"] as const),
+  planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
+  collector: new Set(["star-flux-emission", "simulation-clock-tick"] as const),
+  "power grid": new Set(["simulation-clock-tick", "produce", "draw"] as const),
+  miner: new Set(["simulation-clock-tick", "supply"] as const),
+  [`storage-${Resource.ORE}`]: new Set([
+    "simulation-clock-tick",
+    `produce`,
+    `draw`,
+  ] as const),
+  [`storage-${Resource.METAL}`]: new Set([
+    "simulation-clock-tick",
+    `produce`,
+    `draw`,
+  ] as const),
+  [`storage-${Resource.PACKAGED_SATELLITE}`]: new Set([
+    "simulation-clock-tick",
+    `produce`,
+    `draw`,
+  ] as const),
+  refiner: new Set(["simulation-clock-tick", `supply`] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -37,39 +63,10 @@ export const SUBSCRIPTIONS = {
     "command-simulation-clock-indirect-resume",
     "simulation-clock-indirect-resume",
     "star-flux-emission",
-    "collector-power-production",
-    "draw-power",
-    "supply-power",
     "mine-planet-surface",
-    "produce-ore",
-  ] as const),
-  clock: new Set([
-    "outside-clock-tick",
-    "command-simulation-clock-play",
-    "command-simulation-clock-pause",
-    "command-simulation-clock-indirect-pause",
-    "command-simulation-clock-indirect-resume",
-  ] as const),
-  star: new Set(["simulation-clock-tick"] as const),
-  planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
-  collector: new Set(["star-flux-emission", "simulation-clock-tick"] as const),
-  "power grid": new Set([
-    "collector-power-production",
-    "simulation-clock-tick",
-    "draw-power",
-  ] as const),
-  miner: new Set(["simulation-clock-tick", "supply-power"] as const),
-  [`storage-${Resource.ORE}`]: new Set([
-    "simulation-clock-tick",
-    `produce-${Resource.ORE}`,
-  ] as const),
-  [`storage-${Resource.METAL}`]: new Set([
-    "simulation-clock-tick",
-    `produce-${Resource.METAL}`,
-  ] as const),
-  [`storage-${Resource.PACKAGED_SATELLITE}`]: new Set([
-    "simulation-clock-tick",
-    `produce-${Resource.PACKAGED_SATELLITE}`,
+    "draw",
+    "supply",
+    "produce",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
@@ -78,8 +75,8 @@ export type SubscriptionsFor<ProcessorTag> =
       ? U
       : never
     : never;
-export type HasSubscription<Tag extends string> =
-  Tag extends keyof typeof SUBSCRIPTIONS ? {} : never;
+// export type HasSubscription<Tag extends string> =
+//   Tag extends keyof typeof SUBSCRIPTIONS ? Tag : never;
 
 type SaveState = { processors: Processor[] };
 
@@ -120,15 +117,17 @@ function process(p: Processor): [Processor, Event[]] {
     case "collector":
       return collectorProcess(p);
     case "power grid":
-      return processPowerGrid(p);
+      return powerGridProcess(p);
     case "storage-ore":
-      return oreStorageProcess(p);
+      return storageProcess(Resource.ORE, p);
     case "storage-metal":
-      return metalStorageProcess(p);
+      return storageProcess(Resource.METAL, p);
     case "storage-satellite":
-      return satelliteStorageProcess(p);
+      return storageProcess(Resource.PACKAGED_SATELLITE, p);
     case "miner":
-      return processMiner(p);
+      return minerProcess(p);
+    case "refiner":
+      return refinerProcess(p);
   }
   console.error({
     command: "process",
