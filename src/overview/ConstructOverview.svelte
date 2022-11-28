@@ -62,12 +62,12 @@
       <img
         class="max-h-16 aspect-square self-center mr-1"
         src="/satellite.svg"
-        alt="Satellite"
-        title="satellite"
+        alt="Satellite Swarm"
+        title="satellite swarm"
       />
       <div class="basis-full flex flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
-          <h4 class="basis-full font-bold">Satellite</h4>
+          <h4 class="basis-full font-bold">Satellite Swarm</h4>
           <div class="flex flex-col">
             <h5 class="font-bold">Count:</h5>
             <output>103</output>

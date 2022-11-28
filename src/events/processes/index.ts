@@ -19,6 +19,7 @@ import type { Star } from "./star";
 import type { Collector } from "./collector";
 import type { SatFactory } from "./satFactory";
 import type { Launcher } from "./launcher";
+import type { SatelliteSwarm } from "./satelliteSwarm";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -52,7 +53,8 @@ export type Processor =
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
   | Refiner
   | SatFactory
-  | Launcher;
+  | Launcher
+  | SatelliteSwarm;
 export type Id = Processor["id"];
 
 export function createMemoryStream(
@@ -93,7 +95,6 @@ function App() {
 
 /* ================================= */
 
-type Satellite = { tag: "satellite"; launched: boolean } & Processor;
 type Fabricator = {
   tag: "fabricator";
   working: boolean;

@@ -12,6 +12,7 @@ import { starProcess } from "./processes/star";
 import { collectorProcess } from "./processes/collector";
 import { factoryProcess } from "./processes/satFactory";
 import { launcherProcess } from "./processes/launcher";
+import { swarmProcess } from "./processes/satelliteSwarm";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -51,6 +52,7 @@ export const SUBSCRIPTIONS = {
   refiner: new Set(["simulation-clock-tick", "supply"] as const),
   factory: new Set(["simulation-clock-tick", "supply"] as const),
   launcher: new Set(["simulation-clock-tick", "supply"] as const),
+  swarm: new Set(["simulation-clock-tick", "launch-satellite"] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -133,6 +135,8 @@ function process(p: Processor): [Processor, Event[]] {
       return factoryProcess(p);
     case "launcher":
       return launcherProcess(p);
+    case "swarm":
+      return swarmProcess(p);
   }
   console.error({
     command: "process",

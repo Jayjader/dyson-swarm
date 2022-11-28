@@ -20,6 +20,7 @@ import { createStar } from "./processes/star";
 import { createCollector } from "./processes/collector";
 import { createFactory } from "./processes/satFactory";
 import { createLauncher } from "./processes/launcher";
+import { createSwarm } from "./processes/satelliteSwarm";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -821,5 +822,23 @@ describe("event bus", () => {
       tag: "launch-satellite",
       receivedTick: 3,
     });
+  });
+  test("swarm should increase in count when satellite is launched", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createSwarm());
+    simulation = processUntilSettled(
+      broadcastEvent(
+        broadcastEvent(simulation, {
+          tag: "launch-satellite",
+          receivedTick: 2,
+        }),
+        { tag: "simulation-clock-tick", tick: 2 }
+      )
+    );
+    const swarm = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: "swarm" } => p.id === "swarm-0"
+    )!;
+    expect(swarm.data.count).toEqual(1);
   });
 });
