@@ -42,14 +42,14 @@ export function refinerProcess(refiner: Refiner): [Refiner, Event[]] {
             amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
             forId: refiner.id,
             receivedTick: event.tick + 1,
-          },
+          }, // TODO: move this emission into the if (totalPower < ...) block ?
           {
             tag: "draw",
             resource: Resource.ORE,
             amount: tickConsumption.refinery.get(Resource.ORE)!,
             forId: refiner.id,
             receivedTick: event.tick + 1,
-          }
+          } // TODO: move this emission into the if (ore.length > 0) block ?
         );
         // spend all the power we were supplied on refining (if excess, waste it)
         const [totalPower, ore] = refiner.data.received.reduce(
