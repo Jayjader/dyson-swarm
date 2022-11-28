@@ -2,7 +2,7 @@
   import { fade } from "svelte/transition";
   import { clock } from "../time/store";
   export let swarm: { count: number };
-  let estimatedRatePerTick;
+  let estimatedRatePerTick: number;
   const slidingWindow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
   clock.subscribe(() => {
     slidingWindow.shift();

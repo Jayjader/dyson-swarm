@@ -3,14 +3,14 @@
   import { currentJob } from "./store";
   import { constructionCosts } from "../actions";
   import Job from "./Job.svelte";
-  import { Resource } from "../gameStateStore";
+  import { Resource, type Resources } from "../gameStateStore";
 
   let costs: null | Input = null;
   currentJob.subscribe((job) => {
     costs = job === undefined ? null : constructionCosts[job.building];
   });
 
-  export let resources;
+  export let resources: Resources;
   export let visible = true;
 </script>
 
@@ -27,7 +27,7 @@
           (accu, [resource, cost]) =>
             resource === Resource.ELECTRICITY
               ? accu
-              : accu + Math.min(cost, resources?.[resource] ?? 0),
+              : accu + Math.min(cost, resources[resource]),
           0
         )
       : 1}
@@ -39,6 +39,6 @@
         )
       : 1}
     elecCurrent={resources[Resource.ELECTRICITY]}
-    elecTotal={costs ? costs.get(Resource.ELECTRICITY) : 1}
+    elecTotal={(costs && costs.get(Resource.ELECTRICITY)) ?? 1}
   />
 </section>

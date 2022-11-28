@@ -252,13 +252,13 @@
     consumes={[
       {
         name: "energy",
-        value: launchCost.get(Resource.ELECTRICITY),
+        value: launchCost.get(Resource.ELECTRICITY) ?? 0,
         unit: watt,
         icon: energy,
       },
       {
         name: "packaged satellite",
-        value: launchCost.get(Resource.PACKAGED_SATELLITE),
+        value: launchCost.get(Resource.PACKAGED_SATELLITE) ?? 0,
         unit: "(packaged)",
         icon: satellite,
       },
