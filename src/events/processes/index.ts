@@ -17,6 +17,7 @@ import type { Planet } from "./planet";
 import type { Refiner } from "./refiner";
 import type { Star } from "./star";
 import type { Collector } from "./collector";
+import type { SatFactory } from "./satFactory";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -48,7 +49,8 @@ export type Processor =
   | PowerGrid
   | Miner
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
-  | Refiner;
+  | Refiner
+  | SatFactory;
 export type Id = Processor["id"];
 
 export function createMemoryStream(
@@ -96,5 +98,4 @@ type Fabricator = {
   job: SingleBuildOrder;
   queue: BuildOrder[];
 } & Processor;
-type Factory = { tag: "factory"; working: boolean } & Processor;
 type Launcher = { tag: "launcher"; working: boolean } & Processor;

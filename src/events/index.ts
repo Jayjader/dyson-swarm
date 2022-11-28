@@ -1,9 +1,5 @@
-import {
-  createMemoryStream,
-  type Id,
-  memoryStreamProcess,
-  type Processor,
-} from "./processes";
+import type { Id, Processor } from "./processes";
+import { createMemoryStream, memoryStreamProcess } from "./processes";
 import type { Event, EventTag } from "./events";
 import { Resource } from "../gameStateStore";
 import { storageProcess } from "./processes/storage";
@@ -14,6 +10,7 @@ import { planetProcess } from "./processes/planet";
 import { refinerProcess } from "./processes/refiner";
 import { starProcess } from "./processes/star";
 import { collectorProcess } from "./processes/collector";
+import { factoryProcess } from "./processes/satFactory";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -37,20 +34,21 @@ export const SUBSCRIPTIONS = {
   miner: new Set(["simulation-clock-tick", "supply"] as const),
   [`storage-${Resource.ORE}`]: new Set([
     "simulation-clock-tick",
-    `produce`,
-    `draw`,
+    "produce",
+    "draw",
   ] as const),
   [`storage-${Resource.METAL}`]: new Set([
     "simulation-clock-tick",
-    `produce`,
-    `draw`,
+    "produce",
+    "draw",
   ] as const),
   [`storage-${Resource.PACKAGED_SATELLITE}`]: new Set([
     "simulation-clock-tick",
-    `produce`,
-    `draw`,
+    "produce",
+    "draw",
   ] as const),
-  refiner: new Set(["simulation-clock-tick", `supply`] as const),
+  refiner: new Set(["simulation-clock-tick", "supply"] as const),
+  factory: new Set(["simulation-clock-tick", "supply"] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -128,12 +126,15 @@ function process(p: Processor): [Processor, Event[]] {
       return minerProcess(p);
     case "refiner":
       return refinerProcess(p);
+    case "factory":
+      return factoryProcess(p);
   }
   console.error({
     command: "process",
     processor: p,
     message: "process function not implemented",
   });
+  return [p, []];
 }
 
 export function processUntilSettled(sim: Simulation): Simulation {

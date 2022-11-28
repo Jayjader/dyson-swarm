@@ -18,6 +18,7 @@ import { createPlanet } from "./processes/planet";
 import { createRefiner } from "./processes/refiner";
 import { createStar } from "./processes/star";
 import { createCollector } from "./processes/collector";
+import { createFactory } from "./processes/satFactory";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -659,6 +660,99 @@ describe("event bus", () => {
       resource: Resource.METAL,
       amount: tickProduction.refinery.get(Resource.METAL),
       receivedTick: 7,
+    });
+  });
+  test("factory should draw power and metal on simulation clock tick", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const factory = createFactory();
+    insertProcessor(simulation, factory);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 2 })
+    );
+    const stream = simulation.processors.get("stream-0")! as Processor & {
+      tag: "stream";
+    };
+    expect(stream.data.received).toContainEqual({
+      tag: "draw",
+      resource: Resource.ELECTRICITY,
+      amount: tickConsumption.factory.get(Resource.ELECTRICITY)!,
+      receivedTick: 3,
+      forId: factory.id,
+    });
+    expect(stream.data.received).toContainEqual({
+      tag: "draw",
+      resource: Resource.METAL,
+      amount: tickConsumption.factory.get(Resource.METAL)!,
+      receivedTick: 3,
+      forId: factory.id,
+    });
+  });
+  test("factory should produce packaged satellite when supplied with power and metal", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const factory = createFactory();
+    insertProcessor(simulation, factory);
+    simulation = broadcastEvent(
+      broadcastEvent(simulation, {
+        tag: "supply",
+        resource: Resource.ELECTRICITY,
+        amount: tickConsumption.factory.get(Resource.ELECTRICITY)!,
+        receivedTick: 2,
+        toId: factory.id,
+      }),
+      {
+        tag: "supply",
+        resource: Resource.METAL,
+        amount: tickConsumption.factory.get(Resource.METAL)!,
+        receivedTick: 2,
+        toId: factory.id,
+      }
+    );
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 2 })
+    );
+    const stream = simulation.processors.get("stream-0")! as Processor & {
+      tag: "stream";
+    };
+    expect(stream.data.received).toContainEqual({
+      tag: "produce",
+      resource: Resource.PACKAGED_SATELLITE,
+      amount: tickProduction.factory.get(Resource.PACKAGED_SATELLITE),
+      receivedTick: 3,
+    });
+  });
+  test("factory integration", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+
+    const powerGrid = createPowerGrid();
+    powerGrid.data.stored +=
+      10 * tickConsumption.factory.get(Resource.ELECTRICITY)!;
+    insertProcessor(simulation, powerGrid);
+    const metalStorage = createStorage(Resource.METAL);
+    metalStorage.data.stored +=
+      10 * tickConsumption.factory.get(Resource.METAL)!;
+    insertProcessor(simulation, metalStorage);
+    insertProcessor(simulation, createFactory());
+    (
+      [
+        { tag: "simulation-clock-tick", tick: 1 }, // to make factory draw power and metal
+        { tag: "simulation-clock-tick", tick: 2 }, // to make grid supply power and storage supply metal
+        { tag: "simulation-clock-tick", tick: 3 }, // to make factory produce packaged satellite
+      ] as BusEvent[]
+    ).forEach((event) => {
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+    });
+
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+    )!;
+    expect(stream.data.received).toContainEqual({
+      tag: "produce",
+      resource: Resource.PACKAGED_SATELLITE,
+      amount: tickProduction.factory.get(Resource.PACKAGED_SATELLITE),
+      receivedTick: 4,
     });
   });
 });
