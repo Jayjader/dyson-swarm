@@ -69,7 +69,7 @@ export function refinerProcess(refiner: Refiner): [Refiner, Event[]] {
           break;
         }
         if (ore.length > 0) {
-          ore.unshift();
+          ore.shift();
           refiner.data.received = ore;
           emitted.push({
             tag: "produce",
