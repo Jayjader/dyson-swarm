@@ -11,6 +11,7 @@ import { refinerProcess } from "./processes/refiner";
 import { starProcess } from "./processes/star";
 import { collectorProcess } from "./processes/collector";
 import { factoryProcess } from "./processes/satFactory";
+import { launcherProcess } from "./processes/launcher";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -49,6 +50,7 @@ export const SUBSCRIPTIONS = {
   ] as const),
   refiner: new Set(["simulation-clock-tick", "supply"] as const),
   factory: new Set(["simulation-clock-tick", "supply"] as const),
+  launcher: new Set(["simulation-clock-tick", "supply"] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -65,6 +67,7 @@ export const SUBSCRIPTIONS = {
     "draw",
     "supply",
     "produce",
+    "launch-satellite",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
@@ -128,6 +131,8 @@ function process(p: Processor): [Processor, Event[]] {
       return refinerProcess(p);
     case "factory":
       return factoryProcess(p);
+    case "launcher":
+      return launcherProcess(p);
   }
   console.error({
     command: "process",
