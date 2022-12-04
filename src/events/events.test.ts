@@ -954,4 +954,34 @@ describe("event bus", () => {
       ]);
     }
   );
+  test.each<Construct>([...Object.keys(constructionCosts)] as Construct[])(
+    "fabricator should emit new %s when supplied with the needed materials and power and it is the current job",
+    (construct) => {
+      let simulation = loadSave(blankSave());
+      insertProcessor(simulation, createMemoryStream());
+      const fabricator = createFabricator();
+      fabricator.data.job = construct;
+      insertProcessor(simulation, fabricator);
+
+      constructionCosts[construct].forEach((amount, resource) => {
+        simulation = broadcastEvent(simulation, {
+          tag: "supply",
+          resource,
+          amount,
+          toId: fabricator.id,
+          receivedTick: 5,
+        });
+      });
+      simulation = processUntilSettled(
+        broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 5 })
+      );
+      expect(
+        (simulation.processors.get("stream-0") as EventStream).data.received
+      ).toContainEqual({
+        tag: "construct-fabricated",
+        construct,
+        receivedTick: 6,
+      });
+    }
+  );
 });

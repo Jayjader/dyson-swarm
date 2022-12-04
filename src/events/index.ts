@@ -62,6 +62,7 @@ export const SUBSCRIPTIONS = {
     "launch-satellite",
     "star-flux-emission",
   ] as const),
+  fabricator: new Set(["simulation-clock-tick", "supply"] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -80,8 +81,8 @@ export const SUBSCRIPTIONS = {
     "produce",
     "launch-satellite",
     "satellite-flux-reflection",
+    "construct-fabricated",
   ] as const),
-  fabricator: new Set(["simulation-clock-tick", "supply"] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
   ProcessorTag extends keyof typeof SUBSCRIPTIONS

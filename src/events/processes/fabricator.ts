@@ -35,27 +35,47 @@ export function fabricatorProcess(
     emitted = [] as Event[];
   while ((event = fabricator.incoming.shift())) {
     switch (event.tag) {
-      case "simulation-clock-tick":
-        if (!(fabricator.data.working && fabricator.data.job !== null)) {
-          break;
+      case "supply":
+        if (event.toId === fabricator.id) {
+          fabricator.data.received.push(event);
         }
-        const supply = fabricator.data.received.reduce((supply, event) => {
-          supply.set(
-            event.resource,
-            event.amount + (supply.get(event.resource) ?? 0)
-          );
-          return supply;
-        }, new Map<Resource, number>());
-        for (let [resource, needed] of constructionCosts[fabricator.data.job]) {
-          const supplied = supply.get(resource) ?? 0;
-          if (supplied < needed) {
+        break;
+      case "simulation-clock-tick":
+        const currentJob = fabricator.data.job;
+        if (fabricator.data.working && currentJob !== null) {
+          const supply = fabricator.data.received.reduce((supply, event) => {
+            supply.set(
+              event.resource,
+              event.amount + (supply.get(event.resource) ?? 0)
+            );
+            return supply;
+          }, new Map<Resource, number>());
+          let enoughSupplied = true;
+          for (let [resource, needed] of constructionCosts[currentJob]) {
+            const supplied = supply.get(resource) ?? 0;
+            if (supplied < needed) {
+              enoughSupplied = false;
+              emitted.push({
+                tag: "draw",
+                resource,
+                amount: needed - supplied,
+                forId: fabricator.id,
+                receivedTick: event.tick + 1,
+              });
+            }
+          }
+          if (enoughSupplied) {
             emitted.push({
-              tag: "draw",
-              resource,
-              amount: needed - supplied,
-              forId: fabricator.id,
+              tag: "construct-fabricated",
+              construct: currentJob,
               receivedTick: event.tick + 1,
             });
+            fabricator.data = {
+              working: true,
+              job: null,
+              received: [],
+              queue: fabricator.data.queue,
+            };
           }
         }
         break;

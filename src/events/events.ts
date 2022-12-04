@@ -1,5 +1,6 @@
 import type { Id } from "./processes";
 import type { Resource } from "../gameStateStore";
+import type { Construct } from "../gameStateStore";
 
 export type Event =
   | { tag: "outside-clock-tick"; timeStamp: DOMHighResTimeStamp }
@@ -35,7 +36,8 @@ export type Event =
       receivedTick: number;
     }
   | { tag: "launch-satellite"; receivedTick: number }
-  | { tag: "satellite-flux-reflection"; flux: number; receivedTick: number };
+  | { tag: "satellite-flux-reflection"; flux: number; receivedTick: number }
+  | { tag: "construct-fabricated"; construct: Construct; receivedTick: number };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags
