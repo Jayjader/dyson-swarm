@@ -52,7 +52,11 @@ export const SUBSCRIPTIONS = {
   refiner: new Set(["simulation-clock-tick", "supply"] as const),
   factory: new Set(["simulation-clock-tick", "supply"] as const),
   launcher: new Set(["simulation-clock-tick", "supply"] as const),
-  swarm: new Set(["simulation-clock-tick", "launch-satellite"] as const),
+  swarm: new Set([
+    "simulation-clock-tick",
+    "launch-satellite",
+    "star-flux-emission",
+  ] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -70,6 +74,7 @@ export const SUBSCRIPTIONS = {
     "supply",
     "produce",
     "launch-satellite",
+    "satellite-flux-reflection",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =

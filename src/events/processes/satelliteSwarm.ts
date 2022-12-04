@@ -22,11 +22,26 @@ export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, Event[]] {
     emitted = [] as Event[];
   while ((event = swarm.incoming.shift())) {
     switch (event.tag) {
+      case "star-flux-emission":
       case "launch-satellite":
         swarm.data.received.push(event);
         break;
       case "simulation-clock-tick":
-        swarm.data.count += swarm.data.received.length;
+        const [launched, flux] = swarm.data.received.reduce(
+          ([launched, flux], e) =>
+            e.tag === "launch-satellite"
+              ? [launched + 1, flux]
+              : [launched, true],
+          [0, false]
+        );
+        swarm.data.count += launched;
+        if (flux) {
+          emitted.push({
+            tag: "satellite-flux-reflection",
+            flux: swarm.data.count,
+            receivedTick: event.tick + 1,
+          });
+        }
         swarm.data.received = [];
         break;
     }

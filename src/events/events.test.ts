@@ -844,21 +844,23 @@ describe("event bus", () => {
   test("swarm should reflect energy flux emitted by star", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createStar());
     const swarm = createSwarm();
     swarm.data.count = 3;
     insertProcessor(simulation, swarm);
     simulation = processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(simulation, {
-          tag: "launch-satellite",
-          receivedTick: 2,
-        }),
-        { tag: "simulation-clock-tick", tick: 2 }
-      )
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 2 })
     );
-    const swarm = ([...simulation.processors.values()] as Processor[]).find(
-      (p): p is Processor & { tag: "swarm" } => p.id === "swarm-0"
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 3 })
+    );
+    const stream = ([...simulation.processors.values()] as Processor[]).find(
+      (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(swarm.data.count).toEqual(1);
+    expect(stream.data.received).toContainEqual({
+      tag: "satellite-flux-reflection",
+      flux: tickProduction.satellite.get("flux")! * swarm.data.count,
+      receivedTick: 4,
+    });
   });
 });

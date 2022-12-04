@@ -34,7 +34,8 @@ export type Event =
       toId: Id;
       receivedTick: number;
     }
-  | { tag: "launch-satellite"; receivedTick: number };
+  | { tag: "launch-satellite"; receivedTick: number }
+  | { tag: "satellite-flux-reflection"; flux: number; receivedTick: number };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags
