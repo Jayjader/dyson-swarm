@@ -29,6 +29,7 @@ export function collectorProcess(c: Collector): [Collector, Event[]] {
   while ((event = c.incoming.shift())) {
     switch (event.tag) {
       case "star-flux-emission":
+      case "satellite-flux-reflection":
         c.data.received.push(event);
         break;
       case "simulation-clock-tick":

@@ -664,6 +664,7 @@ describe("event bus", () => {
       receivedTick: 7,
     });
   });
+
   test("factory should draw power and metal on simulation clock tick", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
@@ -757,6 +758,7 @@ describe("event bus", () => {
       receivedTick: 4,
     });
   });
+
   test("launcher should draw power when not fully charged", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
@@ -823,6 +825,7 @@ describe("event bus", () => {
       receivedTick: 3,
     });
   });
+
   test("swarm should increase in count when satellite is launched", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
@@ -862,5 +865,60 @@ describe("event bus", () => {
       flux: tickProduction.satellite.get("flux")! * swarm.data.count,
       receivedTick: 4,
     });
+  });
+  test("collector should produce energy when processing satellite reflected emission", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createCollector());
+    (
+      [
+        { tag: "satellite-flux-reflection", flux: 1, receivedTick: 2 },
+        { tag: "simulation-clock-tick", tick: 2 },
+      ] as BusEvent[]
+    ).forEach((event) => {
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+    });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toEqual([
+      { tag: "satellite-flux-reflection", flux: 1, receivedTick: 2 },
+      { tag: "simulation-clock-tick", tick: 2 },
+      {
+        tag: "produce",
+        resource: Resource.ELECTRICITY,
+        amount: 1,
+        receivedTick: 3,
+      },
+    ]);
+  });
+  test("swarm integration", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    insertProcessor(simulation, createStar());
+    const swarm = createSwarm();
+    swarm.data.count = 1;
+    insertProcessor(simulation, swarm);
+    insertProcessor(simulation, createCollector());
+    insertProcessor(simulation, createPowerGrid());
+    (
+      [
+        { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
+        { tag: "simulation-clock-tick", tick: 2 }, // swarm reflects flux, collector produces power from collected flux (and star emits again)
+        { tag: "simulation-clock-tick", tick: 3 }, // collectors produces from flux from star and swarm
+        { tag: "simulation-clock-tick", tick: 4 }, // grid stores power produced
+      ] as BusEvent[]
+    ).forEach((event) => {
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+    });
+    expect(
+      (
+        simulation.processors.get("power grid-0")! as Processor & {
+          tag: "power grid";
+        }
+      ).data.stored
+    ).toEqual(
+      tickProduction.collector.get(Resource.ELECTRICITY)! * 2 +
+        tickProduction.collector.get(Resource.ELECTRICITY)!
+    );
   });
 });

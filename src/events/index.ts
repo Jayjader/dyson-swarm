@@ -31,7 +31,11 @@ export const SUBSCRIPTIONS = {
   ] as const),
   star: new Set(["simulation-clock-tick"] as const),
   planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
-  collector: new Set(["star-flux-emission", "simulation-clock-tick"] as const),
+  collector: new Set([
+    "star-flux-emission",
+    "satellite-flux-reflection",
+    "simulation-clock-tick",
+  ] as const),
   "power grid": new Set(["simulation-clock-tick", "produce", "draw"] as const),
   miner: new Set(["simulation-clock-tick", "supply"] as const),
   [`storage-${Resource.ORE}`]: new Set([
