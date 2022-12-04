@@ -9,7 +9,12 @@ import {
   processUntilSettled,
 } from "./index";
 import type { Event as BusEvent, Events } from "./events";
-import { Resource, tickConsumption, tickProduction } from "../gameStateStore";
+import {
+  Construct,
+  Resource,
+  tickConsumption,
+  tickProduction,
+} from "../gameStateStore";
 import { createStorage } from "./processes/storage";
 import { createClock } from "./processes/clock";
 import { createPowerGrid } from "./processes/powerGrid";
@@ -21,6 +26,8 @@ import { createCollector } from "./processes/collector";
 import { createFactory } from "./processes/satFactory";
 import { createLauncher } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
+import { createFabricator } from "./processes/fabricator";
+import { constructionCosts } from "../actions";
 
 describe("event bus", () => {
   test.each<BusEvent[][]>([
@@ -920,5 +927,30 @@ describe("event bus", () => {
       tickProduction.collector.get(Resource.ELECTRICITY)! * 2 +
         tickProduction.collector.get(Resource.ELECTRICITY)!
     );
+  });
+
+  test("fabricator should draw materials and power for current job on simulation clock tick when a job exists", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const fabricator = createFabricator();
+    fabricator.data.job = Construct.SOLAR_COLLECTOR;
+    insertProcessor(simulation, fabricator);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 5 })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toEqual([
+      { tag: "simulation-clock-tick", tick: 5 },
+      ...[...constructionCosts[Construct.SOLAR_COLLECTOR]].map(
+        ([resource, amount]) => ({
+          tag: "draw",
+          resource,
+          amount,
+          forId: fabricator.id,
+          receivedTick: 6,
+        })
+      ),
+    ]);
   });
 });

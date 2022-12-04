@@ -20,6 +20,7 @@ import type { Collector } from "./collector";
 import type { SatFactory } from "./satFactory";
 import type { Launcher } from "./launcher";
 import type { SatelliteSwarm } from "./satelliteSwarm";
+import type { Fabricator } from "./fabricator";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -54,7 +55,8 @@ export type Processor =
   | Refiner
   | SatFactory
   | Launcher
-  | SatelliteSwarm;
+  | SatelliteSwarm
+  | Fabricator;
 export type Id = Processor["id"];
 
 export function createMemoryStream(
@@ -92,12 +94,3 @@ function App() {
 
   return () => window.cancelAnimationFrame(clockFrame);
 }
-
-/* ================================= */
-
-type Fabricator = {
-  tag: "fabricator";
-  working: boolean;
-  job: SingleBuildOrder;
-  queue: BuildOrder[];
-} & Processor;

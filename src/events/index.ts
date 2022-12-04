@@ -13,6 +13,7 @@ import { collectorProcess } from "./processes/collector";
 import { factoryProcess } from "./processes/satFactory";
 import { launcherProcess } from "./processes/launcher";
 import { swarmProcess } from "./processes/satelliteSwarm";
+import { fabricatorProcess } from "./processes/fabricator";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -80,6 +81,7 @@ export const SUBSCRIPTIONS = {
     "launch-satellite",
     "satellite-flux-reflection",
   ] as const),
+  fabricator: new Set(["simulation-clock-tick", "supply"] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
   ProcessorTag extends keyof typeof SUBSCRIPTIONS
@@ -146,6 +148,8 @@ function process(p: Processor): [Processor, Event[]] {
       return launcherProcess(p);
     case "swarm":
       return swarmProcess(p);
+    case "fabricator":
+      return fabricatorProcess(p);
   }
   console.error({
     command: "process",
