@@ -459,6 +459,7 @@ describe("event bus", () => {
       [
         { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
         { tag: "simulation-clock-tick", tick: 2 }, // collectors produce power from collected flux
+        { tag: "command-reset-circuit-breaker" }, // miner has been drawing on empty grid so circuit breaker needs to be reset
         { tag: "simulation-clock-tick", tick: 3 }, // grid stores power received & grid supplies power to miner
         { tag: "simulation-clock-tick", tick: 4 }, // miner mines planet
       ] as BusEvent[]
@@ -1009,5 +1010,82 @@ describe("event bus", () => {
     const gridUpdated = simulation.processors.get(grid.id) as PowerGrid;
     expect(gridUpdated.data.breakerTripped).toBeTruthy();
     expect(gridUpdated.data.stored).toEqual(0);
+  });
+  test("tripped power grid should supply nothing (but still store production", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const grid = createPowerGrid();
+    grid.data.breakerTripped = true;
+    grid.data.stored = 100;
+    insertProcessor(simulation, grid);
+    simulation = broadcastEvent(
+      broadcastEvent(simulation, {
+        tag: "draw",
+        resource: Resource.ELECTRICITY,
+        amount: 1,
+        receivedTick: 48,
+        forId: "some-test-id" as Id,
+      }),
+      {
+        tag: "produce",
+        resource: Resource.ELECTRICITY,
+        amount: 4,
+        receivedTick: 48,
+      }
+    );
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 48 })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).not.toContainEqual({
+      tag: "supply",
+      resource: Resource.ELECTRICITY,
+      amount: expect.any(Number),
+      toId: expect.any(String),
+      receivedTick: expect.any(Number),
+    });
+    const gridUpdated = simulation.processors.get(grid.id) as PowerGrid;
+    expect(gridUpdated.data.breakerTripped).toBeTruthy();
+  });
+  test("grid should fulfill command to reset tripped circuit breaker", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const grid = createPowerGrid();
+    grid.data.breakerTripped = true;
+    insertProcessor(simulation, grid);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-reset-circuit-breaker",
+        afterTick: 77,
+      })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "circuit-breaker-reset", onTick: 78 });
+    expect(
+      (simulation.processors.get("power grid-0") as PowerGrid).data
+        .breakerTripped
+    ).toBeFalsy();
+  });
+  test("grid should fulfill command to trip breaker", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const grid = createPowerGrid();
+    grid.data.breakerTripped = false;
+    insertProcessor(simulation, grid);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-trip-circuit-breaker",
+        afterTick: 77,
+      })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "circuit-breaker-tripped", onTick: 78 });
+    expect(
+      (simulation.processors.get("power grid-0") as PowerGrid).data
+        .breakerTripped
+    ).toBeTruthy();
   });
 });

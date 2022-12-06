@@ -37,7 +37,13 @@ export const SUBSCRIPTIONS = {
     "satellite-flux-reflection",
     "simulation-clock-tick",
   ] as const),
-  "power grid": new Set(["simulation-clock-tick", "produce", "draw"] as const),
+  "power grid": new Set([
+    "simulation-clock-tick",
+    "command-reset-circuit-breaker",
+    "command-trip-circuit-breaker",
+    "produce",
+    "draw",
+  ] as const),
   miner: new Set(["simulation-clock-tick", "supply"] as const),
   [`storage-${Resource.ORE}`]: new Set([
     "simulation-clock-tick",
@@ -83,6 +89,9 @@ export const SUBSCRIPTIONS = {
     "satellite-flux-reflection",
     "construct-fabricated",
     "circuit-breaker-tripped",
+    "command-reset-circuit-breaker",
+    "circuit-breaker-reset",
+    "command-trip-circuit-breaker",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =

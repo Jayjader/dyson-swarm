@@ -9,7 +9,10 @@ export type PowerGrid = EventProcessor<
     stored: number;
     breakerTripped: boolean;
     received: Events<
-      Exclude<SubscriptionsFor<"power grid">, "simulation-clock-tick">
+      Exclude<
+        SubscriptionsFor<"power grid">,
+        "simulation-clock-tick" | `command-${string}`
+      >
     >[];
   }
 >;
@@ -41,6 +44,20 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
           grid.data.received.sort((a, b) => a.receivedTick - b.receivedTick);
         }
         break;
+      case "command-trip-circuit-breaker":
+        grid.data.breakerTripped = true;
+        emitted.push({
+          tag: "circuit-breaker-tripped",
+          onTick: event.afterTick + 1,
+        });
+        break;
+      case "command-reset-circuit-breaker":
+        grid.data.breakerTripped = false;
+        emitted.push({
+          tag: "circuit-breaker-reset",
+          onTick: event.afterTick + 1,
+        });
+        break;
       case "simulation-clock-tick":
         const [produced, toSupply] = grid.data.received.reduce(
           (accu, next) =>
@@ -55,6 +72,9 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
           (accu, next) => accu + next.amount,
           0
         );
+        if (grid.data.breakerTripped) {
+          break;
+        }
         if (grid.data.stored >= totalRequestedSupply) {
           grid.data.stored -= totalRequestedSupply;
           for (let drawRequest of toSupply) {

@@ -38,7 +38,10 @@ export type Event =
   | { tag: "launch-satellite"; receivedTick: number }
   | { tag: "satellite-flux-reflection"; flux: number; receivedTick: number }
   | { tag: "construct-fabricated"; construct: Construct; receivedTick: number }
-  | { tag: "circuit-breaker-tripped"; onTick: number };
+  | { tag: "circuit-breaker-tripped"; onTick: number }
+  | { tag: "command-reset-circuit-breaker"; afterTick: number }
+  | { tag: "circuit-breaker-reset"; onTick: number }
+  | { tag: "command-trip-circuit-breaker"; afterTick: number };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags
