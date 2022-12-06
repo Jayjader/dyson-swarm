@@ -50,6 +50,7 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
           [0, new Set<Events<"draw">>()]
         );
         grid.data.stored += produced;
+        grid.data.received = [];
         const totalRequestedSupply = Array.from(toSupply).reduce(
           (accu, next) => accu + next.amount,
           0
@@ -65,8 +66,10 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
               toId: drawRequest.forId,
             });
           }
+          break;
         }
-        grid.data.received = [];
+        grid.data.breakerTripped = true;
+        emitted.push({ tag: "circuit-breaker-tripped", onTick: event.tick });
         break;
     }
   }

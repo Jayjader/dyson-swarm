@@ -17,6 +17,7 @@ import {
 } from "../gameStateStore";
 import { createStorage } from "./processes/storage";
 import { createClock } from "./processes/clock";
+import type { PowerGrid } from "./processes/powerGrid";
 import { createPowerGrid } from "./processes/powerGrid";
 import { createMiner } from "./processes/miner";
 import { createPlanet } from "./processes/planet";
@@ -984,4 +985,29 @@ describe("event bus", () => {
       });
     }
   );
+
+  test("grid should trip breaker when receiving more draw than it can supply in a given simulation clock tick", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const grid = createPowerGrid();
+    grid.data.stored = 0;
+    grid.data.breakerTripped = false;
+    insertProcessor(simulation, grid);
+    simulation = broadcastEvent(simulation, {
+      tag: "draw",
+      resource: Resource.ELECTRICITY,
+      amount: 1,
+      receivedTick: 48,
+      forId: "some-test-id" as Id,
+    });
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 48 })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "circuit-breaker-tripped", onTick: 48 });
+    const gridUpdated = simulation.processors.get(grid.id) as PowerGrid;
+    expect(gridUpdated.data.breakerTripped).toBeTruthy();
+    expect(gridUpdated.data.stored).toEqual(0);
+  });
 });

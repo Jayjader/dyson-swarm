@@ -82,6 +82,7 @@ export const SUBSCRIPTIONS = {
     "launch-satellite",
     "satellite-flux-reflection",
     "construct-fabricated",
+    "circuit-breaker-tripped",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
