@@ -3,27 +3,30 @@ import { Resource } from "../../gameStateStore";
 import type { SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
-export type Collector = EventProcessor<
+export type CollectorManager = EventProcessor<
   "collector",
   {
+    count: number;
     received: Events<
       Exclude<SubscriptionsFor<"collector">, "simulation-clock-tick">
     >[];
   }
 >;
 
-export function createCollector(
-  id: Collector["id"] = "collector-0"
-): Collector {
+export function createCollectorManager(
+  id: CollectorManager["id"] = "collector-0"
+): CollectorManager {
   return {
     id,
     incoming: [],
     tag: "collector",
-    data: { received: [] },
+    data: { count: 0, received: [] },
   };
 }
 
-export function collectorProcess(c: Collector): [Collector, Event[]] {
+export function collectorProcess(
+  c: CollectorManager
+): [CollectorManager, Event[]] {
   let event;
   const emitted = [] as Event[];
   while ((event = c.incoming.shift())) {
@@ -33,7 +36,8 @@ export function collectorProcess(c: Collector): [Collector, Event[]] {
         c.data.received.push(event);
         break;
       case "simulation-clock-tick":
-        const produced = c.data.received.reduce((sum, e) => sum + e.flux, 0);
+        const produced =
+          c.data.count * c.data.received.reduce((sum, e) => sum + e.flux, 0);
         c.data.received = [];
         emitted.push({
           tag: "produce",

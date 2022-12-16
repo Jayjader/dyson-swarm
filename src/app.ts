@@ -15,11 +15,11 @@ const resources: Resources = {
   [Resource.PACKAGED_SATELLITE]: 0,
 };
 const buildings: Buildings = {
-  [Building.SOLAR_COLLECTOR]: 10,
-  [Building.MINER]: 0,
-  [Building.REFINERY]: 0,
-  [Building.SATELLITE_FACTORY]: 0,
-  [Building.SATELLITE_LAUNCHER]: 0,
+  [Construct.SOLAR_COLLECTOR]: 10,
+  [Construct.MINER]: 0,
+  [Construct.REFINERY]: 0,
+  [Construct.SATELLITE_FACTORY]: 0,
+  [Construct.SATELLITE_LAUNCHER]: 0,
 };
 const swarm: Swarm = { satellites: 0 };
 const breaker: CircuitBreaker = { tripped: false };
