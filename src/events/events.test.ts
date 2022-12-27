@@ -403,7 +403,7 @@ describe("event bus", () => {
 
   test("miner should draw power on sim clock tick when working", () => {
     let simulation = loadSave(blankSave());
-    const miner = createMiner();
+    const miner = createMiner({ count: 1 });
     insertProcessor(simulation, miner);
     insertProcessor(simulation, createMemoryStream());
     simulation = processUntilSettled(
@@ -423,7 +423,7 @@ describe("event bus", () => {
   });
   test("miner should mine planet when supplied with power", () => {
     let simulation = loadSave(blankSave());
-    const miner = createMiner();
+    const miner = createMiner({ count: 1 });
     insertProcessor(simulation, miner);
     insertProcessor(simulation, createMemoryStream());
     simulation = processUntilSettled(
@@ -443,6 +443,7 @@ describe("event bus", () => {
     )!;
     expect(stream.data.received).toContainEqual({
       tag: "mine-planet-surface",
+      minerCount: 1,
       receivedTick: 5,
     });
   });
@@ -452,7 +453,7 @@ describe("event bus", () => {
     insertProcessor(simulation, createStar());
     insertProcessor(simulation, createCollectorManager({ count: 3 }));
     insertProcessor(simulation, createPowerGrid());
-    insertProcessor(simulation, createMiner());
+    insertProcessor(simulation, createMiner({ count: 1 }));
 
     (
       [
@@ -470,6 +471,7 @@ describe("event bus", () => {
     )!;
     expect(stream.data.received).toContainEqual({
       tag: "mine-planet-surface",
+      minerCount: 1,
       receivedTick: 5,
     });
   });
@@ -483,6 +485,7 @@ describe("event bus", () => {
       broadcastEvent(
         broadcastEvent(simulation, {
           tag: "mine-planet-surface",
+          minerCount: 1,
           receivedTick: 2,
         }),
         { tag: "simulation-clock-tick", tick: 2 }
@@ -645,9 +648,7 @@ describe("event bus", () => {
       10 * tickConsumption.miner.get(Resource.ELECTRICITY)! +
       10 * tickConsumption.refinery.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, powerGrid);
-    insertProcessor(simulation, createMiner("miner-0"));
-    insertProcessor(simulation, createMiner("miner-1"));
-    insertProcessor(simulation, createMiner("miner-2"));
+    insertProcessor(simulation, createMiner({ count: 3 }));
     insertProcessor(simulation, createStorage(Resource.ORE));
     insertProcessor(simulation, createRefiner());
     (

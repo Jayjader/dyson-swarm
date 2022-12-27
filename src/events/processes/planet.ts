@@ -31,7 +31,8 @@ export function planetProcess(planet: Planet): [Planet, Event[]] {
       case "simulation-clock-tick":
         const totalOreMined = Math.min(
           planet.data.mass, // we don't want to mine more ore than the planet has mass!
-          planet.data.received.length * tickProduction.miner.get(Resource.ORE)!
+          planet.data.received.reduce((accu, e) => accu + e.minerCount, 0) *
+            tickProduction.miner.get(Resource.ORE)!
         );
         if (totalOreMined > 0) {
           planet.data.mass -= totalOreMined;

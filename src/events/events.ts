@@ -14,7 +14,7 @@ export type Event =
   | { tag: "command-simulation-clock-indirect-resume" }
   | { tag: "simulation-clock-indirect-resume" }
   | { tag: "star-flux-emission"; flux: number; receivedTick: number }
-  | { tag: "mine-planet-surface"; receivedTick: number }
+  | { tag: "mine-planet-surface"; minerCount: number; receivedTick: number }
   | {
       tag: "produce";
       resource: Resource;
