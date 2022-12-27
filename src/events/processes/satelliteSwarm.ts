@@ -12,9 +12,19 @@ export type SatelliteSwarm = EventProcessor<
   }
 >;
 export function createSwarm(
-  id: SatelliteSwarm["id"] = "swarm-0"
+  options: Partial<{ id: SatelliteSwarm["id"]; count: number }> = {}
 ): SatelliteSwarm {
-  return { id, tag: "swarm", incoming: [], data: { count: 0, received: [] } };
+  const values = {
+    id: "swarm-0" as SatelliteSwarm["id"],
+    count: 0,
+    ...options,
+  };
+  return {
+    id: values.id,
+    tag: "swarm",
+    incoming: [],
+    data: { count: values.count, received: [] },
+  };
 }
 
 export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, Event[]] {

@@ -837,7 +837,7 @@ describe("event bus", () => {
   test("swarm should increase in count when satellite is launched", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    insertProcessor(simulation, createSwarm());
+    insertProcessor(simulation, createSwarm({ count: 0 }));
     simulation = processUntilSettled(
       broadcastEvent(
         broadcastEvent(simulation, {
@@ -903,17 +903,15 @@ describe("event bus", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
     insertProcessor(simulation, createStar());
-    const swarm = createSwarm();
-    swarm.data.count = 1;
-    insertProcessor(simulation, swarm);
-    insertProcessor(simulation, createCollectorManager());
+    insertProcessor(simulation, createSwarm({ count: 1 }));
+    insertProcessor(simulation, createCollectorManager({ count: 1 }));
     insertProcessor(simulation, createPowerGrid());
     (
       [
         { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
         { tag: "simulation-clock-tick", tick: 2 }, // swarm reflects flux, collector produces power from collected flux (and star emits again)
-        { tag: "simulation-clock-tick", tick: 3 }, // collectors produces from flux from star and swarm
-        { tag: "simulation-clock-tick", tick: 4 }, // grid stores power produced
+        { tag: "simulation-clock-tick", tick: 3 }, // collector produces from flux from star and swarm
+        { tag: "simulation-clock-tick", tick: 4 }, // grid stores power produced during previous tick
       ] as BusEvent[]
     ).forEach((event) => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
@@ -925,8 +923,8 @@ describe("event bus", () => {
         }
       ).data.stored
     ).toEqual(
-      tickProduction.collector.get(Resource.ELECTRICITY)! * 2 +
-        tickProduction.collector.get(Resource.ELECTRICITY)!
+      tickProduction.collector.get(Resource.ELECTRICITY)! + // production on tick 2, just direct star flux
+        tickProduction.collector.get(Resource.ELECTRICITY)! * 2 // production on tick 3, direct star flux + reflected swarm flux
     );
   });
 
