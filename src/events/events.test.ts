@@ -286,9 +286,8 @@ describe("event bus", () => {
   test("collector should output power from processing star flux emission", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const collectors = createCollectorManager();
-    collectors.data.count = 3;
-    insertProcessor(simulation, collectors);
+    const count = 3;
+    insertProcessor(simulation, createCollectorManager({ count }));
     (
       [
         { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
@@ -305,7 +304,7 @@ describe("event bus", () => {
       {
         tag: "produce",
         resource: Resource.ELECTRICITY,
-        amount: 3 * tickProduction.collector.get(Resource.ELECTRICITY)!,
+        amount: count * tickProduction.collector.get(Resource.ELECTRICITY)!,
         receivedTick: 3,
       },
     ]);
@@ -314,7 +313,7 @@ describe("event bus", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
     insertProcessor(simulation, createStar());
-    insertProcessor(simulation, createCollectorManager());
+    insertProcessor(simulation, createCollectorManager({ count: 1 }));
     (
       [
         { tag: "simulation-clock-tick", tick: 1 },
@@ -348,7 +347,7 @@ describe("event bus", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
     insertProcessor(simulation, createStar());
-    insertProcessor(simulation, createCollectorManager());
+    insertProcessor(simulation, createCollectorManager({ count: 1 }));
     insertProcessor(simulation, createPowerGrid());
 
     (
@@ -451,9 +450,7 @@ describe("event bus", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
     insertProcessor(simulation, createStar());
-    insertProcessor(simulation, createCollectorManager("collector-0"));
-    insertProcessor(simulation, createCollectorManager("collector-1"));
-    insertProcessor(simulation, createCollectorManager("collector-2"));
+    insertProcessor(simulation, createCollectorManager({ count: 3 }));
     insertProcessor(simulation, createPowerGrid());
     insertProcessor(simulation, createMiner());
 
@@ -859,9 +856,8 @@ describe("event bus", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
     insertProcessor(simulation, createStar());
-    const swarm = createSwarm();
-    swarm.data.count = 3;
-    insertProcessor(simulation, swarm);
+    const count = 3;
+    insertProcessor(simulation, createSwarm({ count }));
     simulation = processUntilSettled(
       broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 2 })
     );
@@ -873,16 +869,15 @@ describe("event bus", () => {
     )!;
     expect(stream.data.received).toContainEqual({
       tag: "satellite-flux-reflection",
-      flux: tickProduction.satellite.get("flux")! * swarm.data.count,
+      flux: tickProduction.satellite.get("flux")! * count,
       receivedTick: 4,
     });
   });
   test("collector should produce energy when processing satellite reflected emission", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const collectors = createCollectorManager();
-    collectors.data.count = 3;
-    insertProcessor(simulation, collectors);
+    const count = 3;
+    insertProcessor(simulation, createCollectorManager({ count }));
     (
       [
         { tag: "satellite-flux-reflection", flux: 1, receivedTick: 2 },
@@ -899,7 +894,7 @@ describe("event bus", () => {
       {
         tag: "produce",
         resource: Resource.ELECTRICITY,
-        amount: 3 * tickProduction.collector.get(Resource.ELECTRICITY)!,
+        amount: count * tickProduction.collector.get(Resource.ELECTRICITY)!,
         receivedTick: 3,
       },
     ]);

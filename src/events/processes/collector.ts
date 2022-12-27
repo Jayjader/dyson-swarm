@@ -14,13 +14,18 @@ export type CollectorManager = EventProcessor<
 >;
 
 export function createCollectorManager(
-  id: CollectorManager["id"] = "collector-0"
+  options: Partial<{ id: CollectorManager["id"]; count: number }> = {}
 ): CollectorManager {
+  const values = {
+    id: "collector-0" as CollectorManager["id"],
+    count: 0,
+    ...options,
+  };
   return {
-    id,
+    id: values.id,
     incoming: [],
     tag: "collector",
-    data: { count: 0, received: [] },
+    data: { count: values.count, received: [] },
   };
 }
 
