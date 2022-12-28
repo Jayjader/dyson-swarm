@@ -18,7 +18,7 @@ import type { RefinerManager } from "./refiner";
 import type { Star } from "./star";
 import type { CollectorManager } from "./collector";
 import type { SatelliteFactoryManager } from "./satFactory";
-import type { Launcher } from "./launcher";
+import type { LauncherManager } from "./launcher";
 import type { SatelliteSwarm } from "./satelliteSwarm";
 import type { Fabricator } from "./fabricator";
 
@@ -54,7 +54,7 @@ export type Processor =
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
   | RefinerManager
   | SatelliteFactoryManager
-  | Launcher
+  | LauncherManager
   | SatelliteSwarm
   | Fabricator;
 export type Id = Processor["id"];

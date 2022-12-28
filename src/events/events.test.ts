@@ -25,7 +25,7 @@ import { createRefinerManager } from "./processes/refiner";
 import { createStar } from "./processes/star";
 import { createCollectorManager } from "./processes/collector";
 import { createFactoryManager } from "./processes/satFactory";
-import { createLauncher } from "./processes/launcher";
+import { createLauncherManager } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
 import { createFabricator } from "./processes/fabricator";
 import { constructionCosts } from "../actions";
@@ -771,7 +771,7 @@ describe("event bus", () => {
   test("launcher should draw power when not fully charged", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const launcher = createLauncher();
+    const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = 0;
     insertProcessor(simulation, launcher);
     simulation = processUntilSettled(
@@ -791,7 +791,7 @@ describe("event bus", () => {
   test("launcher should draw packaged satellite when fully charged", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const launcher = createLauncher();
+    const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, launcher);
     simulation = processUntilSettled(
@@ -811,7 +811,7 @@ describe("event bus", () => {
   test("launcher should launch supplied satellite on sim clock tick when fully charged", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const launcher = createLauncher();
+    const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, launcher);
     simulation = processUntilSettled(

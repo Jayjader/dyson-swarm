@@ -3,25 +3,40 @@ import type { EventProcessor } from "./index";
 import type { SubscriptionsFor } from "../index";
 import { Resource, tickConsumption } from "../../gameStateStore";
 
-export type Launcher = EventProcessor<
+export type LauncherManager = EventProcessor<
   "launcher",
   {
-    working: boolean;
+    working: number;
+    count: number;
     charge: number;
     received: Events<
       Exclude<SubscriptionsFor<"factory">, "simulation-clock-tick">
     >[];
   }
 >;
-export function createLauncher(id: Launcher["id"] = "launcher-0"): Launcher {
+export function createLauncherManager(
+  options: Partial<{ id: LauncherManager["id"]; count: number }> = {}
+): LauncherManager {
+  const values = {
+    id: "launcher-0" as LauncherManager["id"],
+    count: 0,
+    ...options,
+  };
   return {
-    id,
+    id: values.id,
     tag: "launcher",
     incoming: [],
-    data: { working: true, charge: 0, received: [] },
+    data: {
+      working: values.count,
+      count: values.count,
+      charge: 0,
+      received: [],
+    },
   };
 }
-export function launcherProcess(launcher: Launcher): [Launcher, Event[]] {
+export function launcherProcess(
+  launcher: LauncherManager
+): [LauncherManager, Event[]] {
   let event;
   let emitted = [] as Event[];
   while ((event = launcher.incoming.shift())) {
@@ -31,52 +46,69 @@ export function launcherProcess(launcher: Launcher): [Launcher, Event[]] {
           launcher.data.received.push(event);
         }
         break;
-      case "simulation-clock-tick":
-        const [totalPower, satellites] = launcher.data.received.reduce(
-          (accu, e) => {
-            if (e.resource === Resource.ELECTRICITY) {
-              return [accu[0] + e.amount, accu[1]];
-            }
-            if (e.resource === Resource.PACKAGED_SATELLITE) {
-              accu[1].push(e);
-            }
-            return accu;
-          },
-          [0, [] as Events<"supply">[]]
-        );
-        launcher.data.charge += totalPower;
-        if (
-          launcher.data.charge <
-          tickConsumption.launcher.get(Resource.ELECTRICITY)!
-        ) {
-          emitted.push({
-            tag: "draw",
-            resource: Resource.ELECTRICITY,
-            amount: tickConsumption.launcher.get(Resource.ELECTRICITY)!,
-            forId: launcher.id,
-            receivedTick: event.tick + 1,
-          });
-        } else {
-          if (satellites.length > 0) {
-            satellites.shift();
-            launcher.data.received = satellites;
-            emitted.push({
-              tag: "launch-satellite",
-              receivedTick: event.tick + 1,
-            });
-          } else {
+      case "simulation-clock-tick": {
+        if (launcher.data.working > 0) {
+          const received = launcher.data.received.reduce(
+            (sum, e) => {
+              sum[
+                e.resource as Resource.ELECTRICITY | Resource.PACKAGED_SATELLITE
+              ] += e.amount;
+              return sum;
+            },
+            { [Resource.ELECTRICITY]: 0, [Resource.PACKAGED_SATELLITE]: 0 }
+          );
+          launcher.data.received = [];
+          launcher.data.charge += received[Resource.ELECTRICITY];
+          let enoughSupplied = true;
+          const powerNeeded =
+            launcher.data.working *
+            tickConsumption.launcher.get(Resource.ELECTRICITY)!;
+          if (launcher.data.charge < powerNeeded) {
+            enoughSupplied = false;
             emitted.push({
               tag: "draw",
-              resource: Resource.PACKAGED_SATELLITE,
-              amount: tickConsumption.launcher.get(
-                Resource.PACKAGED_SATELLITE
-              )!,
+              resource: Resource.ELECTRICITY,
+              amount: powerNeeded - received[Resource.ELECTRICITY],
               forId: launcher.id,
               receivedTick: event.tick + 1,
             });
           }
+          const satellitesNeeded =
+            launcher.data.working *
+            tickConsumption.launcher.get(Resource.PACKAGED_SATELLITE)!;
+          if (received[Resource.PACKAGED_SATELLITE] < satellitesNeeded) {
+            enoughSupplied = false;
+            emitted.push({
+              tag: "draw",
+              resource: Resource.PACKAGED_SATELLITE,
+              amount: satellitesNeeded - received[Resource.PACKAGED_SATELLITE],
+              forId: launcher.id,
+              receivedTick: event.tick + 1,
+            });
+          }
+          if (enoughSupplied) {
+            for (let i = 0; i < launcher.data.working; i++) {
+              emitted.push({
+                tag: "launch-satellite",
+                receivedTick: event.tick + 1,
+              });
+            }
+          } else {
+            for (const entry of Object.entries(received)) {
+              const [resource, amount] = entry as [Resource, number];
+              if (amount > 0) {
+                launcher.data.received.push({
+                  tag: "supply",
+                  resource,
+                  amount,
+                  toId: launcher.id,
+                  receivedTick: event.tick,
+                });
+              }
+            }
+          }
         }
-        break;
+      }
     }
   }
   return [launcher, emitted];
