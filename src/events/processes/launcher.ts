@@ -42,6 +42,7 @@ export function launcherProcess(
   while ((event = launcher.incoming.shift())) {
     switch (event.tag) {
       case "construct-fabricated":
+      case "command-set-working-count":
         if (event.construct === Construct.SATELLITE_LAUNCHER) {
           launcher.data.received.push(event);
         }
@@ -56,6 +57,8 @@ export function launcherProcess(
           (sum, e) => {
             if (e.tag === "construct-fabricated") {
               sum.fabricated += 1;
+            } else if (e.tag === "command-set-working-count") {
+              sum.working = e.count;
             } else {
               sum[
                 e.resource as Resource.ELECTRICITY | Resource.PACKAGED_SATELLITE
@@ -67,10 +70,14 @@ export function launcherProcess(
             [Resource.ELECTRICITY]: 0,
             [Resource.PACKAGED_SATELLITE]: 0,
             fabricated: 0,
+            working: null as null | number,
           }
         );
         launcher.data.working += received.fabricated;
         launcher.data.count += received.fabricated;
+        if (received.working !== null) {
+          launcher.data.working = received.working;
+        }
         if (launcher.data.working > 0) {
           launcher.data.received = [];
           launcher.data.charge += received[Resource.ELECTRICITY];

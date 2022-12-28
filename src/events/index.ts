@@ -49,6 +49,7 @@ export const SUBSCRIPTIONS = {
     "simulation-clock-tick",
     "supply",
     "construct-fabricated",
+    "command-set-working-count",
   ] as const),
   [`storage-${Resource.ORE}`]: new Set([
     "simulation-clock-tick",
@@ -69,16 +70,19 @@ export const SUBSCRIPTIONS = {
     "simulation-clock-tick",
     "supply",
     "construct-fabricated",
+    "command-set-working-count",
   ] as const),
   factory: new Set([
     "simulation-clock-tick",
     "supply",
     "construct-fabricated",
+    "command-set-working-count",
   ] as const),
   launcher: new Set([
     "simulation-clock-tick",
     "supply",
     "construct-fabricated",
+    "command-set-working-count",
   ] as const),
   swarm: new Set([
     "simulation-clock-tick",
@@ -109,6 +113,7 @@ export const SUBSCRIPTIONS = {
     "command-reset-circuit-breaker",
     "circuit-breaker-reset",
     "command-trip-circuit-breaker",
+    "command-set-working-count",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =

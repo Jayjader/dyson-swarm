@@ -1129,4 +1129,42 @@ describe("event bus", () => {
         .breakerTripped
     ).toBeTruthy();
   });
+
+  test.each<Exclude<Construct, Construct.SOLAR_COLLECTOR>>([
+    Construct.MINER,
+    Construct.REFINER,
+    Construct.SATELLITE_FACTORY,
+    Construct.SATELLITE_LAUNCHER,
+  ])(
+    "%p working count should adjust when receiving command to change it",
+    (construct) => {
+      let simulation = loadSave(blankSave());
+      insertProcessor(simulation, createMemoryStream());
+      for (const createManager of [
+        createMinerManager,
+        createRefinerManager,
+        createFactoryManager,
+        createLauncherManager,
+      ]) {
+        insertProcessor(simulation, createManager({ count: 1 }));
+      }
+      simulation = processUntilSettled(
+        broadcastEvent(
+          broadcastEvent(simulation, {
+            tag: "command-set-working-count",
+            construct,
+            count: 0,
+            receivedTick: 1,
+          }),
+          { tag: "simulation-clock-tick", tick: 1 }
+        )
+      );
+      const manager = simulation.processors.get(`${construct}-0`) as
+        | MinerManager
+        | RefinerManager
+        | SatelliteFactoryManager
+        | LauncherManager;
+      expect(manager.data.working).toEqual(0);
+    }
+  );
 });

@@ -46,6 +46,7 @@ export function refinerProcess(
   while ((event = refiner.incoming.shift())) {
     switch (event.tag) {
       case "construct-fabricated":
+      case "command-set-working-count":
         if (event.construct === Construct.REFINER) {
           refiner.data.received.push(event);
         }
@@ -60,16 +61,26 @@ export function refinerProcess(
           (sum, e) => {
             if (e.tag === "construct-fabricated") {
               sum.fabricated += 1;
+            } else if (e.tag === "command-set-working-count") {
+              sum.working = e.count;
             } else {
               sum[e.resource as Resource.ELECTRICITY | Resource.ORE] +=
                 e.amount;
             }
             return sum;
           },
-          { [Resource.ELECTRICITY]: 0, [Resource.ORE]: 0, fabricated: 0 }
+          {
+            [Resource.ELECTRICITY]: 0,
+            [Resource.ORE]: 0,
+            fabricated: 0,
+            working: null as null | number,
+          }
         );
         refiner.data.working += received.fabricated;
         refiner.data.count += received.fabricated;
+        if (received.working !== null) {
+          refiner.data.working = received.working;
+        }
         if (refiner.data.working > 0) {
           let enoughSupplied = true;
           refiner.data.received = [];

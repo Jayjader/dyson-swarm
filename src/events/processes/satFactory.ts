@@ -41,6 +41,7 @@ export function factoryProcess(
   while ((event = factory.incoming.shift())) {
     switch (event.tag) {
       case "construct-fabricated":
+      case "command-set-working-count":
         if (event.construct === Construct.SATELLITE_FACTORY) {
           factory.data.received.push(event);
         }
@@ -55,16 +56,26 @@ export function factoryProcess(
           (sum, e) => {
             if (e.tag === "construct-fabricated") {
               sum.fabricated += 1;
+            } else if (e.tag === "command-set-working-count") {
+              sum.working = e.count;
             } else {
               sum[e.resource as Resource.ELECTRICITY | Resource.METAL] +=
                 e.amount;
             }
             return sum;
           },
-          { [Resource.ELECTRICITY]: 0, [Resource.METAL]: 0, fabricated: 0 }
+          {
+            [Resource.ELECTRICITY]: 0,
+            [Resource.METAL]: 0,
+            fabricated: 0,
+            working: null as null | number,
+          }
         );
         factory.data.working += received.fabricated;
         factory.data.count += received.fabricated;
+        if (received.working !== null) {
+          factory.data.working = received.working;
+        }
         if (factory.data.working > 0) {
           let enoughSupplied = true;
           factory.data.received = [];

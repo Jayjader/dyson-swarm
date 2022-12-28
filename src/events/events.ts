@@ -41,7 +41,13 @@ export type Event =
   | { tag: "circuit-breaker-tripped"; onTick: number }
   | { tag: "command-reset-circuit-breaker"; afterTick: number }
   | { tag: "circuit-breaker-reset"; onTick: number }
-  | { tag: "command-trip-circuit-breaker"; afterTick: number };
+  | { tag: "command-trip-circuit-breaker"; afterTick: number }
+  | {
+      tag: "command-set-working-count";
+      construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
+      count: number;
+      receivedTick: number;
+    };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags

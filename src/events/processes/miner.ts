@@ -36,6 +36,7 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
   while ((event = miner.incoming.shift())) {
     switch (event.tag) {
       case "construct-fabricated":
+      case "command-set-working-count":
         if (event.construct === Construct.MINER) {
           miner.data.received.push(event);
         }
@@ -50,15 +51,24 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
           (sum, e) => {
             if (e.tag === "construct-fabricated") {
               sum.fabricated += 1;
+            } else if (e.tag === "command-set-working-count") {
+              sum.working = e.count;
             } else {
               sum[Resource.ELECTRICITY] += e.amount;
             }
             return sum;
           },
-          { [Resource.ELECTRICITY]: 0, fabricated: 0 }
+          {
+            [Resource.ELECTRICITY]: 0,
+            fabricated: 0,
+            working: null as null | number,
+          }
         );
         miner.data.count += received.fabricated;
         miner.data.working += received.fabricated;
+        if (received.working !== null) {
+          miner.data.working = received.working;
+        }
         if (miner.data.working > 0) {
           miner.data.received = [];
           const powerNeeded =
