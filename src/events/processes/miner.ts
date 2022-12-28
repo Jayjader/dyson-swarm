@@ -1,6 +1,6 @@
 import type { Event, Events } from "../events";
 import type { SubscriptionsFor } from "../index";
-import { Resource, tickConsumption } from "../../gameStateStore";
+import { Construct, Resource, tickConsumption } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
 
 export type MinerManager = EventProcessor<
@@ -35,36 +35,59 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
   const emitted = [] as Event[];
   while ((event = miner.incoming.shift())) {
     switch (event.tag) {
+      case "construct-fabricated":
+        if (event.construct === Construct.MINER) {
+          miner.data.received.push(event);
+        }
+        break;
       case "supply":
         if (event.toId === miner.id) {
           miner.data.received.push(event);
         }
         break;
       case "simulation-clock-tick":
-        emitted.push({
-          tag: "draw",
-          resource: Resource.ELECTRICITY,
-          amount:
-            miner.data.working *
-            tickConsumption.miner.get(Resource.ELECTRICITY)!,
-          forId: miner.id,
-          receivedTick: event.tick + 1,
-        });
-        // spend all the power we were supplied on mining (if excess, waste it)
-        const supplied = miner.data.received.reduce(
-          (sum, e) => sum + e.amount,
-          0
+        const received = miner.data.received.reduce(
+          (sum, e) => {
+            if (e.tag === "construct-fabricated") {
+              sum.fabricated += 1;
+            } else {
+              sum[Resource.ELECTRICITY] += e.amount;
+            }
+            return sum;
+          },
+          { [Resource.ELECTRICITY]: 0, fabricated: 0 }
         );
-        miner.data.received = [];
-        if (
-          supplied >=
-          tickConsumption.miner.get(Resource.ELECTRICITY)! * miner.data.working
-        ) {
-          emitted.push({
-            tag: "mine-planet-surface",
-            minerCount: miner.data.working,
-            receivedTick: event.tick + 1,
-          });
+        miner.data.count += received.fabricated;
+        miner.data.working += received.fabricated;
+        if (miner.data.working > 0) {
+          miner.data.received = [];
+          const powerNeeded =
+            miner.data.working *
+            tickConsumption.miner.get(Resource.ELECTRICITY)!;
+          if (received[Resource.ELECTRICITY] < powerNeeded) {
+            emitted.push({
+              tag: "draw",
+              resource: Resource.ELECTRICITY,
+              amount: powerNeeded - received[Resource.ELECTRICITY],
+              forId: miner.id,
+              receivedTick: event.tick + 1,
+            });
+            if (received[Resource.ELECTRICITY] > 0) {
+              miner.data.received.push({
+                tag: "supply",
+                resource: Resource.ELECTRICITY,
+                amount: received[Resource.ELECTRICITY],
+                toId: miner.id,
+                receivedTick: event.tick,
+              });
+            }
+          } else {
+            emitted.push({
+              tag: "mine-planet-surface",
+              minerCount: miner.data.working,
+              receivedTick: event.tick + 1,
+            });
+          }
         }
     }
   }

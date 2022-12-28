@@ -19,13 +19,22 @@ import { createStorage } from "./processes/storage";
 import { createClock } from "./processes/clock";
 import type { PowerGrid } from "./processes/powerGrid";
 import { createPowerGrid } from "./processes/powerGrid";
-import { createMinerManager } from "./processes/miner";
+import { createMinerManager, type MinerManager } from "./processes/miner";
 import { createPlanet } from "./processes/planet";
-import { createRefinerManager } from "./processes/refiner";
+import { createRefinerManager, type RefinerManager } from "./processes/refiner";
 import { createStar } from "./processes/star";
-import { createCollectorManager } from "./processes/collector";
-import { createFactoryManager } from "./processes/satFactory";
-import { createLauncherManager } from "./processes/launcher";
+import {
+  type CollectorManager,
+  createCollectorManager,
+} from "./processes/collector";
+import {
+  createFactoryManager,
+  type SatelliteFactoryManager,
+} from "./processes/satFactory";
+import {
+  createLauncherManager,
+  type LauncherManager,
+} from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
 import { createFabricator } from "./processes/fabricator";
 import { constructionCosts } from "../actions";
@@ -316,8 +325,8 @@ describe("event bus", () => {
     insertProcessor(simulation, createCollectorManager({ count: 1 }));
     (
       [
-        { tag: "simulation-clock-tick", tick: 1 },
-        { tag: "simulation-clock-tick", tick: 2 },
+        { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
+        { tag: "simulation-clock-tick", tick: 2 }, // collector receives flux and produces power
       ] as BusEvent[]
     ).forEach((event) => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
@@ -327,12 +336,6 @@ describe("event bus", () => {
     ).toEqual([
       { tag: "simulation-clock-tick", tick: 1 },
       { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
-      {
-        tag: "produce",
-        resource: Resource.ELECTRICITY,
-        amount: 0, // no flux received during previous tick
-        receivedTick: 2,
-      },
       { tag: "simulation-clock-tick", tick: 2 },
       { tag: "star-flux-emission", flux: 1, receivedTick: 3 },
       {
@@ -589,14 +592,14 @@ describe("event bus", () => {
     expect(stream.data.received).toContainEqual({
       tag: "draw",
       resource: Resource.ELECTRICITY,
-      amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+      amount: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!,
       forId: refiner.id,
       receivedTick: 2,
     });
     expect(stream.data.received).toContainEqual({
       tag: "draw",
       resource: Resource.ORE,
-      amount: tickConsumption.refinery.get(Resource.ORE)!,
+      amount: tickConsumption[Construct.REFINER].get(Resource.ORE)!,
       forId: refiner.id,
       receivedTick: 2,
     });
@@ -611,14 +614,14 @@ describe("event bus", () => {
         {
           tag: "supply",
           resource: Resource.ELECTRICITY,
-          amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+          amount: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!,
           toId: refiner.id,
           receivedTick: 15,
         },
         {
           tag: "supply",
           resource: Resource.ORE,
-          amount: tickConsumption.refinery.get(Resource.ELECTRICITY)!,
+          amount: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!,
           toId: refiner.id,
           receivedTick: 15,
         },
@@ -635,7 +638,7 @@ describe("event bus", () => {
     expect(stream.data.received).toContainEqual({
       tag: "produce",
       resource: Resource.METAL,
-      amount: tickProduction.refinery.get(Resource.METAL),
+      amount: tickProduction[Construct.REFINER].get(Resource.METAL),
       receivedTick: 16,
     });
   });
@@ -646,7 +649,7 @@ describe("event bus", () => {
     const powerGrid = createPowerGrid();
     powerGrid.data.stored +=
       10 * tickConsumption.miner.get(Resource.ELECTRICITY)! +
-      10 * tickConsumption.refinery.get(Resource.ELECTRICITY)!;
+      10 * tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, powerGrid);
     insertProcessor(simulation, createMinerManager({ count: 3 }));
     insertProcessor(simulation, createStorage(Resource.ORE));
@@ -669,7 +672,7 @@ describe("event bus", () => {
     expect(stream.data.received).toContainEqual({
       tag: "produce",
       resource: Resource.METAL,
-      amount: tickProduction.refinery.get(Resource.METAL),
+      amount: tickProduction[Construct.REFINER].get(Resource.METAL),
       receivedTick: 7,
     });
   });
@@ -982,6 +985,46 @@ describe("event bus", () => {
         construct,
         receivedTick: 6,
       });
+    }
+  );
+
+  test.each<Construct>([
+    Construct.SOLAR_COLLECTOR,
+    Construct.MINER,
+    Construct.REFINER,
+    Construct.SATELLITE_FACTORY,
+    Construct.SATELLITE_LAUNCHER,
+  ])(
+    "total %p count should increase by 1 when construct-fabricated received",
+    (construct) => {
+      let simulation = loadSave(blankSave());
+      insertProcessor(simulation, createMemoryStream());
+      for (const createManager of [
+        createCollectorManager,
+        createMinerManager,
+        createRefinerManager,
+        createFactoryManager,
+        createLauncherManager,
+      ]) {
+        insertProcessor(simulation, createManager({ count: 0 }));
+      }
+      simulation = processUntilSettled(
+        broadcastEvent(
+          broadcastEvent(simulation, {
+            tag: "construct-fabricated",
+            construct,
+            receivedTick: 1,
+          }),
+          { tag: "simulation-clock-tick", tick: 1 }
+        )
+      );
+      const manager = simulation.processors.get(`${construct}-0`) as
+        | CollectorManager
+        | MinerManager
+        | RefinerManager
+        | SatelliteFactoryManager
+        | LauncherManager;
+      expect(manager.data.count).toEqual(1);
     }
   );
 

@@ -2,6 +2,7 @@ import type { Event, Events } from "../events";
 import type { EventProcessor } from "./index";
 import type { SubscriptionsFor } from "../index";
 import {
+  Construct,
   Resource,
   tickConsumption,
   tickProduction,
@@ -39,21 +40,32 @@ export function factoryProcess(
   const emitted = [] as Event[];
   while ((event = factory.incoming.shift())) {
     switch (event.tag) {
+      case "construct-fabricated":
+        if (event.construct === Construct.SATELLITE_FACTORY) {
+          factory.data.received.push(event);
+        }
+        break;
       case "supply":
         if (event.toId === factory.id) {
           factory.data.received.push(event);
         }
         break;
       case "simulation-clock-tick": {
-        if (factory.data.working > 0) {
-          const received = factory.data.received.reduce(
-            (sum, e) => {
+        const received = factory.data.received.reduce(
+          (sum, e) => {
+            if (e.tag === "construct-fabricated") {
+              sum.fabricated += 1;
+            } else {
               sum[e.resource as Resource.ELECTRICITY | Resource.METAL] +=
                 e.amount;
-              return sum;
-            },
-            { [Resource.ELECTRICITY]: 0, [Resource.METAL]: 0 }
-          );
+            }
+            return sum;
+          },
+          { [Resource.ELECTRICITY]: 0, [Resource.METAL]: 0, fabricated: 0 }
+        );
+        factory.data.working += received.fabricated;
+        factory.data.count += received.fabricated;
+        if (factory.data.working > 0) {
           let enoughSupplied = true;
           factory.data.received = [];
           const powerNeeded =

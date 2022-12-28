@@ -17,7 +17,7 @@ const resources: Resources = {
 const buildings: Buildings = {
   [Construct.SOLAR_COLLECTOR]: 10,
   [Construct.MINER]: 0,
-  [Construct.REFINERY]: 0,
+  [Construct.REFINER]: 0,
   [Construct.SATELLITE_FACTORY]: 0,
   [Construct.SATELLITE_LAUNCHER]: 0,
 };

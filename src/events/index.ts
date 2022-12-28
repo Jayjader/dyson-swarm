@@ -36,6 +36,7 @@ export const SUBSCRIPTIONS = {
     "star-flux-emission",
     "satellite-flux-reflection",
     "simulation-clock-tick",
+    "construct-fabricated",
   ] as const),
   "power grid": new Set([
     "simulation-clock-tick",
@@ -44,7 +45,11 @@ export const SUBSCRIPTIONS = {
     "produce",
     "draw",
   ] as const),
-  miner: new Set(["simulation-clock-tick", "supply"] as const),
+  miner: new Set([
+    "simulation-clock-tick",
+    "supply",
+    "construct-fabricated",
+  ] as const),
   [`storage-${Resource.ORE}`]: new Set([
     "simulation-clock-tick",
     "produce",
@@ -60,9 +65,21 @@ export const SUBSCRIPTIONS = {
     "produce",
     "draw",
   ] as const),
-  refiner: new Set(["simulation-clock-tick", "supply"] as const),
-  factory: new Set(["simulation-clock-tick", "supply"] as const),
-  launcher: new Set(["simulation-clock-tick", "supply"] as const),
+  refiner: new Set([
+    "simulation-clock-tick",
+    "supply",
+    "construct-fabricated",
+  ] as const),
+  factory: new Set([
+    "simulation-clock-tick",
+    "supply",
+    "construct-fabricated",
+  ] as const),
+  launcher: new Set([
+    "simulation-clock-tick",
+    "supply",
+    "construct-fabricated",
+  ] as const),
   swarm: new Set([
     "simulation-clock-tick",
     "launch-satellite",

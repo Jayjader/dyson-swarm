@@ -172,20 +172,20 @@
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Construct.REFINERY].get(Resource.ELECTRICITY),
+        value: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY),
         unit: watt,
         icon: energy,
       },
       {
         name: "ore",
-        value: tickConsumption[Construct.REFINERY].get(Resource.ORE),
+        value: tickConsumption[Construct.REFINER].get(Resource.ORE),
         unit: kilogram,
         icon: ore,
       },
     ]}
     produces={{
       name: "refined metal",
-      value: tickProduction[Construct.REFINERY].get(Resource.METAL),
+      value: tickProduction[Construct.REFINER].get(Resource.METAL),
       unit: kilogram,
       icon: metal,
     }}
@@ -197,10 +197,10 @@
         <input
           type="number"
           min={0}
-          max={constructs.get(Construct.REFINERY)}
+          max={constructs.get(Construct.REFINER)}
           style="max-width: 6ch"
         />
-        <output>/{constructs.get(Construct.REFINERY) ?? 0}</output>
+        <output>/{constructs.get(Construct.REFINER) ?? 0}</output>
         <button class="border-2 rounded border-zinc-50">All</button>
       </span>
     </div>

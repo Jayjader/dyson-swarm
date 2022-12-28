@@ -1,5 +1,6 @@
 import type { Event, Events } from "../events";
 import {
+  Construct,
   Resource,
   tickConsumption,
   tickProduction,
@@ -44,26 +45,37 @@ export function refinerProcess(
   const emitted = [] as Event[];
   while ((event = refiner.incoming.shift())) {
     switch (event.tag) {
+      case "construct-fabricated":
+        if (event.construct === Construct.REFINER) {
+          refiner.data.received.push(event);
+        }
+        break;
       case "supply":
         if (event.toId === refiner.id) {
           refiner.data.received.push(event);
         }
         break;
       case "simulation-clock-tick": {
-        if (refiner.data.working > 0) {
-          const received = refiner.data.received.reduce(
-            (sum, e) => {
+        const received = refiner.data.received.reduce(
+          (sum, e) => {
+            if (e.tag === "construct-fabricated") {
+              sum.fabricated += 1;
+            } else {
               sum[e.resource as Resource.ELECTRICITY | Resource.ORE] +=
                 e.amount;
-              return sum;
-            },
-            { [Resource.ELECTRICITY]: 0, [Resource.ORE]: 0 }
-          );
+            }
+            return sum;
+          },
+          { [Resource.ELECTRICITY]: 0, [Resource.ORE]: 0, fabricated: 0 }
+        );
+        refiner.data.working += received.fabricated;
+        refiner.data.count += received.fabricated;
+        if (refiner.data.working > 0) {
           let enoughSupplied = true;
           refiner.data.received = [];
           const powerNeeded =
             refiner.data.working *
-            tickConsumption.refinery.get(Resource.ELECTRICITY)!;
+            tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
           if (received[Resource.ELECTRICITY] < powerNeeded) {
             enoughSupplied = false;
             emitted.push({
@@ -75,7 +87,8 @@ export function refinerProcess(
             });
           }
           const oreNeeded =
-            refiner.data.working * tickConsumption.refinery.get(Resource.ORE)!;
+            refiner.data.working *
+            tickConsumption[Construct.REFINER].get(Resource.ORE)!;
           if (received[Resource.ORE] < oreNeeded) {
             enoughSupplied = false;
             emitted.push({
@@ -104,7 +117,7 @@ export function refinerProcess(
               resource: Resource.METAL,
               amount:
                 refiner.data.working *
-                tickProduction.refinery.get(Resource.METAL)!,
+                tickProduction[Construct.REFINER].get(Resource.METAL)!,
               receivedTick: event.tick + 1,
             });
           } else {

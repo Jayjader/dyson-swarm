@@ -1,5 +1,5 @@
 import type { Event, Events } from "../events";
-import { Resource } from "../../gameStateStore";
+import { Construct, Resource } from "../../gameStateStore";
 import type { SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
@@ -36,21 +36,38 @@ export function collectorProcess(
   const emitted = [] as Event[];
   while ((event = c.incoming.shift())) {
     switch (event.tag) {
+      case "construct-fabricated":
+        if (event.construct !== Construct.SOLAR_COLLECTOR) {
+          break;
+        }
       case "star-flux-emission":
       case "satellite-flux-reflection":
         c.data.received.push(event);
         break;
-      case "simulation-clock-tick":
-        const produced =
-          c.data.count * c.data.received.reduce((sum, e) => sum + e.flux, 0);
+      case "simulation-clock-tick": {
+        const received = c.data.received.reduce(
+          (sum, e) => {
+            if (e.tag === "construct-fabricated") {
+              sum.fabricated += 1;
+            } else {
+              sum.flux += e.flux;
+            }
+            return sum;
+          },
+          { flux: 0, fabricated: 0 }
+        );
+        c.data.count += received.fabricated;
         c.data.received = [];
-        emitted.push({
-          tag: "produce",
-          resource: Resource.ELECTRICITY,
-          amount: produced,
-          receivedTick: event.tick + 1,
-        });
-        break;
+        const produced = c.data.count * received.flux;
+        if (produced > 0) {
+          emitted.push({
+            tag: "produce",
+            resource: Resource.ELECTRICITY,
+            amount: produced,
+            receivedTick: event.tick + 1,
+          });
+        }
+      }
     }
   }
   return [c, emitted];

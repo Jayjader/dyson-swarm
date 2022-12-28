@@ -11,7 +11,7 @@ export const constructionCosts: Record<Construct, Input> = {
     [Resource.ELECTRICITY, 150],
     [Resource.METAL, 30],
   ]),
-  [Construct.REFINERY]: new Map([
+  [Construct.REFINER]: new Map([
     [Resource.ELECTRICITY, 500],
     [Resource.METAL, 45],
   ]),

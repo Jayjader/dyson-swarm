@@ -14,7 +14,7 @@ export type Resources = Record<Resource, number>;
 export enum Construct {
   SOLAR_COLLECTOR = "collector",
   MINER = "miner",
-  REFINERY = "refinery",
+  REFINER = "refiner",
   SATELLITE_FACTORY = "factory",
   SATELLITE_LAUNCHER = "launcher",
 }
@@ -36,14 +36,14 @@ export type CircuitBreaker = {
 export const __PRODUCERS = [
   "satellite",
   Construct.MINER,
-  Construct.REFINERY,
+  Construct.REFINER,
   Construct.SATELLITE_FACTORY,
   Construct.SOLAR_COLLECTOR,
 ] as const;
 export type Producer = typeof __PRODUCERS[number];
 export const __CONSUMERS = [
   Construct.MINER,
-  Construct.REFINERY,
+  Construct.REFINER,
   Construct.SATELLITE_FACTORY,
   Construct.SATELLITE_LAUNCHER,
 ] as const;
@@ -68,16 +68,16 @@ export type GameState = {
 export type GameAction = (state: GameState) => GameState;
 
 export const tickConsumption = {
-  launcher: new Map([
+  [Construct.SATELLITE_LAUNCHER]: new Map([
     [Resource.ELECTRICITY, 1.4 * 10 ** 3] as const,
     [Resource.PACKAGED_SATELLITE, 1] as const,
   ] as const),
-  miner: new Map([[Resource.ELECTRICITY, 3] as const] as const),
-  refinery: new Map([
+  [Construct.MINER]: new Map([[Resource.ELECTRICITY, 3] as const] as const),
+  [Construct.REFINER]: new Map([
     [Resource.ELECTRICITY, 5] as const,
     [Resource.ORE, 3] as const,
   ] as const),
-  factory: new Map([
+  [Construct.SATELLITE_FACTORY]: new Map([
     [Resource.ELECTRICITY, 25] as const,
     [Resource.METAL, 2] as const,
   ] as const),
@@ -85,7 +85,7 @@ export const tickConsumption = {
 
 export const tickProduction = {
   [Construct.MINER]: new Map([["ore", 1] as const] as const),
-  [Construct.REFINERY]: new Map([["metal", 1] as const] as const),
+  [Construct.REFINER]: new Map([["metal", 1] as const] as const),
   [Construct.SATELLITE_FACTORY]: new Map([["satellite", 1] as const] as const),
   [Construct.SOLAR_COLLECTOR]: new Map([["power", 1] as const] as const),
   satellite: new Map([["flux", 1] as const] as const),

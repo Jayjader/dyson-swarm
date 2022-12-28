@@ -144,7 +144,7 @@
       />
       <MenuButton
         text="Refiner"
-        on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINERY)}
+        on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINER)}
       />
     </div>
     <div class="flex flex-col gap-0.5 col-start-3 row-span-2">

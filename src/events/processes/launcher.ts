@@ -1,7 +1,7 @@
 import type { Event, Events } from "../events";
 import type { EventProcessor } from "./index";
 import type { SubscriptionsFor } from "../index";
-import { Resource, tickConsumption } from "../../gameStateStore";
+import { Construct, Resource, tickConsumption } from "../../gameStateStore";
 
 export type LauncherManager = EventProcessor<
   "launcher",
@@ -41,22 +41,37 @@ export function launcherProcess(
   let emitted = [] as Event[];
   while ((event = launcher.incoming.shift())) {
     switch (event.tag) {
+      case "construct-fabricated":
+        if (event.construct === Construct.SATELLITE_LAUNCHER) {
+          launcher.data.received.push(event);
+        }
+        break;
       case "supply":
         if (event.toId === launcher.id) {
           launcher.data.received.push(event);
         }
         break;
       case "simulation-clock-tick": {
-        if (launcher.data.working > 0) {
-          const received = launcher.data.received.reduce(
-            (sum, e) => {
+        const received = launcher.data.received.reduce(
+          (sum, e) => {
+            if (e.tag === "construct-fabricated") {
+              sum.fabricated += 1;
+            } else {
               sum[
                 e.resource as Resource.ELECTRICITY | Resource.PACKAGED_SATELLITE
               ] += e.amount;
-              return sum;
-            },
-            { [Resource.ELECTRICITY]: 0, [Resource.PACKAGED_SATELLITE]: 0 }
-          );
+            }
+            return sum;
+          },
+          {
+            [Resource.ELECTRICITY]: 0,
+            [Resource.PACKAGED_SATELLITE]: 0,
+            fabricated: 0,
+          }
+        );
+        launcher.data.working += received.fabricated;
+        launcher.data.count += received.fabricated;
+        if (launcher.data.working > 0) {
           launcher.data.received = [];
           launcher.data.charge += received[Resource.ELECTRICITY];
           let enoughSupplied = true;

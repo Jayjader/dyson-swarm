@@ -27,7 +27,7 @@ export const ICON = {
   [Resource.PACKAGED_SATELLITE]: satellite,
   [Construct.SOLAR_COLLECTOR]: collector,
   [Construct.MINER]: miner,
-  [Construct.REFINERY]: refiner,
+  [Construct.REFINER]: refiner,
   [Construct.SATELLITE_FACTORY]: factory,
   [Construct.SATELLITE_LAUNCHER]: launcher,
 } as const;
