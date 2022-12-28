@@ -21,7 +21,7 @@ import type { PowerGrid } from "./processes/powerGrid";
 import { createPowerGrid } from "./processes/powerGrid";
 import { createMiner } from "./processes/miner";
 import { createPlanet } from "./processes/planet";
-import { createRefiner } from "./processes/refiner";
+import { createRefinerManager } from "./processes/refiner";
 import { createStar } from "./processes/star";
 import { createCollectorManager } from "./processes/collector";
 import { createFactory } from "./processes/satFactory";
@@ -576,7 +576,7 @@ describe("event bus", () => {
 
   test("refiner should draw power and ore on sim clock tick when working", () => {
     let simulation = loadSave(blankSave());
-    const refiner = createRefiner("refiner-0", true);
+    const refiner = createRefinerManager({ count: 1 });
     insertProcessor(simulation, refiner);
     insertProcessor(simulation, createMemoryStream());
     simulation = processUntilSettled(
@@ -603,7 +603,7 @@ describe("event bus", () => {
   });
   test("refiner should refine ore into metal when supplied with power (and ore)", () => {
     let simulation = loadSave(blankSave());
-    const refiner = createRefiner("refiner-0", true);
+    const refiner = createRefinerManager({ count: 1 });
     insertProcessor(simulation, refiner);
     insertProcessor(simulation, createMemoryStream());
     (
@@ -650,7 +650,7 @@ describe("event bus", () => {
     insertProcessor(simulation, powerGrid);
     insertProcessor(simulation, createMiner({ count: 3 }));
     insertProcessor(simulation, createStorage(Resource.ORE));
-    insertProcessor(simulation, createRefiner());
+    insertProcessor(simulation, createRefinerManager({ count: 1 }));
     (
       [
         { tag: "simulation-clock-tick", tick: 1 }, // to make constructs draw power

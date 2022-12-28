@@ -14,7 +14,7 @@ import type { Clock } from "./clock";
 import type { PowerGrid } from "./powerGrid";
 import type { Miner } from "./miner";
 import type { Planet } from "./planet";
-import type { Refiner } from "./refiner";
+import type { RefinerManager } from "./refiner";
 import type { Star } from "./star";
 import type { CollectorManager } from "./collector";
 import type { SatFactory } from "./satFactory";
@@ -52,7 +52,7 @@ export type Processor =
   | PowerGrid
   | Miner
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
-  | Refiner
+  | RefinerManager
   | SatFactory
   | Launcher
   | SatelliteSwarm
