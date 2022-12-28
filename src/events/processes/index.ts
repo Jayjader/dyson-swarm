@@ -17,7 +17,7 @@ import type { Planet } from "./planet";
 import type { RefinerManager } from "./refiner";
 import type { Star } from "./star";
 import type { CollectorManager } from "./collector";
-import type { SatFactory } from "./satFactory";
+import type { SatelliteFactoryManager } from "./satFactory";
 import type { Launcher } from "./launcher";
 import type { SatelliteSwarm } from "./satelliteSwarm";
 import type { Fabricator } from "./fabricator";
@@ -53,7 +53,7 @@ export type Processor =
   | MinerManager
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
   | RefinerManager
-  | SatFactory
+  | SatelliteFactoryManager
   | Launcher
   | SatelliteSwarm
   | Fabricator;

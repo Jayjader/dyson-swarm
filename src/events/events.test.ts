@@ -24,7 +24,7 @@ import { createPlanet } from "./processes/planet";
 import { createRefinerManager } from "./processes/refiner";
 import { createStar } from "./processes/star";
 import { createCollectorManager } from "./processes/collector";
-import { createFactory } from "./processes/satFactory";
+import { createFactoryManager } from "./processes/satFactory";
 import { createLauncher } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
 import { createFabricator } from "./processes/fabricator";
@@ -677,7 +677,7 @@ describe("event bus", () => {
   test("factory should draw power and metal on simulation clock tick", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const factory = createFactory();
+    const factory = createFactoryManager({ count: 1 });
     insertProcessor(simulation, factory);
     simulation = processUntilSettled(
       broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 2 })
@@ -703,7 +703,7 @@ describe("event bus", () => {
   test("factory should produce packaged satellite when supplied with power and metal", () => {
     let simulation = loadSave(blankSave());
     insertProcessor(simulation, createMemoryStream());
-    const factory = createFactory();
+    const factory = createFactoryManager({ count: 1 });
     insertProcessor(simulation, factory);
     simulation = broadcastEvent(
       broadcastEvent(simulation, {
@@ -746,7 +746,7 @@ describe("event bus", () => {
     metalStorage.data.stored +=
       10 * tickConsumption.factory.get(Resource.METAL)!;
     insertProcessor(simulation, metalStorage);
-    insertProcessor(simulation, createFactory());
+    insertProcessor(simulation, createFactoryManager({ count: 1 }));
     (
       [
         { tag: "simulation-clock-tick", tick: 1 }, // to make factory draw power and metal
