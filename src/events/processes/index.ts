@@ -12,7 +12,7 @@ import type { Resource } from "../../gameStateStore";
 import type { Storage } from "./storage";
 import type { Clock } from "./clock";
 import type { PowerGrid } from "./powerGrid";
-import type { Miner } from "./miner";
+import type { MinerManager } from "./miner";
 import type { Planet } from "./planet";
 import type { RefinerManager } from "./refiner";
 import type { Star } from "./star";
@@ -50,7 +50,7 @@ export type Processor =
   | Planet
   | CollectorManager
   | PowerGrid
-  | Miner
+  | MinerManager
   | Storage<Exclude<Resource, Resource.ELECTRICITY>>
   | RefinerManager
   | SatFactory

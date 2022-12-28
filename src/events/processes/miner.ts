@@ -3,7 +3,7 @@ import type { SubscriptionsFor } from "../index";
 import { Resource, tickConsumption } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
 
-export type Miner = EventProcessor<
+export type MinerManager = EventProcessor<
   "miner",
   {
     working: number;
@@ -14,10 +14,10 @@ export type Miner = EventProcessor<
   }
 >;
 
-export function createMiner(
-  options: Partial<{ id: Miner["id"]; count: number }> = {}
-): Miner {
-  const values = { id: "miner-0" as Miner["id"], count: 0, ...options };
+export function createMinerManager(
+  options: Partial<{ id: MinerManager["id"]; count: number }> = {}
+): MinerManager {
+  const values = { id: "miner-0" as MinerManager["id"], count: 0, ...options };
   return {
     id: values.id,
     tag: "miner",
@@ -30,7 +30,7 @@ export function createMiner(
   };
 }
 
-export function minerProcess(miner: Miner): [Miner, Event[]] {
+export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
   let event;
   const emitted = [] as Event[];
   while ((event = miner.incoming.shift())) {

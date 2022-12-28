@@ -19,7 +19,7 @@ import { createStorage } from "./processes/storage";
 import { createClock } from "./processes/clock";
 import type { PowerGrid } from "./processes/powerGrid";
 import { createPowerGrid } from "./processes/powerGrid";
-import { createMiner } from "./processes/miner";
+import { createMinerManager } from "./processes/miner";
 import { createPlanet } from "./processes/planet";
 import { createRefinerManager } from "./processes/refiner";
 import { createStar } from "./processes/star";
@@ -403,7 +403,7 @@ describe("event bus", () => {
 
   test("miner should draw power on sim clock tick when working", () => {
     let simulation = loadSave(blankSave());
-    const miner = createMiner({ count: 1 });
+    const miner = createMinerManager({ count: 1 });
     insertProcessor(simulation, miner);
     insertProcessor(simulation, createMemoryStream());
     simulation = processUntilSettled(
@@ -423,7 +423,7 @@ describe("event bus", () => {
   });
   test("miner should mine planet when supplied with power", () => {
     let simulation = loadSave(blankSave());
-    const miner = createMiner({ count: 1 });
+    const miner = createMinerManager({ count: 1 });
     insertProcessor(simulation, miner);
     insertProcessor(simulation, createMemoryStream());
     simulation = processUntilSettled(
@@ -453,7 +453,7 @@ describe("event bus", () => {
     insertProcessor(simulation, createStar());
     insertProcessor(simulation, createCollectorManager({ count: 3 }));
     insertProcessor(simulation, createPowerGrid());
-    insertProcessor(simulation, createMiner({ count: 1 }));
+    insertProcessor(simulation, createMinerManager({ count: 1 }));
 
     (
       [
@@ -648,7 +648,7 @@ describe("event bus", () => {
       10 * tickConsumption.miner.get(Resource.ELECTRICITY)! +
       10 * tickConsumption.refinery.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, powerGrid);
-    insertProcessor(simulation, createMiner({ count: 3 }));
+    insertProcessor(simulation, createMinerManager({ count: 3 }));
     insertProcessor(simulation, createStorage(Resource.ORE));
     insertProcessor(simulation, createRefinerManager({ count: 1 }));
     (
