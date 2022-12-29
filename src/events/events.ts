@@ -1,6 +1,7 @@
 import type { Id } from "./processes";
 import type { Resource } from "../gameStateStore";
 import type { Construct } from "../gameStateStore";
+import type { BuildOrder } from "../types";
 
 export type Event =
   | { tag: "outside-clock-tick"; timeStamp: DOMHighResTimeStamp }
@@ -53,7 +54,13 @@ export type Event =
       construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
       count: number;
       beforeTick: number;
-    };
+    }
+  | {
+      tag: "command-set-fabricator-queue";
+      queue: BuildOrder[];
+      afterTick: number;
+    }
+  | { tag: "fabricator-queue-set"; queue: BuildOrder[]; beforeTick: number };
 export type EventTag = Event["tag"];
 
 // helper type to extract a subset of possible events based on just their tags

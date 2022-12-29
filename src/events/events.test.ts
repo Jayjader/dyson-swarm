@@ -36,7 +36,7 @@ import {
   type LauncherManager,
 } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
-import { createFabricator } from "./processes/fabricator";
+import { createFabricator, type Fabricator } from "./processes/fabricator";
 import { constructionCosts } from "../actions";
 
 describe("event bus", () => {
@@ -1171,4 +1171,28 @@ describe("event bus", () => {
       } as BusEvent);
     }
   );
+
+  test("fabricator job queue state should update when receiving command to do so", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const fabricator = createFabricator();
+    insertProcessor(simulation, fabricator);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-set-fabricator-queue",
+        queue: [{ building: Construct.SOLAR_COLLECTOR }],
+        afterTick: 17777777,
+      })
+    );
+    expect(
+      (simulation.processors.get(fabricator.id) as Fabricator).data.queue
+    ).toEqual([{ building: Construct.SOLAR_COLLECTOR }]);
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({
+      tag: "fabricator-queue-set",
+      queue: [{ building: Construct.SOLAR_COLLECTOR }],
+      beforeTick: 17777778,
+    });
+  });
 });

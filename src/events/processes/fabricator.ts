@@ -1,7 +1,6 @@
 import type { EventProcessor } from "./index";
 import type { BuildChoice, BuildOrder } from "../../types";
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
 import type { Resource } from "../../gameStateStore";
 import { constructionCosts } from "../../actions";
 
@@ -11,9 +10,7 @@ export type Fabricator = EventProcessor<
     working: boolean;
     job: BuildChoice;
     queue: BuildOrder[];
-    received: Events<
-      Exclude<SubscriptionsFor<"fabricator">, "simulation-clock-tick">
-    >[];
+    received: Events<"supply">[];
   }
 >;
 
@@ -35,6 +32,14 @@ export function fabricatorProcess(
     emitted = [] as Event[];
   while ((event = fabricator.incoming.shift())) {
     switch (event.tag) {
+      case "command-set-fabricator-queue":
+        fabricator.data.queue = event.queue;
+        emitted.push({
+          tag: "fabricator-queue-set",
+          queue: event.queue,
+          beforeTick: event.afterTick + 1,
+        });
+        break;
       case "supply":
         if (event.toId === fabricator.id) {
           fabricator.data.received.push(event);

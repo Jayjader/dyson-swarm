@@ -89,7 +89,11 @@ export const SUBSCRIPTIONS = {
     "launch-satellite",
     "star-flux-emission",
   ] as const),
-  fabricator: new Set(["simulation-clock-tick", "supply"] as const),
+  fabricator: new Set([
+    "simulation-clock-tick",
+    "supply",
+    "command-set-fabricator-queue",
+  ] as const),
   stream: new Set([
     "outside-clock-tick",
     "simulation-clock-tick",
@@ -115,6 +119,7 @@ export const SUBSCRIPTIONS = {
     "command-trip-circuit-breaker",
     "command-set-working-count",
     "working-count-set",
+    "fabricator-queue-set",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
