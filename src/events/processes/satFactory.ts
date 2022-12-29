@@ -40,8 +40,18 @@ export function factoryProcess(
   const emitted = [] as Event[];
   while ((event = factory.incoming.shift())) {
     switch (event.tag) {
-      case "construct-fabricated":
       case "command-set-working-count":
+        if (event.construct === Construct.SATELLITE_FACTORY) {
+          factory.data.working = event.count;
+          emitted.push({
+            tag: "working-count-set",
+            count: event.count,
+            construct: Construct.SATELLITE_FACTORY,
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
+      case "construct-fabricated":
         if (event.construct === Construct.SATELLITE_FACTORY) {
           factory.data.received.push(event);
         }

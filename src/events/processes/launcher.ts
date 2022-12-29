@@ -41,8 +41,18 @@ export function launcherProcess(
   let emitted = [] as Event[];
   while ((event = launcher.incoming.shift())) {
     switch (event.tag) {
-      case "construct-fabricated":
       case "command-set-working-count":
+        if (event.construct === Construct.SATELLITE_LAUNCHER) {
+          launcher.data.working = event.count;
+          emitted.push({
+            tag: "working-count-set",
+            construct: Construct.SATELLITE_LAUNCHER,
+            count: event.count,
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
+      case "construct-fabricated":
         if (event.construct === Construct.SATELLITE_LAUNCHER) {
           launcher.data.received.push(event);
         }

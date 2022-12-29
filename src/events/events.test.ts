@@ -998,7 +998,6 @@ describe("event bus", () => {
     "total %p count should increase by 1 when construct-fabricated received",
     (construct) => {
       let simulation = loadSave(blankSave());
-      insertProcessor(simulation, createMemoryStream());
       for (const createManager of [
         createCollectorManager,
         createMinerManager,
@@ -1149,15 +1148,12 @@ describe("event bus", () => {
         insertProcessor(simulation, createManager({ count: 1 }));
       }
       simulation = processUntilSettled(
-        broadcastEvent(
-          broadcastEvent(simulation, {
-            tag: "command-set-working-count",
-            construct,
-            count: 0,
-            receivedTick: 1,
-          }),
-          { tag: "simulation-clock-tick", tick: 1 }
-        )
+        broadcastEvent(simulation, {
+          tag: "command-set-working-count",
+          construct,
+          count: 0,
+          afterTick: 1,
+        })
       );
       const manager = simulation.processors.get(`${construct}-0`) as
         | MinerManager
@@ -1165,6 +1161,14 @@ describe("event bus", () => {
         | SatelliteFactoryManager
         | LauncherManager;
       expect(manager.data.working).toEqual(0);
+      expect(
+        (simulation.processors.get("stream-0") as EventStream).data.received
+      ).toContainEqual({
+        tag: "working-count-set",
+        construct,
+        count: 0,
+        beforeTick: 2,
+      } as BusEvent);
     }
   );
 });

@@ -46,7 +46,13 @@ export type Event =
       tag: "command-set-working-count";
       construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
       count: number;
-      receivedTick: number;
+      afterTick: number;
+    }
+  | {
+      tag: "working-count-set";
+      construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
+      count: number;
+      beforeTick: number;
     };
 export type EventTag = Event["tag"];
 

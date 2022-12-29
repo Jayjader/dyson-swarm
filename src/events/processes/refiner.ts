@@ -45,8 +45,18 @@ export function refinerProcess(
   const emitted = [] as Event[];
   while ((event = refiner.incoming.shift())) {
     switch (event.tag) {
-      case "construct-fabricated":
       case "command-set-working-count":
+        if (event.construct === Construct.REFINER) {
+          refiner.data.working = event.count;
+          emitted.push({
+            tag: "working-count-set",
+            count: event.count,
+            construct: Construct.REFINER,
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
+      case "construct-fabricated":
         if (event.construct === Construct.REFINER) {
           refiner.data.received.push(event);
         }

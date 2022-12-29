@@ -35,8 +35,18 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
   const emitted = [] as Event[];
   while ((event = miner.incoming.shift())) {
     switch (event.tag) {
-      case "construct-fabricated":
       case "command-set-working-count":
+        if (event.construct === Construct.MINER) {
+          miner.data.working = event.count;
+          emitted.push({
+            tag: "working-count-set",
+            count: event.count,
+            construct: Construct.MINER,
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
+      case "construct-fabricated":
         if (event.construct === Construct.MINER) {
           miner.data.received.push(event);
         }
