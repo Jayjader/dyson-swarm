@@ -462,7 +462,7 @@ describe("event bus", () => {
       [
         { tag: "simulation-clock-tick", tick: 1 }, // star emits flux
         { tag: "simulation-clock-tick", tick: 2 }, // collectors produce power from collected flux
-        { tag: "command-reset-circuit-breaker" }, // miner has been drawing on empty grid so circuit breaker needs to be reset
+        { tag: "command-reset-circuit-breaker", afterTick: 2 }, // miner has been drawing on empty grid so circuit breaker needs to be reset
         { tag: "simulation-clock-tick", tick: 3 }, // grid stores power received & grid supplies power to miner
         { tag: "simulation-clock-tick", tick: 4 }, // miner mines planet
       ] as BusEvent[]
