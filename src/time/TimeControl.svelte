@@ -16,7 +16,6 @@
     const newSpeed = Number.parseInt(event.target.value);
     console.info({ command: "set-speed", newSpeed });
     clock.setSpeed(newSpeed);
-    displayedSpeed = newSpeed;
   }
   function startEditingSpeed() {
     console.info({ command: "start-editing-speed" });
@@ -44,6 +43,9 @@
     if (isPlay(data)) {
       displayedSpeed = data[0].speed;
       currentTick = data[0].tick;
+    } else {
+      displayedSpeed = data[1].speed;
+      currentTick = data[1].tick;
     }
   });
 </script>
