@@ -133,7 +133,7 @@
       <SwarmHud swarm={{ count: $state.swarm.satellites }} />
     </div>
 
-    <div class="flex flex-row flex-wrap justify-around">
+    <div class="flex flex-row flex-wrap justify-around gap-2">
       <TimeControl />
       {#if $state.swarm.satellites > 0}
         <ProgressOverview swarm={{ count: $state.swarm.satellites }} />
