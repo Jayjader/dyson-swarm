@@ -5,7 +5,7 @@
 </script>
 
 <label
-  class="basis-full border-8 rounded-xl {border} pt-1 pb-2 flex flex-col justify-center items-stretch text-center {text} cursor-pointer"
+  class="basis-full rounded-xl border-8 {border} flex flex-col items-stretch justify-center pt-1 pb-2 text-center {text} cursor-pointer"
 >
   Circuit Breaker
   <input type="checkbox" readonly bind:checked={open} class="cursor-pointer" />

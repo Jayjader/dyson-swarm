@@ -23,13 +23,13 @@
 </script>
 
 <div
-  class="panel my-4 mx-0 pb-9 bg-purple-300"
+  class="panel my-4 mx-0 bg-purple-300 pb-9"
   class:left={orientation === "left"}
   class:right={orientation === "right"}
   data-augmented-ui={augUiMixins}
 >
   <table>
-    <caption class="capitalize font-bold">{caption}</caption>
+    <caption class="font-bold capitalize">{caption}</caption>
     {#each contents as [name, count] (name)}
       <tr
         ><th>{name}</th><td>{count}</td>

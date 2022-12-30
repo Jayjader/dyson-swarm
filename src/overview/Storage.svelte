@@ -9,17 +9,17 @@
 </script>
 
 <div
-  class="flex flex-row flex-wrap gap-1 p-1 border-4 rounded border-slate-500 bg-zinc-200 text-slate-700"
+  class="flex flex-row flex-wrap gap-1 rounded border-4 border-slate-500 bg-zinc-200 p-1 text-slate-700"
 >
   <img
-    class="max-h-12 aspect-square self-center px-1 ml-auto mr-auto"
+    class="ml-auto mr-auto aspect-square max-h-12 self-center px-1"
     alt={name}
     src={icon}
   />
-  <div class="flex-grow flex flex-row flex-wrap">
+  <div class="flex flex-grow flex-row flex-wrap">
     <div class="flex flex-col items-start">
       <h4
-        class="flex-grow font-bold border-b-2 border-b-slate-500 rounded-br pr-1"
+        class="flex-grow rounded-br border-b-2 border-b-slate-500 pr-1 font-bold"
         style="line-height: 1;"
       >
         {name}
@@ -27,14 +27,14 @@
       <h5 class="font-bold">Stored</h5>
       <output>{stored}{unit}</output>
     </div>
-    <div class="flex-grow flex flex-col">
+    <div class="flex flex-grow flex-col">
       <h5 class="text-center font-bold" style="line-height: 1;">Last Tick</h5>
       <div class="flex flex-row gap-1">
-        <div class="basis-1/2 flex flex-col items-end">
+        <div class="flex basis-1/2 flex-col items-end">
           <h5 class="font-bold">Total</h5>
           <output>{total > 0 ? "+" : ""}{total}{unit}</output>
         </div>
-        <div class="basis-1/2 flex flex-col">
+        <div class="flex basis-1/2 flex-col">
           <span class="flex flex-row gap-1">
             <output>{produced}{unit}</output><span>Produced</span>
           </span>

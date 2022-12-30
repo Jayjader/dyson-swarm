@@ -51,7 +51,7 @@
 </script>
 
 <div
-  class="text-right border-2 rounded border-slate-100 bg-stone-800 text-slate-100 px-1 flex flex-col items-stretch"
+  class="flex flex-col items-stretch rounded border-2 border-slate-100 bg-stone-800 px-1 text-right text-slate-100"
 >
   <label class="flex gap-1">
     Simulation Time: <output>
@@ -76,8 +76,8 @@
     on:mousemove={editSpeedFromMouseEvent}
     on:mouseup={stopEditingSpeed}
   />
-  <div class="flex flex-row gap-1 justify-evenly">
-    <label class="flex flex-row gap-1 justify-between cursor-pointer">
+  <div class="flex flex-row justify-evenly gap-1">
+    <label class="flex cursor-pointer flex-row justify-between gap-1">
       Pause
       <input
         type="radio"
@@ -87,7 +87,7 @@
         on:change={pause}
       />
     </label>
-    <label class="flex flex-row gap-1 justify-between cursor-pointer">
+    <label class="flex cursor-pointer flex-row justify-between gap-1">
       Play
       <input
         type="radio"

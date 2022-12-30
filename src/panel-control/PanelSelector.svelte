@@ -3,7 +3,7 @@
   import PanelControl from "./PanelControl.svelte";
 </script>
 
-<div class="flex-grow-0 flex flex-row flex-wrap justify-center gap-1">
+<div class="flex flex-grow-0 flex-row flex-wrap justify-center gap-1">
   <PanelControl
     on={$uiPanelsState.size > 0}
     disabled={$uiPanelsState.size === 0}

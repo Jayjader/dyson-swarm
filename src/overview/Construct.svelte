@@ -18,26 +18,26 @@
 </script>
 
 <div
-  class="basis-{basis} p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 bg-slate-500 text-zinc-50"
+  class="basis-{basis} flex flex-row gap-1 rounded border-2 border-zinc-300 bg-slate-500 p-1 text-zinc-50"
 >
   <img
-    class="self-center max-w-min aspect-square mr-1"
+    class="mr-1 aspect-square max-w-min self-center"
     src="/{name}.png"
     alt={name}
     title={name}
   />
-  <div class="flex-1 flex flex-row flex-wrap justify-between gap-1">
-    <div class="flex flex-col gap-1 justify-between">
+  <div class="flex flex-1 flex-row flex-wrap justify-between gap-1">
+    <div class="flex flex-col justify-between gap-1">
       <h4 class="font-bold text-zinc-50">{name}</h4>
       <slot />
     </div>
-    <div class="flex flex-col gap-1 justify-between">
+    <div class="flex flex-col justify-between gap-1">
       <div class="flex flex-col">
         <h5 class="font-bold">Consumes:</h5>
         <span class="flex flex-row gap-1">
           {#each consumes as c (c.name)}
             <img
-              class="ml-2 mr-1 self-center max-w-min h-4 aspect-square"
+              class="ml-2 mr-1 aspect-square h-4 max-w-min self-center"
               src={c.icon}
               alt={c.name}
               title={c.name}
@@ -50,7 +50,7 @@
         <h5 class="font-bold">Produces:</h5>
         <span class="flex flex-row gap-1">
           <img
-            class="ml-2 mr-1 self-center max-w-min h-4 aspect-square"
+            class="ml-2 mr-1 aspect-square h-4 max-w-min self-center"
             src={produces.icon}
             alt={produces.name}
             title={produces.name}

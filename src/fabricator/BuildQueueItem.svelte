@@ -4,7 +4,7 @@
 </script>
 
 <li
-  class="border-4 rounded-sm bg-sky-300 text-gray-900"
+  class="rounded-sm border-4 bg-sky-300 text-gray-900"
   class:border-sky-500={!isRepeat}
   class:border-pink-400={isRepeat}
   class:border-rose-500={mode === "remove-build-order"}

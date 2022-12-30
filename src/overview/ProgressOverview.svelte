@@ -25,7 +25,7 @@
     "border-b-2 border-b-stone-600 rounded-br text-right pr-2";
 </script>
 
-<table class="border-2 rounded border-stone-400 border-separate p-1">
+<table class="border-separate rounded border-2 border-stone-400 p-1">
   <tr transition:fade={{ delay: 150, duration: 1500 }}>
     <th class={tableHeaderClasses}
       >Number needed to capture 100% of the star's output</th

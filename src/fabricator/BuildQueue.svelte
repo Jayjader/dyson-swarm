@@ -41,7 +41,7 @@
 
 <section
   style="grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
-  class="border-2 rounded-sm grid gap-1 p-1"
+  class="grid gap-1 rounded-sm border-2 p-1"
   class:visible
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}
@@ -49,7 +49,7 @@
   class:border-rose-600={$mode === "remove-build-order"}
 >
   <h3
-    class="font-bold flex flex-row justify-evenly row-start-1 col-start-2"
+    class="col-start-2 row-start-1 flex flex-row justify-evenly font-bold"
     class:text-sky-500={$mode === "read-only"}
     class:text-violet-400={$mode === "edit"}
     class:text-indigo-400={$mode === "add-build-order"}
@@ -58,7 +58,7 @@
     {#if $mode === "read-only"}
       Order Queue
       <button
-        class="text-indigo-300 border-2 border-indigo-300 -my-0.5 hover:bg-stone-700 active:bg-stone-900 hover:text-indigo-300 active:text-indigo-300"
+        class="-my-0.5 border-2 border-indigo-300 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
         on:click={enterEdit}
       >
         Edit
@@ -71,7 +71,7 @@
       Remove Build Order
     {/if}
   </h3>
-  <ol class="mx-1 col-start-2 row-start-2 flex flex-col gap-1">
+  <ol class="col-start-2 row-start-2 mx-1 flex flex-col gap-1">
     {#each queue as buildOrder, i (buildOrder)}
       <BuildQueueItem mode={$mode} isRepeat={isRepeat(buildOrder)}>
         {#if $mode === "remove-build-order" && !isRepeat(buildOrder)}
@@ -89,7 +89,7 @@
     {/each}
   </ol>
   {#if $mode === "edit"}
-    <div class="flex flex-col gap-0.5 col-start-1 row-span-2">
+    <div class="col-start-1 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Remove Build Order"
         on:click={uiState.enterRemoveBuildOrder}
@@ -102,16 +102,16 @@
         disabled={$uiState?.[0]?.present?.queue?.length === 0}
       />
     </div>
-    <div class="flex flex-col gap-0.5 col-start-3 row-span-2">
+    <div class="col-start-3 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Add Build Order"
         on:click={uiState.enterAddBuildOrder}
       />
       <MenuButton text="Add Repeat" disabled={true} />
     </div>
-    <div class="flex flex-row gap-0.5 justify-between col-start-1 col-span-3">
+    <div class="col-span-3 col-start-1 flex flex-row justify-between gap-0.5">
       <MenuButton text="Cancel Edits" on:click={cancelEdits} />
-      <div class="flex flex-row gap-0.5 justify-center">
+      <div class="flex flex-row justify-center gap-0.5">
         <MenuButton
           text="Undo"
           on:click={uiState.undoEdit}
@@ -130,7 +130,7 @@
       />
     </div>
   {:else if $mode === "add-build-order"}
-    <div class="flex flex-col gap-0.5 col-start-1 row-span-2">
+    <div class="col-start-1 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Solar Collector"
         on:click={uiState.selectNewBuildOrder.bind(
@@ -147,7 +147,7 @@
         on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINER)}
       />
     </div>
-    <div class="flex flex-col gap-0.5 col-start-3 row-span-2">
+    <div class="col-start-3 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Satellite Launcher"
         on:click={uiState.selectNewBuildOrder.bind(
@@ -163,11 +163,11 @@
         )}
       />
     </div>
-    <div class="flex flex-row gap-0.5 col-start-1 row-start-3 col-span-3">
+    <div class="col-span-3 col-start-1 row-start-3 flex flex-row gap-0.5">
       <MenuButton text="Cancel" on:click={uiState.cancelAddBuildOrder} />
     </div>
   {:else if $mode === "remove-build-order"}
-    <div class="flex flex-row gap-0.5 col-start-1 col-span-3">
+    <div class="col-span-3 col-start-1 flex flex-row gap-0.5">
       <MenuButton text="Cancel" on:click={uiState.cancelRemoveBuildOrder} />
     </div>
   {/if}

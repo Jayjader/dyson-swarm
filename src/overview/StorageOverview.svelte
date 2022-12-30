@@ -6,8 +6,8 @@
   const kilogram = "kg";
 </script>
 
-<section class="flex flex-col gap-1 p-1 border-2 rounded border-slate-100">
-  <h3 class="text-slate-100 font-bold text-center">Storage</h3>
+<section class="flex flex-col gap-1 rounded border-2 border-slate-100 p-1">
+  <h3 class="text-center font-bold text-slate-100">Storage</h3>
   <Storage
     name="Power"
     icon="/electric.svg"

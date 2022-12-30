@@ -18,20 +18,20 @@
 </script>
 
 <section
-  class="flex flex-row flex-wrap gap-1 p-1 border-2 rounded border-slate-100"
+  class="flex flex-row flex-wrap gap-1 rounded border-2 border-slate-100 p-1"
 >
-  <h3 class="text-slate-100 font-bold text-center basis-full">Constructs</h3>
-  <div class="flex-grow flex flex-row gap-1 justify-items-stretch">
+  <h3 class="basis-full text-center font-bold text-slate-100">Constructs</h3>
+  <div class="flex flex-grow flex-row justify-items-stretch gap-1">
     <div
-      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-yellow-500 text-yellow-400 bg-zinc-600"
+      class="flex flex-grow basis-2/5 flex-row gap-1 rounded border-2 border-yellow-500 bg-zinc-600 p-1 text-yellow-400"
     >
       <img
-        class="max-w-min aspect-square self-center mr-1"
+        class="mr-1 aspect-square max-w-min self-center"
         src={ICON["star"]}
         alt="Star"
         title="star"
       />
-      <div class="basis-full flex flex-row flex-wrap justify-between">
+      <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
           <h4 class="basis-full font-bold">Star</h4>
           <div class="flex flex-col">
@@ -40,11 +40,11 @@
           </div>
         </div>
         <div class="flex flex-col-reverse">
-          <div class="text-zinc-200 flex flex-col">
+          <div class="flex flex-col text-zinc-200">
             <h5 class="font-bold">Produces:</h5>
             <span class="flex flex-row gap-1">
               <img
-                class="self-center max-w-min h-4 aspect-square"
+                class="aspect-square h-4 max-w-min self-center"
                 src={ICON["flux"]}
                 alt="Energy Flux"
                 title="energy flux"
@@ -57,15 +57,15 @@
     </div>
     <!-- TODO: Swarm Overview appears when count > 0 -->
     <div
-      class="basis-3/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-zinc-300 bg-slate-500 text-zinc-50"
+      class="flex flex-grow basis-3/5 flex-row gap-1 rounded border-2 border-zinc-300 bg-slate-500 p-1 text-zinc-50"
     >
       <img
-        class="max-h-16 aspect-square self-center mr-1"
+        class="mr-1 aspect-square max-h-16 self-center"
         src="/satellite.svg"
         alt="Satellite Swarm"
         title="satellite swarm"
       />
-      <div class="basis-full flex flex-row flex-wrap justify-between">
+      <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
           <h4 class="basis-full font-bold">Satellite Swarm</h4>
           <div class="flex flex-col">
@@ -78,7 +78,7 @@
             <h5 class="font-bold">Redirects:</h5>
             <span class="flex flex-row gap-1">
               <img
-                class="self-center max-w-min h-4 aspect-square"
+                class="aspect-square h-4 max-w-min self-center"
                 src={ICON["flux"]}
                 alt="Energy Flux"
                 title="energy flux"
@@ -114,16 +114,16 @@
   </ConstructOverview>
   <GridBreaker open={circuitBreaker.tripped} />
   <Fabricator />
-  <div class="flex-grow flex flex-row gap-1 justify-items-stretch">
+  <div class="flex flex-grow flex-row justify-items-stretch gap-1">
     <div
-      class="basis-2/5 flex-grow p-1 flex flex-row gap-1 border-2 rounded border-orange-300 bg-zinc-600 text-amber-300"
+      class="flex flex-grow basis-2/5 flex-row gap-1 rounded border-2 border-orange-300 bg-zinc-600 p-1 text-amber-300"
     >
       <img
-        class="max-w-min aspect-square self-center mr-1"
+        class="mr-1 aspect-square max-w-min self-center"
         src={ICON["planet"]}
         alt="Planet"
       />
-      <div class="basis-full flex flex-row flex-wrap justify-between">
+      <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
           <h4 class="basis-full font-bold">Planet</h4>
           <div class="flex flex-col">
@@ -154,7 +154,7 @@
       <div class="flex flex-col">
         <h5 class="font-bold">Working:</h5>
         <span class="flex flex-row gap-1">
-          <button class="border-2 rounded border-zinc-50">None</button>
+          <button class="rounded border-2 border-zinc-50">None</button>
           <input
             type="number"
             max={constructs.get(Construct.MINER) ?? 0}
@@ -162,7 +162,7 @@
             style="max-width: 6ch"
           />
           <output>/{constructs.get(Construct.MINER) ?? 0}</output>
-          <button class="border-2 rounded border-zinc-50">All</button>
+          <button class="rounded border-2 border-zinc-50">All</button>
         </span>
       </div>
     </ConstructOverview>
@@ -193,7 +193,7 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="border-2 rounded border-zinc-50">None</button>
+        <button class="rounded border-2 border-zinc-50">None</button>
         <input
           type="number"
           min={0}
@@ -201,7 +201,7 @@
           style="max-width: 6ch"
         />
         <output>/{constructs.get(Construct.REFINER) ?? 0}</output>
-        <button class="border-2 rounded border-zinc-50">All</button>
+        <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
   </ConstructOverview>
@@ -235,7 +235,7 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="border-2 rounded border-zinc-50">None</button>
+        <button class="rounded border-2 border-zinc-50">None</button>
         <input
           type="number"
           min={0}
@@ -243,7 +243,7 @@
           style="max-width: 6ch"
         />
         <output>/{constructs.get(Construct.SATELLITE_FACTORY) ?? 0}</output>
-        <button class="border-2 rounded border-zinc-50">All</button>
+        <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
   </ConstructOverview>
@@ -273,7 +273,7 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="border-2 rounded border-zinc-50">None</button>
+        <button class="rounded border-2 border-zinc-50">None</button>
         <input
           type="number"
           min={0}
@@ -281,7 +281,7 @@
           style="max-width: 6ch"
         />
         <output>/{constructs.get(Construct.SATELLITE_LAUNCHER) ?? 0}</output>
-        <button class="border-2 rounded border-zinc-50">All</button>
+        <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
   </ConstructOverview>

@@ -23,24 +23,24 @@
 </script>
 
 <div
-  class="basis-full p-1 gap-1 flex flex-row border-2 rounded border-zinc-300 bg-slate-500 text-zinc-50"
+  class="flex basis-full flex-row gap-1 rounded border-2 border-zinc-300 bg-slate-500 p-1 text-zinc-50"
 >
   <img
-    class="self-center max-w-min aspect-square mr-1"
+    class="mr-1 aspect-square max-w-min self-center"
     src={ICON["fabricator"]}
     alt="Fabricator"
   />
-  <div class="flex-1 flex flex-row flex-wrap justify-between gap-1">
-    <div class="flex flex-col gap-1 justify-between">
+  <div class="flex flex-1 flex-row flex-wrap justify-between gap-1">
+    <div class="flex flex-col justify-between gap-1">
       <h4 class="font-bold text-zinc-50">Fabricator</h4>
     </div>
-    <div class="flex flex-col gap-1 justify-between">
+    <div class="flex flex-col justify-between gap-1">
       <div class="flex flex-col">
         <h5 class="font-bold">Consuming:</h5>
         <span class="flex flex-row gap-1">
           {#each consumes as { name, value, unit, icon } (name)}
             <img
-              class="self-center max-w-min h-4 aspect-square"
+              class="aspect-square h-4 max-w-min self-center"
               src={icon}
               alt={name}
               title={name}
@@ -54,7 +54,7 @@
         {#if buildOrder}
           <span class="flex flex-row gap-1">
             <img
-              class="self-center max-w-min h-4 aspect-square"
+              class="aspect-square h-4 max-w-min self-center"
               src={ICON[buildOrder.building]}
               alt={buildOrder.building}
             />

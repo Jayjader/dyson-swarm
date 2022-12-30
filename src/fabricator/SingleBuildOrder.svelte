@@ -6,7 +6,7 @@
   export let buildOrder: undefined | BuildOrder;
 </script>
 
-<span class="min-w-min inline-block flex flex-row flex-wrap items-center">
+<span class="inline-block flex min-w-min flex-row flex-wrap items-center">
   {#if isRepeat(buildOrder)}
     <ol>
       {#if isInfinite(buildOrder)}🗘 Forever{:else}{buildOrder.count}{/if}

@@ -124,8 +124,10 @@
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
 </script>
 
-<main class="p-0 m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2">
-  <div class="flex-grow-0 flex flex-col">
+<main
+  class="m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2 p-0"
+>
+  <div class="flex flex-grow-0 flex-col">
     <div class="flex flex-row justify-between text-stone-200">
       <ResourceHud resources={$resources} />
       <SwarmHud swarm={{ count: $state.swarm.satellites }} />
@@ -139,7 +141,7 @@
     </div>
   </div>
 
-  <div class="panels overflow-y-scroll grid grid-auto" style="--gap: 0.5rem">
+  <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview
         constructs={$state.working}
