@@ -124,14 +124,14 @@
   onDestroy(() => window.cancelAnimationFrame(animationFrame));
 </script>
 
-<main class="p-0 m-0 flex flex-col flex-nowrap items-stretch justify-between">
+<main class="p-0 m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2">
   <div class="flex-grow-0 flex flex-col">
     <div class="flex flex-row justify-between text-stone-200">
       <ResourceHud resources={$resources} />
       <SwarmHud swarm={{ count: $state.swarm.satellites }} />
     </div>
 
-    <div class="flex flex-row flex-wrap justify-between">
+    <div class="flex flex-row flex-wrap justify-around">
       <TimeControl />
       {#if $state.swarm.satellites > 0}
         <ProgressOverview swarm={{ count: $state.swarm.satellites }} />

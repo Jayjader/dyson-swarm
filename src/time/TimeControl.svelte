@@ -16,6 +16,7 @@
     const newSpeed = Number.parseInt(event.target.value);
     console.info({ command: "set-speed", newSpeed });
     clock.setSpeed(newSpeed);
+    displayedSpeed = newSpeed;
   }
   function startEditingSpeed() {
     console.info({ command: "start-editing-speed" });
@@ -48,7 +49,7 @@
 </script>
 
 <div
-  class="text-right border-2 rounded border-stone-800 px-1 flex flex-col items-stretch"
+  class="text-right border-2 rounded border-slate-100 bg-stone-800 text-slate-100 px-1 flex flex-col items-stretch"
 >
   <label class="flex gap-1">
     Simulation Time: <output>
@@ -60,6 +61,19 @@
       >{displayedSpeed} tick{displayedSpeed === 1 ? "" : "s"}/s</output
     >
   </label>
+  <input
+    id="speed"
+    name="speed"
+    type="range"
+    min="1"
+    max="60"
+    step="1"
+    value={displayedSpeed}
+    on:input={setSpeed}
+    on:mousedown={startEditingSpeed}
+    on:mousemove={editSpeedFromMouseEvent}
+    on:mouseup={stopEditingSpeed}
+  />
   <div class="flex flex-row gap-1 justify-evenly">
     <label class="flex flex-row gap-1 justify-between">
       Pause
@@ -84,19 +98,6 @@
   <!-- TODO: handle touch events 
         see https://web.dev/mobile-touch/ and https://web.dev/mobile-touchandmouse/
   -->
-  <input
-    id="speed"
-    name="speed"
-    type="range"
-    min="0.5"
-    max="60"
-    step="1"
-    value={displayedSpeed}
-    on:change={setSpeed}
-    on:mousedown={startEditingSpeed}
-    on:mousemove={editSpeedFromMouseEvent}
-    on:mouseup={stopEditingSpeed}
-  />
 </div>
 
 <style>
