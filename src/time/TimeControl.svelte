@@ -101,6 +101,3 @@
         see https://web.dev/mobile-touch/ and https://web.dev/mobile-touchandmouse/
   -->
 </div>
-
-<style>
-</style>
