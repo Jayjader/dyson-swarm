@@ -75,7 +75,7 @@
     on:mouseup={stopEditingSpeed}
   />
   <div class="flex flex-row gap-1 justify-evenly">
-    <label class="flex flex-row gap-1 justify-between">
+    <label class="flex flex-row gap-1 justify-between cursor-pointer">
       Pause
       <input
         type="radio"
@@ -85,7 +85,7 @@
         on:change={pause}
       />
     </label>
-    <label class="flex flex-row gap-1 justify-between">
+    <label class="flex flex-row gap-1 justify-between cursor-pointer">
       Play
       <input
         type="radio"
