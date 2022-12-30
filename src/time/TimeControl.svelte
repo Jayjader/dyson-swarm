@@ -51,7 +51,7 @@
 </script>
 
 <div
-  class="flex flex-col items-stretch rounded border-2 border-slate-100 bg-stone-800 px-1 text-right text-slate-100"
+  class="flex flex-col items-stretch justify-around rounded border-2 border-slate-100 bg-stone-800 px-1 text-right text-slate-100"
 >
   <label class="flex gap-1">
     Simulation Time: <output>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
   import { clock } from "../time/store";
+  import ProgressHeader from "./ProgressHeader.svelte";
   export let swarm: { count: number };
   let estimatedRatePerTick: number;
   const slidingWindow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -21,38 +22,39 @@
       estimatedRatePerTick,
     });
   });
-  const tableHeaderClasses =
-    "border-b-2 border-b-stone-600 rounded-br text-right pr-2";
+  const swarmSizeGoal = 2 ** 50;
 </script>
 
-<table class="border-separate rounded border-2 border-stone-400 p-1">
+<table
+  class="border-separate rounded border-2 border-slate-100 p-1 text-slate-100"
+>
   <tr transition:fade={{ delay: 150, duration: 1500 }}>
-    <th class={tableHeaderClasses}
-      >Number needed to capture 100% of the star's output</th
+    <ProgressHeader
+      >Number needed to capture 100% of the star's output</ProgressHeader
     >
-    <td>{2 ** 50}</td>
+    <td>{swarmSizeGoal}</td>
   </tr>
   <tr transition:fade={{ delay: 1000, duration: 1500 }}>
-    <th class={tableHeaderClasses}>Percent of star's output captured</th>
-    <td>{(swarm.count * 100) / 2 ** 50}</td>
+    <ProgressHeader>Percent of star's output captured</ProgressHeader>
+    <td>{(swarm.count * 100) / swarmSizeGoal}</td>
   </tr>
   <tr
     transition:fade={{ delay: 1500, duration: 1500 }}
     title="Estimated over the past 10 ticks"
   >
-    <th class={tableHeaderClasses}>Estimated rate of deployment</th>
+    <ProgressHeader>Estimated rate of deployment</ProgressHeader>
     <td>{estimatedRatePerTick.toFixed(1)}/tick</td>
   </tr>
   <tr
     transition:fade={{ delay: 2000, duration: 1500 }}
     title="Estimated over the past 10 ticks"
   >
-    <th class={tableHeaderClasses}
-      >Estimated time to reach 100% at current rate:</th
+    <ProgressHeader
+      >Estimated time to reach 100% at current rate:</ProgressHeader
     >
     <td>
       {Math.floor(
-        (2 ** 50 - swarm.count) /
+        (swarmSizeGoal - swarm.count) /
           estimatedRatePerTick /
           (365 * 24 * 3600 * 1000)
       )} tick-years
