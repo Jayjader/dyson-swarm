@@ -8,25 +8,27 @@
   import { constructionCosts } from "../actions";
   import { Resource } from "../gameStateStore";
 
-  let costs: null | Input = null as null | Input;
-  currentJob.subscribe((job) => {
-    costs = job === undefined ? null : constructionCosts[job.building];
-  });
-  const matsProgress = tweened<number>(0, {
+  const matsProgress = tweened<number | undefined>(0, {
     duration: 150,
     easing: cubicOut,
   });
-  const elecProgress = tweened<number>(1, {
+  const elecProgress = tweened<number | undefined>(1, {
     duration: 150,
     easing: cubicOut,
   });
   let buildOrder: undefined | BuildOrder;
+  let costs: null | Input = null as null | Input;
   currentJob.subscribe((newVal) => {
     buildOrder = newVal;
     if (buildOrder) {
       console.debug({ command: "new-job-received", buildOrder }); // TODO: verify log level
+      costs = constructionCosts[buildOrder.building];
       matsProgress.update(() => 0);
       elecProgress.update(() => 0);
+    } else {
+      costs = null;
+      matsProgress.set(undefined);
+      elecProgress.set(undefined);
     }
   });
   export let resources;
@@ -64,9 +66,9 @@
 >
   <div class="flex flex-row justify-around gap-2 self-stretch">
     <button
-      class="my-1 rounded border-2 border-stone-400 px-2"
-      on:click={currentJob.set.bind(this, undefined)}
-      disabled={costs === undefined}>Clear Job</button
+      class="my-1 rounded border-2 border-stone-400 px-2 disabled:text-stone-600"
+      on:click={() => currentJob.set(undefined)}
+      disabled={!costs}>Clear Job</button
     >
     <h3>Current Job</h3>
   </div>

@@ -48,29 +48,33 @@
   class:border-indigo-400={$mode === "add-build-order"}
   class:border-rose-600={$mode === "remove-build-order"}
 >
-  <h3
-    class="col-start-2 row-start-1 flex flex-row justify-evenly font-bold"
-    class:text-sky-500={$mode === "read-only"}
-    class:text-violet-400={$mode === "edit"}
-    class:text-indigo-400={$mode === "add-build-order"}
-    class:text-rose-600={$mode === "remove-build-order"}
-  >
+  <div class="col-start-2 row-start-1 flex flex-row justify-evenly ">
+    <h3
+      class="font-bold"
+      class:text-sky-500={$mode === "read-only"}
+      class:text-violet-400={$mode === "edit"}
+      class:text-indigo-400={$mode === "add-build-order"}
+      class:text-rose-600={$mode === "remove-build-order"}
+    >
+      {#if $mode === "read-only"}
+        Order Queue
+      {:else if $mode === "edit"}
+        Edit
+      {:else if $mode === "add-build-order"}
+        Add Build Order
+      {:else if $mode === "remove-build-order"}
+        Remove Build Order
+      {/if}
+    </h3>
     {#if $mode === "read-only"}
-      Order Queue
       <button
-        class="-my-0.5 border-2 border-indigo-300 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
+        class="my-2 px-2 border-2 border-indigo-300 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
         on:click={enterEdit}
       >
         Edit
       </button>
-    {:else if $mode === "edit"}
-      Edit
-    {:else if $mode === "add-build-order"}
-      Add Build Order
-    {:else if $mode === "remove-build-order"}
-      Remove Build Order
     {/if}
-  </h3>
+  </div>
   <ol class="col-start-2 row-start-2 mx-1 flex flex-col gap-1">
     {#each queue as buildOrder, i (buildOrder)}
       <BuildQueueItem mode={$mode} isRepeat={isRepeat(buildOrder)}>

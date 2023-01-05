@@ -166,9 +166,6 @@
   .panels {
     min-height: 10rem;
   }
-  .panels > :global(section:nth-child(3)) {
-    grid-column: 1/-1;
-  }
   .grid-auto {
     --gap: initial;
     gap: var(--gap);
