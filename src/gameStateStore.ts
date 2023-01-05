@@ -151,9 +151,9 @@ export const tick: GameAction = (state) => {
     (accu, [worker, count]) =>
       accu +
       count *
-        (tickProduction[worker as unknown as keyof typeof tickProduction].get(
-          Resource.ELECTRICITY as never
-        ) ?? 0),
+        (tickProduction?.[
+          worker as unknown as keyof typeof tickProduction
+        ]?.get(Resource.ELECTRICITY as never) ?? 0),
     0
   );
   const breakerShouldTrip =

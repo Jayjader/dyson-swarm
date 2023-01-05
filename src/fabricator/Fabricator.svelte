@@ -14,7 +14,7 @@
   export let visible = true;
 </script>
 
-<section class:visible>
+<section class:visible class="rounded border-2 border-slate-100 text-slate-100">
   <h2>Fabricator</h2>
   <h3>Current Job</h3>
   <button
