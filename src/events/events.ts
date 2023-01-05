@@ -13,6 +13,8 @@ export type Event =
   | { tag: "command-simulation-clock-indirect-pause" }
   | { tag: "simulation-clock-indirect-pause" }
   | { tag: "command-simulation-clock-indirect-resume" }
+  | { tag: "command-simulation-clock-set-speed"; speed: number, afterTick: number }
+  | { tag: "simulation-clock-new-speed"; speed: number, beforeTick: number }
   | { tag: "simulation-clock-indirect-resume" }
   | { tag: "star-flux-emission"; flux: number; receivedTick: number }
   | { tag: "mine-planet-surface"; minerCount: number; receivedTick: number }

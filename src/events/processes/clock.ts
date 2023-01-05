@@ -76,6 +76,16 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
           emitted.push({ tag: "simulation-clock-indirect-resume" });
         }
         break;
+      case "command-simulation-clock-set-speed":
+        if (!isPlay(clock.data.state)) {
+          clock.data.state[1].speed = event.speed;
+          emitted.push({
+            tag: "simulation-clock-new-speed",
+            speed: event.speed,
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
       case "outside-clock-tick":
         if (!isPlay(clock.data.state)) {
           break;

@@ -54,8 +54,6 @@
         "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
       );
     }
-    // TODO: investigate if it's better to schedule the next frame *after* we're done processing this one
-    scheduleCallback(advanceClock);
     // don't catch up passed time if clock was paused
     if (options.resume) {
       timeStampOfLastTick = nextTimeStamp;
@@ -84,6 +82,8 @@
         timeStampOfLastTick,
       });
     }
+    // TODO: investigate if it's better to schedule the next frame *before* we're done processing this one
+    scheduleCallback(advanceClock);
   }
 
   function mainLoop() {

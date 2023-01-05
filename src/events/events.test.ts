@@ -16,7 +16,7 @@ import {
   tickProduction,
 } from "../gameStateStore";
 import { createStorage } from "./processes/storage";
-import { createClock } from "./processes/clock";
+import { type Clock, createClock } from "./processes/clock";
 import type { PowerGrid } from "./processes/powerGrid";
 import { createPowerGrid } from "./processes/powerGrid";
 import { createMinerManager, type MinerManager } from "./processes/miner";
@@ -186,23 +186,108 @@ describe("event bus", () => {
         (simulation.processors.get("stream-0") as EventStream).data.received
       ).not.toContainEqual(
         expect.objectContaining({
+          // we're just looking at events emitted by the clock, so we can implicitly exclude all player commands (that start with "command-")
           tag: expect.stringMatching(/^simulation-clock-indirect/),
         })
       );
     }
   );
 
+  test("clock should change speed when receiving command while paused", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const clock = createClock(0, "clock-0", {
+      speed: 1,
+      tick: 0,
+      mode: "pause",
+    });
+    insertProcessor(simulation, clock);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-simulation-clock-set-speed",
+        speed: 30,
+        afterTick: 0,
+      })
+    );
+    expect((simulation.processors.get(clock.id) as Clock).data.state).toEqual([
+      "pause",
+      { tick: 0, speed: 30 },
+    ]);
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({
+      tag: "simulation-clock-new-speed",
+      speed: 30,
+      beforeTick: 1,
+    });
+  });
+
+  test("clock should emit ticks according to speed", () => {
+    let simulation = loadSave(blankSave());
+    insertProcessor(simulation, createMemoryStream());
+    const clock = createClock(0, "clock-0", {
+      speed: 10,
+      tick: 0,
+      mode: "play",
+    });
+    insertProcessor(simulation, clock);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "outside-clock-tick",
+        timeStamp: 1001,
+      })
+    );
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 1 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 2 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 3 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 4 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 5 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 6 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 7 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 8 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 9 });
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual({ tag: "simulation-clock-tick", tick: 10 });
+  });
+
   test.each<BusEvent[][]>([
     [
-      [{ tag: "outside-clock-tick", timeStamp: 1001 }],
       [
+        { tag: "outside-clock-tick", timeStamp: 0 },
+        { tag: "outside-clock-tick", timeStamp: 1001 },
+      ],
+      [
+        { tag: "outside-clock-tick", timeStamp: 0 },
         { tag: "outside-clock-tick", timeStamp: 1001 },
         { tag: "simulation-clock-tick", tick: 1 },
       ],
     ],
     [
-      [{ tag: "outside-clock-tick", timeStamp: 3001 }],
       [
+        { tag: "outside-clock-tick", timeStamp: 0 },
+        { tag: "outside-clock-tick", timeStamp: 3001 },
+      ],
+      [
+        { tag: "outside-clock-tick", timeStamp: 0 },
         { tag: "outside-clock-tick", timeStamp: 3001 },
         { tag: "simulation-clock-tick", tick: 1 },
         { tag: "simulation-clock-tick", tick: 2 },
