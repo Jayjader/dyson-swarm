@@ -98,7 +98,9 @@ describe("event bus", () => {
       );
     }
   );
-  test.each<BusEvent[][]>([[[{ tag: "command-simulation-clock-play" }]]])(
+  test.each<BusEvent[][]>([
+    [[{ tag: "command-simulation-clock-play", timeStamp: 1, afterTick: 1 }]],
+  ])(
     "clock should switch to play when receiving command event to do so %j",
     (events) => {
       let simulation = loadSave(blankSave());
@@ -113,7 +115,10 @@ describe("event bus", () => {
       expect(
         (simulation.processors.get("stream-0") as EventStream).data.received
       ).toContainEqual(
-        expect.objectContaining({ tag: "simulation-clock-play" })
+        expect.objectContaining({
+          tag: "simulation-clock-play",
+          beforeTick: 2,
+        } as BusEvent)
       );
     }
   );
@@ -125,12 +130,19 @@ describe("event bus", () => {
       createClock(0, "clock-0", { speed: 1, mode: "play" })
     );
     simulation = processUntilSettled(
-      broadcastEvent(simulation, { tag: "command-simulation-clock-pause" })
+      broadcastEvent(simulation, {
+        tag: "command-simulation-clock-pause",
+        timeStamp: 1,
+        afterTick: 1,
+      })
     );
     expect(
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toContainEqual(
-      expect.objectContaining({ tag: "simulation-clock-pause" })
+      expect.objectContaining({
+        tag: "simulation-clock-pause",
+        beforeTick: 2,
+      } as BusEvent)
     );
   });
   test("clock should switch to indirect pause when receiving command while in play", () => {
@@ -143,12 +155,14 @@ describe("event bus", () => {
     simulation = processUntilSettled(
       broadcastEvent(simulation, {
         tag: "command-simulation-clock-indirect-pause",
+        timeStamp: 1,
+        afterTick: 0
       })
     );
     expect(
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toContainEqual(
-      expect.objectContaining({ tag: "simulation-clock-indirect-pause" })
+      expect.objectContaining({ tag: "simulation-clock-indirect-pause", beforeTick: 1 } as BusEvent)
     );
   });
   test("clock should switch to play when receiving command for indirect-resume while in indirect pause", () => {
@@ -161,17 +175,19 @@ describe("event bus", () => {
     simulation = processUntilSettled(
       broadcastEvent(simulation, {
         tag: "command-simulation-clock-indirect-resume",
+        timeStamp: 1,
+        afterTick: 0
       })
     );
     expect(
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toContainEqual(
-      expect.objectContaining({ tag: "simulation-clock-indirect-resume" })
+      expect.objectContaining({ tag: "simulation-clock-indirect-resume", beforeTick: 1 } as BusEvent)
     );
   });
   test.each<BusEvent[]>([
-    [{ tag: "command-simulation-clock-indirect-pause" }],
-    [{ tag: "command-simulation-clock-indirect-resume" }],
+    [{ tag: "command-simulation-clock-indirect-pause", timeStamp: 0, afterTick: 0 }],
+    [{ tag: "command-simulation-clock-indirect-resume", timeStamp: 0, afterTick: 0 }],
   ])(
     "clock should ignore indirect command %j while already in pause",
     (event) => {
@@ -207,6 +223,7 @@ describe("event bus", () => {
         tag: "command-simulation-clock-set-speed",
         speed: 30,
         afterTick: 0,
+        timeStamp: 1,
       })
     );
     expect((simulation.processors.get(clock.id) as Clock).data.state).toEqual([
@@ -1183,6 +1200,7 @@ describe("event bus", () => {
       broadcastEvent(simulation, {
         tag: "command-reset-circuit-breaker",
         afterTick: 77,
+        timeStamp: Math.floor(150 * Math.random()),
       })
     );
     expect(
@@ -1203,6 +1221,7 @@ describe("event bus", () => {
       broadcastEvent(simulation, {
         tag: "command-trip-circuit-breaker",
         afterTick: 77,
+        timeStamp: Math.floor(150 * Math.random()),
       })
     );
     expect(
@@ -1238,6 +1257,7 @@ describe("event bus", () => {
           construct,
           count: 0,
           afterTick: 1,
+          timeStamp: Math.floor(150 * Math.random()),
         })
       );
       const manager = simulation.processors.get(`${construct}-0`) as
@@ -1267,6 +1287,7 @@ describe("event bus", () => {
         tag: "command-set-fabricator-queue",
         queue: [{ building: Construct.SOLAR_COLLECTOR }],
         afterTick: 17777777,
+        timeStamp: Math.floor(150 * Math.random()),
       })
     );
     expect(

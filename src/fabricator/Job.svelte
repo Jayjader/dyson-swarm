@@ -64,7 +64,7 @@
 >
   <div class="flex flex-row justify-around gap-2 self-stretch">
     <button
-      class="rounded border-2 border-stone-400 px-2"
+      class="my-1 rounded border-2 border-stone-400 px-2"
       on:click={currentJob.set.bind(this, undefined)}
       disabled={costs === undefined}>Clear Job</button
     >

@@ -55,25 +55,25 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
       case "command-simulation-clock-play":
         if (isPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
-          emitted.push({ tag: "simulation-clock-play" });
+          emitted.push({ tag: "simulation-clock-play", beforeTick: event.afterTick+1 });
         }
         break;
       case "command-simulation-clock-pause":
         if (isPlay(clock.data.state)) {
           clock.data.state = ["pause", clock.data.state[0]];
-          emitted.push({ tag: "simulation-clock-pause" });
+          emitted.push({ tag: "simulation-clock-pause", beforeTick: event.afterTick+1 });
         }
         break;
       case "command-simulation-clock-indirect-pause":
         if (isPlay(clock.data.state)) {
           clock.data.state = ["indirect-pause", clock.data.state[0]];
-          emitted.push({ tag: "simulation-clock-indirect-pause" });
+          emitted.push({ tag: "simulation-clock-indirect-pause", beforeTick: event.afterTick+1 });
         }
         break;
       case "command-simulation-clock-indirect-resume":
         if (isIndirectPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
-          emitted.push({ tag: "simulation-clock-indirect-resume" });
+          emitted.push({ tag: "simulation-clock-indirect-resume", beforeTick: event.afterTick+1 });
         }
         break;
       case "command-simulation-clock-set-speed":

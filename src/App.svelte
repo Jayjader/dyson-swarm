@@ -154,9 +154,6 @@
     {#if $uiPanelsState.has("fabricator")}
       <Fabricator resources={$state.resources} />
     {/if}
-    {#if $uiPanelsState.has("order-queue")}
-      <BuildQueue />
-    {/if}
   </div>
   <PanelSelector />
 </main>
@@ -168,6 +165,9 @@
   }
   .panels {
     min-height: 10rem;
+  }
+  .panels > :global(section:nth-child(3)) {
+    grid-column: 1/-1;
   }
   .grid-auto {
     --gap: initial;
