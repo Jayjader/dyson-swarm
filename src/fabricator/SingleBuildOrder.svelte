@@ -6,20 +6,21 @@
   export let buildOrder: undefined | BuildOrder;
 </script>
 
-<span class="inline-block flex min-w-min flex-row flex-wrap items-center">
-  {#if isRepeat(buildOrder)}
-    <ol>
-      {#if isInfinite(buildOrder)}🗘 Forever{:else}{buildOrder.count}{/if}
-      {#each buildOrder.repeat as bo, i ([bo, i])}
-        <svelte:self buildOrder={bo} />
-      {/each}
-    </ol>
-  {:else}
+{#if buildOrder !== undefined && isRepeat(buildOrder)}
+  <ol>
+    {#if isInfinite(buildOrder)}🗘 Forever{:else}{buildOrder.count}{/if}
+    {#each buildOrder.repeat as bo, i ([bo, i])}
+      <svelte:self buildOrder={bo} />
+    {/each}
+  </ol>
+{:else}
+  <figure class="flex flex-row flex-wrap items-center">
     <img
-      src={ICON[buildOrder.building]}
-      alt={buildOrder.building}
-      title={buildOrder.building}
+      src={buildOrder === undefined ? "./empty.png" : ICON[buildOrder.building]}
+      alt={buildOrder?.building ?? "Empty slot"}
+      title={buildOrder?.building ?? "None"}
+      class="mx-auto"
     />
-    <span class="mx-auto">{buildOrder.building}</span>
-  {/if}
-</span>
+    <figcaption class="mx-auto">{buildOrder?.building ?? "None"}</figcaption>
+  </figure>
+{/if}

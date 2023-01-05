@@ -28,7 +28,7 @@
   />
   <div class="flex flex-1 flex-row flex-wrap justify-between gap-1">
     <div class="flex flex-col justify-between gap-1">
-      <h4 class="font-bold text-zinc-50">{name}</h4>
+      <h3 class="font-bold text-zinc-50">{name}</h3>
       <slot />
     </div>
     <div class="flex flex-col justify-between gap-1">

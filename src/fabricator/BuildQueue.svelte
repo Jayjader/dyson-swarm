@@ -40,8 +40,8 @@
 </script>
 
 <section
-  style="grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
-  class="grid gap-1 rounded-sm border-2 p-1"
+  style="min-width: 30rem; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
+  class="grid shrink-0 flex-grow gap-1 rounded-sm border-2 p-1"
   class:visible
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}

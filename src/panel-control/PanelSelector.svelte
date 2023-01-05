@@ -33,14 +33,6 @@
       ? uiPanelsState.closeFabricator
       : uiPanelsState.openFabricator}
   >
-    Fabricator Job Status
-  </PanelControl>
-  <PanelControl
-    on={$uiPanelsState.has("order-queue")}
-    on:click={$uiPanelsState.has("order-queue")
-      ? uiPanelsState.closeQueue
-      : uiPanelsState.openQueue}
-  >
-    Fabricator Order Queue
+    Fabricator
   </PanelControl>
 </div>

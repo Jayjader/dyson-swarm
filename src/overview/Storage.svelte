@@ -18,12 +18,12 @@
   />
   <div class="flex flex-grow flex-row flex-wrap">
     <div class="flex flex-col items-start">
-      <h4
+      <h3
         class="flex-grow rounded-br border-b-2 border-b-slate-500 pr-1 font-bold"
         style="line-height: 1;"
       >
         {name}
-      </h4>
+      </h3>
       <h5 class="font-bold">Stored</h5>
       <output>{stored}{unit}</output>
     </div>

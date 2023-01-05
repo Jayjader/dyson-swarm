@@ -7,7 +7,7 @@
 </script>
 
 <section class="flex flex-col gap-1 rounded border-2 border-slate-100 p-1">
-  <h3 class="text-center font-bold text-slate-100">Storage</h3>
+  <h2 class="text-center font-bold text-slate-100">Storage</h2>
   <Storage
     name="Power"
     icon="/electric.svg"

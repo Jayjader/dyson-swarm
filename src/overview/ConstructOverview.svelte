@@ -20,7 +20,7 @@
 <section
   class="flex flex-row flex-wrap gap-1 rounded border-2 border-slate-100 p-1"
 >
-  <h3 class="basis-full text-center font-bold text-slate-100">Constructs</h3>
+  <h2 class="basis-full text-center font-bold text-slate-100">Constructs</h2>
   <div class="flex flex-grow flex-row justify-items-stretch gap-1">
     <div
       class="flex flex-grow basis-2/5 flex-row gap-1 rounded border-2 border-yellow-500 bg-zinc-600 p-1 text-yellow-400"
@@ -33,7 +33,7 @@
       />
       <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
-          <h4 class="basis-full font-bold">Star</h4>
+          <h3 class="basis-full font-bold">Star</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
             <output>1.989e30 {kilogram}</output>
@@ -67,7 +67,7 @@
       />
       <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
-          <h4 class="basis-full font-bold">Satellite Swarm</h4>
+          <h3 class="basis-full font-bold">Satellite Swarm</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Count:</h5>
             <output>103</output>
@@ -125,7 +125,7 @@
       />
       <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
-          <h4 class="basis-full font-bold">Planet</h4>
+          <h3 class="basis-full font-bold">Planet</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
             <output>3.301e23 {kilogram}</output>
