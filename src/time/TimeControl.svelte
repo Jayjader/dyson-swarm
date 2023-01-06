@@ -1,20 +1,20 @@
 <script lang="ts">
   import { type Clock as ClockState, isPlay } from "./store";
-  import type { Clock } from "../events/processes/clock";
-  import { getContext } from "svelte";
-  import { broadcastEvent, contextKey, processUntilSettled } from "../events";
-  import type { Event as BusEvent } from "../events/events";
   import { getClock } from "../events/processes/clock";
+  import { getContext } from "svelte";
+  import { contextKey } from "../events";
+  import type { Event as BusEvent } from "../events/events";
 
   const { getSimulation } = getContext(contextKey);
   const simulation = getSimulation();
+
   let displayedSpeed = 1;
   let speedIsBeingEdited = false;
   let currentTick = 0;
   let clock: ClockState = [{ tick: 0, speed: 1 }];
+
   simulation.subscribe((sim) => {
     clock = getClock(sim);
-    // console.debug({ command: "time-control->clock.subscribe", clock });
     if (isPlay(clock)) {
       displayedSpeed = clock[0].speed;
       currentTick = clock[0].tick;
@@ -32,7 +32,6 @@
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
     simulation.processUntilSettled();
-    // clock.play();
   }
   function pause() {
     const busEvent = {
@@ -42,7 +41,6 @@
     } as const;
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
-    // clock.pause();
   }
   function setSpeed(event) {
     const newSpeed = Number.parseInt(event.target.value);
@@ -54,7 +52,6 @@
     } as const;
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
-    // clock.setSpeed(newSpeed);
   }
   function startEditingSpeed() {
     const busEvent: BusEvent = {
@@ -64,7 +61,6 @@
     } as const;
     console.info({ busEvent });
     simulation.broadcastEvent(busEvent);
-    // clock.startIndirectPause();
     speedIsBeingEdited = true;
   }
   function editSpeedFromMouseEvent(event) {
@@ -92,7 +88,6 @@
     } as const;
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
-    // clock.stopIndirectPause();
     speedIsBeingEdited = false;
   }
 </script>

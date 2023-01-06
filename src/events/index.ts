@@ -267,9 +267,9 @@ const { subscribe, update, set } = writable<Simulation>({
 });
 export const store = {
   subscribe,
-  insertProcessor: (p: Processor) =>
+  insertProcessors: (...processors: Processor[]) =>
     update((sim) => {
-      insertProcessor(sim, p);
+      processors.forEach((p) => insertProcessor(sim, p));
       return sim;
     }),
   processUntilSettled: () => {

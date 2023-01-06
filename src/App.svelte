@@ -25,27 +25,28 @@
 
   export let init: GameState;
 
-  // const state = createGameStateStore(init);
-  // let simulation = loadSave(blankSave());
   simulation.loadSave(blankSave());
-  simulation.insertProcessor(createMemoryStream());
-  simulation.insertProcessor(createPowerGrid());
-  simulation.insertProcessor(createStorage(Resource.ORE));
-  simulation.insertProcessor(createStorage(Resource.METAL));
-  simulation.insertProcessor(createStorage(Resource.PACKAGED_SATELLITE));
+  simulation.insertProcessors(
+    createMemoryStream(),
+    createPowerGrid(),
+    createStorage(Resource.ORE),
+    createStorage(Resource.METAL),
+    createStorage(Resource.PACKAGED_SATELLITE)
+  );
   // simulation.insertProcessor(createStar());
   // simulation.insertProcessor(createPlanet());
   let timeStampOfLastTick = window.performance.now();
   let clockFrame: number = 0;
-  simulation.insertProcessor(
+  simulation.insertProcessors(
     createClock(timeStampOfLastTick, "clock-0", { mode: "pause" })
   );
 
   setContext(contextKey, { getSimulation: () => simulation });
-  // const resources = resourceArray(state);
+
   let breakerTripped, resources, swarm;
+
   simulation.subscribe((sim) => {
-    if (clockFrame % 500 === 3 * 60) {
+    if (clockFrame % (3 * 60) === 0) {
       console.debug({ sim });
     }
     const gridState_ = gridState(sim);
@@ -65,12 +66,6 @@
   function scheduleCallback(callback) {
     clockFrame = window.requestAnimationFrame(callback);
     // console.debug({ command: "schedule-callback", animationFrame: clockFrame });
-    // if (clockFrame % 500 === 0) {
-    //   console.debug({
-    //     command: "clock",
-    //     state: simulation.processors.get("stream-0")?.data,
-    //   });
-    // }
   }
   function cancelCallback() {
     console.debug({ command: "cancel-callback", animationFrame: clockFrame });
