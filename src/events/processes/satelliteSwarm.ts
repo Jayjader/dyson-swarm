@@ -1,6 +1,6 @@
 import type { EventProcessor } from "./index";
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
+import type { SubscriptionsFor, Simulation } from "../index";
 
 export type SatelliteSwarm = EventProcessor<
   "swarm",
@@ -57,4 +57,9 @@ export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, Event[]] {
     }
   }
   return [swarm, emitted];
+}
+export function swarmCount(simulation: Simulation): number {
+  return (
+    (simulation.processors?.get("swarm-0") as SatelliteSwarm)?.data.count ?? 0
+  );
 }

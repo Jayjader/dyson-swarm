@@ -1,6 +1,6 @@
 import type { Event, Events } from "../events";
 import { Resource } from "../../gameStateStore";
-import type { SubscriptionsFor } from "../index";
+import type { SubscriptionsFor, Simulation } from "../index";
 import type { EventProcessor } from "./index";
 
 export type PowerGrid = EventProcessor<
@@ -94,4 +94,10 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
     }
   }
   return [grid, emitted];
+}
+export function gridState(simulation: Simulation): PowerGrid["data"] {
+  return (
+    (simulation.processors.get("power grid-0") as PowerGrid | undefined)
+      ?.data ?? { stored: 0, breakerTripped: false, received: [] }
+  );
 }

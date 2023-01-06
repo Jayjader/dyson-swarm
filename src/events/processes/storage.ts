@@ -1,7 +1,7 @@
 import type { Resource } from "../../gameStateStore";
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
-import type { EventProcessor } from "./index";
+import type { SubscriptionsFor, Simulation } from "../index";
+import type { EventProcessor, Id } from "./index";
 
 export type Storage<R extends string> = EventProcessor<
   `storage-${R}`,
@@ -76,4 +76,13 @@ export function storageProcess(
     }
   }
   return [storage, emitted];
+}
+export function readStored(simulation: Simulation, resource: Resource): number {
+  return (
+    (
+      simulation.processors.get(
+        `storage-${resource}-0` as unknown as Id
+      ) as Storage<Resource>
+    )?.data.stored ?? 0
+  );
 }

@@ -6,7 +6,7 @@ import {
   isPlay,
 } from "../../time/store";
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
 export type Clock = EventProcessor<
@@ -55,36 +55,51 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
       case "command-simulation-clock-play":
         if (isPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
-          emitted.push({ tag: "simulation-clock-play", beforeTick: event.afterTick+1 });
+          emitted.push({
+            tag: "simulation-clock-play",
+            beforeTick: event.afterTick + 1,
+          });
         }
         break;
       case "command-simulation-clock-pause":
         if (isPlay(clock.data.state)) {
           clock.data.state = ["pause", clock.data.state[0]];
-          emitted.push({ tag: "simulation-clock-pause", beforeTick: event.afterTick+1 });
+          emitted.push({
+            tag: "simulation-clock-pause",
+            beforeTick: event.afterTick + 1,
+          });
         }
         break;
       case "command-simulation-clock-indirect-pause":
         if (isPlay(clock.data.state)) {
           clock.data.state = ["indirect-pause", clock.data.state[0]];
-          emitted.push({ tag: "simulation-clock-indirect-pause", beforeTick: event.afterTick+1 });
+          emitted.push({
+            tag: "simulation-clock-indirect-pause",
+            beforeTick: event.afterTick + 1,
+          });
         }
         break;
       case "command-simulation-clock-indirect-resume":
         if (isIndirectPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
-          emitted.push({ tag: "simulation-clock-indirect-resume", beforeTick: event.afterTick+1 });
+          emitted.push({
+            tag: "simulation-clock-indirect-resume",
+            beforeTick: event.afterTick + 1,
+          });
         }
         break;
       case "command-simulation-clock-set-speed":
         if (!isPlay(clock.data.state)) {
           clock.data.state[1].speed = event.speed;
-          emitted.push({
-            tag: "simulation-clock-new-speed",
-            speed: event.speed,
-            beforeTick: event.afterTick + 1,
-          });
+        } else {
+          clock.data.state[0].speed = event.speed;
         }
+        emitted.push({
+          tag: "simulation-clock-new-speed",
+          speed: event.speed,
+          beforeTick: event.afterTick + 1,
+        });
+
         break;
       case "outside-clock-tick":
         if (!isPlay(clock.data.state)) {
@@ -115,4 +130,11 @@ export function clockProcess(clock: Clock): [Clock, Event[]] {
     }
   }
   return [clock, emitted];
+}
+
+export function getClock(simulation: Simulation): ClockState {
+  return (
+    (simulation.processors.get("clock-0") as Clock | undefined)?.data.state ??
+    ([{ tick: 0, speed: 1 }] as ClockState)
+  );
 }
