@@ -7,14 +7,54 @@
     tickConsumption,
     tickProduction,
   } from "../gameStateStore";
+  import { SIMULATION_STORE } from "../events";
   import { launchCost } from "../actions";
   import Fabricator from "./Fabricator.svelte";
   import { kilogram, watt, wattsPerSquareMeter } from "../units";
   import { energy, ICON, metal, ore, satellite } from "../icons";
   import GridBreaker from "./GridBreaker.svelte";
+  import { getCollectorCount } from "../events/processes/collector";
+  import { getMiners } from "../events/processes/miner";
+  import { gridState } from "../events/processes/powerGrid";
+  import { getRefiners } from "../events/processes/refiner";
+  import { getFactories } from "../events/processes/satFactory";
+  import { getLaunchers } from "../events/processes/launcher";
+  import { getStarMass } from "../events/processes/star";
+  import { getPlanetMass } from "../events/processes/planet";
+  import { swarmCount } from "../events/processes/satelliteSwarm";
+  import { getFabricator } from "../events/processes/fabricator";
+  import { getContext, onDestroy } from "svelte";
 
-  export let constructs = new Map();
-  export let circuitBreaker: CircuitBreaker = { tripped: false };
+  const simulation = getContext(SIMULATION_STORE).simulation;
+
+  let constructs = new Map();
+  let circuitBreaker: CircuitBreaker = { tripped: false };
+  let fabricator = { working: false, job: null as Construct | null };
+
+  const unsubscribe = simulation.subscribe((sim) => {
+    circuitBreaker.tripped = gridState(sim).breakerTripped;
+    constructs.set(Construct.SOLAR_COLLECTOR, getCollectorCount(sim));
+    constructs.set(Construct.MINER, getMiners(sim));
+    constructs.set(Construct.REFINER, getRefiners(sim));
+    constructs.set(Construct.SATELLITE_FACTORY, getFactories(sim));
+    constructs.set(Construct.SATELLITE_LAUNCHER, getLaunchers(sim));
+    constructs.set("star", getStarMass(sim));
+    constructs.set("planet", getPlanetMass(sim));
+    constructs.set("swarm", swarmCount(sim));
+    const fab = getFabricator(sim);
+    fabricator.working = fab.working;
+    fabricator.job = fab.job;
+  });
+
+  const count = (tag) => {
+    console.debug({ command: "count construct", tag, constructs });
+    return constructs.get(tag)?.count ?? 0;
+  };
+  const working = (tag) => {
+    console.debug({ command: "working construct", tag });
+    return constructs.get(tag)?.working ?? 0;
+  };
+  onDestroy(unsubscribe);
 </script>
 
 <section
@@ -36,7 +76,7 @@
           <h3 class="basis-full font-bold">Star</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
-            <output>1.989e30 {kilogram}</output>
+            <output>{constructs.get("star")} {kilogram}</output>
           </div>
         </div>
         <div class="flex flex-col-reverse">
@@ -70,7 +110,7 @@
           <h3 class="basis-full font-bold">Satellite Swarm</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Count:</h5>
-            <output>103</output>
+            <output>{constructs.get("swarm")}</output>
           </div>
         </div>
         <div class="flex flex-col-reverse">
@@ -109,7 +149,7 @@
   >
     <div class="flex flex-row">
       <h5 class="font-bold">Count:</h5>
-      <output>{constructs.get(Construct.SOLAR_COLLECTOR) ?? 0}</output>
+      <output>{constructs.get(Construct.SOLAR_COLLECTOR)}</output>
     </div>
   </ConstructOverview>
   <GridBreaker open={circuitBreaker.tripped} />
@@ -128,7 +168,7 @@
           <h3 class="basis-full font-bold">Planet</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
-            <output>3.301e23 {kilogram}</output>
+            <output>{constructs.get("planet")} {kilogram}</output>
           </div>
         </div>
       </div>
@@ -157,11 +197,12 @@
           <button class="rounded border-2 border-zinc-50">None</button>
           <input
             type="number"
-            max={constructs.get(Construct.MINER) ?? 0}
+            max={count(Construct.MINER)}
             min={0}
+            value={working(Construct.MINER)}
             style="max-width: 6ch"
           />
-          <output>/{constructs.get(Construct.MINER) ?? 0}</output>
+          <output>/{count(Construct.MINER)}</output>
           <button class="rounded border-2 border-zinc-50">All</button>
         </span>
       </div>
@@ -197,10 +238,11 @@
         <input
           type="number"
           min={0}
-          max={constructs.get(Construct.REFINER)}
+          max={count(Construct.REFINER)}
+          value={working(Construct.REFINER)}
           style="max-width: 6ch"
         />
-        <output>/{constructs.get(Construct.REFINER) ?? 0}</output>
+        <output>/{count(Construct.REFINER)}</output>
         <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
@@ -239,10 +281,11 @@
         <input
           type="number"
           min={0}
-          max={constructs.get(Construct.SATELLITE_FACTORY)}
+          max={count(Construct.SATELLITE_FACTORY)}
+          value={working(Construct.SATELLITE_FACTORY)}
           style="max-width: 6ch"
         />
-        <output>/{constructs.get(Construct.SATELLITE_FACTORY) ?? 0}</output>
+        <output>/{count(Construct.SATELLITE_FACTORY)}</output>
         <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
@@ -277,12 +320,20 @@
         <input
           type="number"
           min={0}
-          max={constructs.get(Construct.SATELLITE_LAUNCHER)}
+          max={count(Construct.SATELLITE_LAUNCHER)}
+          value={working(Construct.SATELLITE_LAUNCHER)}
           style="max-width: 6ch"
         />
-        <output>/{constructs.get(Construct.SATELLITE_LAUNCHER) ?? 0}</output>
+        <output>/{count(Construct.SATELLITE_LAUNCHER)}</output>
         <button class="rounded border-2 border-zinc-50">All</button>
       </span>
     </div>
   </ConstructOverview>
 </section>
+
+<style>
+  input {
+    text-align: right;
+    background: #64748b;
+  }
+</style>

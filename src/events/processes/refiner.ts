@@ -14,7 +14,10 @@ export type RefinerManager = EventProcessor<
     working: number;
     count: number;
     received: Events<
-      Exclude<SubscriptionsFor<"refiner">, "simulation-clock-tick">
+      Exclude<
+        SubscriptionsFor<"refiner">,
+        "simulation-clock-tick" | "command-set-working-count"
+      >
     >[];
   }
 >;
@@ -71,8 +74,6 @@ export function refinerProcess(
           (sum, e) => {
             if (e.tag === "construct-fabricated") {
               sum.fabricated += 1;
-            } else if (e.tag === "command-set-working-count") {
-              sum.working = e.count;
             } else {
               sum[e.resource as Resource.ELECTRICITY | Resource.ORE] +=
                 e.amount;
@@ -83,76 +84,76 @@ export function refinerProcess(
             [Resource.ELECTRICITY]: 0,
             [Resource.ORE]: 0,
             fabricated: 0,
-            working: null as null | number,
           }
         );
         refiner.data.working += received.fabricated;
         refiner.data.count += received.fabricated;
-        if (received.working !== null) {
-          refiner.data.working = received.working;
+        if (refiner.data.working <= 0) {
+          break;
         }
-        if (refiner.data.working > 0) {
-          let enoughSupplied = true;
-          refiner.data.received = [];
-          const powerNeeded =
-            refiner.data.working *
-            tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
-          if (received[Resource.ELECTRICITY] < powerNeeded) {
-            enoughSupplied = false;
-            emitted.push({
-              tag: "draw",
-              resource: Resource.ELECTRICITY,
-              amount: powerNeeded - received[Resource.ELECTRICITY],
-              forId: refiner.id,
-              receivedTick: event.tick + 1,
-            });
+
+        let enoughSupplied = true;
+        refiner.data.received = [];
+
+        const powerNeeded =
+          refiner.data.working *
+          tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
+        if (received[Resource.ELECTRICITY] < powerNeeded) {
+          enoughSupplied = false;
+          emitted.push({
+            tag: "draw",
+            resource: Resource.ELECTRICITY,
+            amount: powerNeeded - received[Resource.ELECTRICITY],
+            forId: refiner.id,
+            receivedTick: event.tick + 1,
+          });
+        }
+        const oreNeeded =
+          refiner.data.working *
+          tickConsumption[Construct.REFINER].get(Resource.ORE)!;
+        if (received[Resource.ORE] < oreNeeded) {
+          enoughSupplied = false;
+          emitted.push({
+            tag: "draw",
+            resource: Resource.ORE,
+            amount: oreNeeded - received[Resource.ORE],
+            forId: refiner.id,
+            receivedTick: event.tick + 1,
+          });
+        }
+
+        if (enoughSupplied) {
+          const leftOverOre = received[Resource.ORE] - oreNeeded;
+          if (leftOverOre > 0) {
+            refiner.data.received = [
+              {
+                tag: "supply",
+                resource: Resource.ORE,
+                amount: leftOverOre,
+                toId: refiner.id,
+                receivedTick: event.tick,
+              },
+            ];
           }
-          const oreNeeded =
-            refiner.data.working *
-            tickConsumption[Construct.REFINER].get(Resource.ORE)!;
-          if (received[Resource.ORE] < oreNeeded) {
-            enoughSupplied = false;
-            emitted.push({
-              tag: "draw",
-              resource: Resource.ORE,
-              amount: oreNeeded - received[Resource.ORE],
-              forId: refiner.id,
-              receivedTick: event.tick + 1,
-            });
-          }
-          if (enoughSupplied) {
-            const leftOverOre = received[Resource.ORE] - oreNeeded;
-            if (leftOverOre > 0) {
-              refiner.data.received = [
-                {
-                  tag: "supply",
-                  resource: Resource.ORE,
-                  amount: leftOverOre,
-                  toId: refiner.id,
-                  receivedTick: event.tick,
-                },
-              ];
-            }
-            emitted.push({
-              tag: "produce",
-              resource: Resource.METAL,
-              amount:
-                refiner.data.working *
-                tickProduction[Construct.REFINER].get(Resource.METAL)!,
-              receivedTick: event.tick + 1,
-            });
-          } else {
-            for (const entry of Object.entries(received)) {
-              const [resource, amount] = entry as [Resource, number];
-              if (amount > 0) {
-                refiner.data.received.push({
-                  tag: "supply",
-                  resource,
-                  amount,
-                  toId: refiner.id,
-                  receivedTick: event.tick,
-                });
-              }
+          emitted.push({
+            tag: "produce",
+            resource: Resource.METAL,
+            amount:
+              refiner.data.working *
+              tickProduction[Construct.REFINER].get(Resource.METAL)!,
+            receivedTick: event.tick + 1,
+          });
+        } else {
+          for (const entry of Object.entries(received)) {
+            const [resource, amount] = entry as [Resource, number];
+            if (amount > 0) {
+              refiner.data.received.push({
+                tag: "supply",
+                resource,
+                amount,
+                toId: refiner.id,
+                receivedTick: event.tick,
+              });
             }
           }
         }

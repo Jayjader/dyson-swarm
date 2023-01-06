@@ -14,7 +14,7 @@
   import ProgressOverview from "./overview/ProgressOverview.svelte";
   import ConstructOverview from "./overview/ConstructOverview.svelte";
   import StorageOverview from "./overview/StorageOverview.svelte";
-  import { blankSave, contextKey, store as simulation } from "./events";
+  import { blankSave, SIMULATION_STORE, store as simulation } from "./events";
   import { createMemoryStream } from "./events/processes";
   import { swarmCount } from "./events/processes/satelliteSwarm";
   import { createStorage, readStored } from "./events/processes/storage";
@@ -22,44 +22,54 @@
   import { createClock } from "./events/processes/clock";
   import { createStar } from "./events/processes/star";
   import { createPlanet } from "./events/processes/planet";
+  import { createCollectorManager } from "./events/processes/collector";
+  import { createMinerManager } from "./events/processes/miner";
+  import { createRefinerManager } from "./events/processes/refiner";
+  import { createFactoryManager } from "./events/processes/satFactory";
+  import { createLauncherManager } from "./events/processes/launcher";
+  import { createFabricator } from "./events/processes/fabricator";
 
   export let init: GameState;
 
   simulation.loadSave(blankSave());
-  simulation.insertProcessors(
-    createMemoryStream(),
-    createPowerGrid(),
-    createStorage(Resource.ORE),
-    createStorage(Resource.METAL),
-    createStorage(Resource.PACKAGED_SATELLITE)
-  );
-  // simulation.insertProcessor(createStar());
-  // simulation.insertProcessor(createPlanet());
   let timeStampOfLastTick = window.performance.now();
   let clockFrame: number = 0;
   simulation.insertProcessors(
+    createMemoryStream(),
+    createPowerGrid({ stored: 22 ** 2 }),
+    createStorage(Resource.ORE),
+    createStorage(Resource.METAL),
+    createStorage(Resource.PACKAGED_SATELLITE),
+    createStar(),
+    createPlanet({ mass: 10 ** 4 }),
+    createCollectorManager({ count: 60 }),
+    createMinerManager({ count: 4 }),
+    createRefinerManager({ count: 1 }),
+    createFactoryManager({ count: 0 }),
+    createLauncherManager({ count: 0 }),
+    createFabricator(),
     createClock(timeStampOfLastTick, "clock-0", { mode: "pause" })
   );
 
-  setContext(contextKey, { getSimulation: () => simulation });
+  setContext(SIMULATION_STORE, { simulation });
 
-  let breakerTripped, resources, swarm;
+  let resources = [],
+    swarm = 0;
 
-  simulation.subscribe((sim) => {
-    if (clockFrame % (3 * 60) === 0) {
+  const unsubscribe = simulation.subscribe((sim) => {
+    if (clockFrame % (5 * 60) === 0) {
       console.debug({ sim });
     }
     const gridState_ = gridState(sim);
-    breakerTripped = gridState_.breakerTripped;
-    resources = {
-      [Resource.ORE]: readStored(sim, Resource.ORE),
-      [Resource.METAL]: readStored(sim, Resource.METAL),
-      [Resource.ELECTRICITY]: gridState_.stored,
-      [Resource.PACKAGED_SATELLITE]: readStored(
-        sim,
-        Resource.PACKAGED_SATELLITE
-      ),
-    };
+    resources = [
+      [Resource.ELECTRICITY, gridState_.stored],
+      [Resource.ORE, readStored(sim, Resource.ORE)],
+      [Resource.METAL, readStored(sim, Resource.METAL)],
+      [
+        Resource.PACKAGED_SATELLITE,
+        readStored(sim, Resource.PACKAGED_SATELLITE),
+      ],
+    ];
     swarm = swarmCount(sim);
   });
 
@@ -96,7 +106,8 @@
     const timeElapsed = Math.floor(nextTimeStamp - timeStampOfLastTick);
   }
 
-  onDestroy(() => window.cancelAnimationFrame(clockFrame));
+  onDestroy(unsubscribe);
+  onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
   scheduleCallback(outsideClockLoop);
 </script>
 
@@ -105,7 +116,7 @@
 >
   <div class="flex flex-grow-0 flex-col gap-2">
     <div class="flex flex-row justify-between text-stone-200">
-      <ResourceHud resources={Object.entries(resources)} />
+      <ResourceHud {resources} />
       <SwarmHud swarm={{ count: swarm }} />
     </div>
 
@@ -119,13 +130,10 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("construct-overview")}
-      <ConstructOverview
-        constructs={simulation.processors}
-        circuitBreaker={{ tripped: breakerTripped }}
-      />
+      <ConstructOverview />
     {/if}
     {#if $uiPanelsState.has("storage-overview")}
-      <StorageOverview />
+      <StorageOverview resources={new Map(resources)} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
       <Fabricator {resources} />

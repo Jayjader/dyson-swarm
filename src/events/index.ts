@@ -259,7 +259,7 @@ export function blankSave(): SaveState {
   return { processors: [] };
 }
 
-export const contextKey = Symbol();
+export const SIMULATION_STORE = Symbol();
 
 const { subscribe, update, set } = writable<Simulation>({
   bus: { subscriptions: new Map() },

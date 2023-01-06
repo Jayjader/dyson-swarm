@@ -1,19 +1,18 @@
 <script lang="ts">
   import { type Clock as ClockState, isPlay } from "./store";
   import { getClock } from "../events/processes/clock";
-  import { getContext } from "svelte";
-  import { contextKey } from "../events";
+  import { getContext, onDestroy } from "svelte";
+  import { SIMULATION_STORE } from "../events";
   import type { Event as BusEvent } from "../events/events";
 
-  const { getSimulation } = getContext(contextKey);
-  const simulation = getSimulation();
+  const simulation = getContext(SIMULATION_STORE).simulation;
 
   let displayedSpeed = 1;
   let speedIsBeingEdited = false;
   let currentTick = 0;
   let clock: ClockState = [{ tick: 0, speed: 1 }];
 
-  simulation.subscribe((sim) => {
+  const unsubscribe = simulation.subscribe((sim) => {
     clock = getClock(sim);
     if (isPlay(clock)) {
       displayedSpeed = clock[0].speed;
@@ -23,6 +22,7 @@
       currentTick = clock[1].tick;
     }
   });
+
   function play() {
     const busEvent: BusEvent = {
       tag: "command-simulation-clock-play",
@@ -90,6 +90,7 @@
     simulation.broadcastEvent(busEvent);
     speedIsBeingEdited = false;
   }
+  onDestroy(unsubscribe);
 </script>
 
 <div

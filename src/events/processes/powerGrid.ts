@@ -18,14 +18,19 @@ export type PowerGrid = EventProcessor<
 >;
 
 export function createPowerGrid(
-  id: PowerGrid["id"] = "power grid-0"
+  options: Partial<{ id: PowerGrid["id"]; stored: number }> = {}
 ): PowerGrid {
+  const values = {
+    id: "power grid-0" as PowerGrid["id"],
+    stored: 0,
+    ...options,
+  };
   return {
-    id,
+    id: values.id,
     incoming: [],
     tag: "power grid",
     data: {
-      stored: 0,
+      stored: values.stored,
       breakerTripped: false,
       received: [],
     },

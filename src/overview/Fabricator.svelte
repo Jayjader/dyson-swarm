@@ -1,16 +1,20 @@
 <script lang="ts">
-  import type { SingleBuildOrder } from "../types";
   import { constructionCosts } from "../actions";
   import { ICON } from "../icons";
   import { UNIT } from "../units";
-  import { currentJob } from "../fabricator/store";
+  import { getContext, onDestroy } from "svelte";
+  import { SIMULATION_STORE } from "../events";
+  import { getFabricator } from "../events/processes/fabricator";
+  import type { Construct } from "../gameStateStore";
 
-  let buildOrder: SingleBuildOrder | undefined;
+  const simulation = getContext(SIMULATION_STORE).simulation;
+
+  let buildOrder: Construct | null;
   let consumes = [];
-  currentJob.subscribe((newJob) => {
-    buildOrder = newJob;
+  const unsubscribe = simulation.subscribe((sim) => {
+    buildOrder = getFabricator(sim).job;
     if (buildOrder) {
-      consumes = [...constructionCosts[buildOrder.building]].map(
+      consumes = [...constructionCosts[buildOrder]].map(
         ([resource, amount]) => ({
           name: resource,
           value: amount,
@@ -20,6 +24,7 @@
       );
     }
   });
+  onDestroy(unsubscribe);
 </script>
 
 <div
@@ -55,10 +60,10 @@
           <span class="flex flex-row gap-1">
             <img
               class="aspect-square h-4 max-w-min self-center"
-              src={ICON[buildOrder.building]}
-              alt={buildOrder.building}
+              src={ICON[buildOrder]}
+              alt={buildOrder}
             />
-            <output>1 {buildOrder.building}</output>
+            <output>1 {buildOrder}</output>
           </span>
         {/if}
       </div>
