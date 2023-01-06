@@ -1,25 +1,70 @@
 <script lang="ts">
-  import { clock, isPlay } from "./store";
+  import { type Clock as ClockState, isPlay } from "./store";
+  import type { Clock } from "../events/processes/clock";
+  import { getContext } from "svelte";
+  import { broadcastEvent, contextKey, processUntilSettled } from "../events";
+  import type { Event as BusEvent } from "../events/events";
+  import { getClock } from "../events/processes/clock";
 
+  const { getSimulation } = getContext(contextKey);
+  const simulation = getSimulation();
   let displayedSpeed = 1;
   let speedIsBeingEdited = false;
   let currentTick = 0;
+  let clock: ClockState = [{ tick: 0, speed: 1 }];
+  simulation.subscribe((sim) => {
+    clock = getClock(sim);
+    // console.debug({ command: "time-control->clock.subscribe", clock });
+    if (isPlay(clock)) {
+      displayedSpeed = clock[0].speed;
+      currentTick = clock[0].tick;
+    } else {
+      displayedSpeed = clock[1].speed;
+      currentTick = clock[1].tick;
+    }
+  });
   function play() {
-    console.info({ command: "play" });
-    clock.play();
+    const busEvent: BusEvent = {
+      tag: "command-simulation-clock-play",
+      timeStamp: performance.now(),
+      afterTick: currentTick,
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+    simulation.processUntilSettled();
+    // clock.play();
   }
   function pause() {
-    console.info({ command: "pause" });
-    clock.pause();
+    const busEvent = {
+      tag: "command-simulation-clock-pause",
+      timeStamp: performance.now(),
+      afterTick: currentTick,
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+    // clock.pause();
   }
   function setSpeed(event) {
     const newSpeed = Number.parseInt(event.target.value);
-    console.info({ command: "set-speed", newSpeed });
-    clock.setSpeed(newSpeed);
+    const busEvent = {
+      tag: "command-simulation-clock-set-speed",
+      speed: newSpeed,
+      timeStamp: performance.now(),
+      afterTick: currentTick,
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+    // clock.setSpeed(newSpeed);
   }
   function startEditingSpeed() {
-    console.info({ command: "start-editing-speed" });
-    clock.startIndirectPause();
+    const busEvent: BusEvent = {
+      tag: "command-simulation-clock-indirect-pause",
+      timeStamp: performance.now(),
+      afterTick: currentTick,
+    } as const;
+    console.info({ busEvent });
+    simulation.broadcastEvent(busEvent);
+    // clock.startIndirectPause();
     speedIsBeingEdited = true;
   }
   function editSpeedFromMouseEvent(event) {
@@ -27,27 +72,29 @@
     if (speedIsBeingEdited) {
       const newSpeed = Number.parseInt(event.target.value);
       if (newSpeed !== displayedSpeed) {
-        console.debug({ command: "set-speed", newSpeed });
+        const busEvent: BusEvent = {
+          tag: "command-simulation-clock-set-speed",
+          speed: newSpeed,
+          timeStamp: performance.now(),
+          afterTick: clock[1].tick,
+        } as const;
+        console.debug(busEvent);
+        simulation.broadcastEvent(busEvent);
         displayedSpeed = newSpeed;
       }
     }
   }
   function stopEditingSpeed() {
-    console.info({ command: "stop-editing-speed" });
-    clock.stopIndirectPause();
+    const busEvent: BusEvent = {
+      tag: "command-simulation-clock-indirect-resume",
+      timeStamp: performance.now(),
+      afterTick: clock[1].tick,
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+    // clock.stopIndirectPause();
     speedIsBeingEdited = false;
   }
-
-  clock.subscribe((data) => {
-    console.debug({ command: "time-control->clock.subscribe", data });
-    if (isPlay(data)) {
-      displayedSpeed = data[0].speed;
-      currentTick = data[0].tick;
-    } else {
-      displayedSpeed = data[1].speed;
-      currentTick = data[1].tick;
-    }
-  });
 </script>
 
 <div
@@ -83,7 +130,7 @@
         type="radio"
         class="mr-1"
         value="pause"
-        checked={!isPlay($clock)}
+        checked={!isPlay(clock)}
         on:change={pause}
       />
     </label>
@@ -92,7 +139,7 @@
       <input
         type="radio"
         value="play"
-        checked={isPlay($clock)}
+        checked={isPlay(clock)}
         on:change={play}
       />
     </label>
