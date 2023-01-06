@@ -14,6 +14,7 @@ import { factoryProcess } from "./processes/satFactory";
 import { launcherProcess } from "./processes/launcher";
 import { swarmProcess } from "./processes/satelliteSwarm";
 import { fabricatorProcess } from "./processes/fabricator";
+import { writable } from "svelte/store";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -257,3 +258,27 @@ export function generateSave(sim: Simulation): SaveState {
 export function blankSave(): SaveState {
   return { processors: [] };
 }
+
+export const contextKey = Symbol();
+
+const { subscribe, update, set } = writable<Simulation>({
+  bus: { subscriptions: new Map() },
+  processors: new Map(),
+});
+export const store = {
+  subscribe,
+  insertProcessor: (p: Processor) =>
+    update((sim) => {
+      insertProcessor(sim, p);
+      return sim;
+    }),
+  processUntilSettled: () => {
+    update((sim) => processUntilSettled(sim));
+  },
+  broadcastEvent: (e: Event) => {
+    update((sim) => broadcastEvent(sim, e));
+  },
+  loadSave: (s: SaveState) => {
+    set(loadSave(s));
+  },
+};
