@@ -3,6 +3,7 @@ import type { BuildChoice, BuildOrder } from "../../types";
 import type { Event, Events } from "../events";
 import type { Resource } from "../../gameStateStore";
 import { constructionCosts } from "../../actions";
+import type { Simulation } from "../index";
 
 export type Fabricator = EventProcessor<
   "fabricator",
@@ -87,4 +88,11 @@ export function fabricatorProcess(
     }
   }
   return [fabricator, emitted];
+}
+
+export function getFabricator(simulation: Simulation) {
+  const { working, queue, job } = (
+    simulation.processors.get("fabricator-0") as Fabricator | undefined
+  )?.data ?? { working: false, job: null, queue: [] };
+  return { working, queue, job };
 }

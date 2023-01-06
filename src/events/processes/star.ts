@@ -1,5 +1,6 @@
 import type { Event } from "../events";
 import type { EventProcessor } from "./index";
+import type { Simulation } from "../index";
 
 export type Star = EventProcessor<"star", { mass: number }>;
 
@@ -25,4 +26,10 @@ export function starProcess(star: Star): [Star, Event[]] {
     }
   }
   return [star, emitted];
+}
+
+export function getStarMass(simulation: Simulation): number {
+  return (
+    (simulation.processors.get("star-0") as Star | undefined)?.data.mass ?? 0
+  );
 }

@@ -1,6 +1,6 @@
 import type { Event, Events } from "../events";
 import type { EventProcessor } from "./index";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import {
   Construct,
   Resource,
@@ -154,4 +154,13 @@ export function factoryProcess(
     }
   }
   return [factory, emitted];
+}
+
+export function getFactories(simulation: Simulation) {
+  const { count, working } = (
+    simulation.processors.get("factory-0") as
+      | SatelliteFactoryManager
+      | undefined
+  )?.data ?? { count: 0, working: 0 };
+  return { count, working };
 }

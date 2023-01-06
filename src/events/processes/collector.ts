@@ -1,6 +1,6 @@
 import type { Event, Events } from "../events";
 import { Construct, Resource } from "../../gameStateStore";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
 export type CollectorManager = EventProcessor<
@@ -71,4 +71,11 @@ export function collectorProcess(
     }
   }
   return [c, emitted];
+}
+
+export function getCollectorCount(simulation: Simulation): number {
+  return (
+    (simulation.processors.get("collector-0") as CollectorManager | undefined)
+      ?.data.count ?? 0
+  );
 }

@@ -1,5 +1,5 @@
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import { Construct, Resource, tickConsumption } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
 
@@ -112,4 +112,11 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
     }
   }
   return [miner, emitted];
+}
+
+export function getMiners(simulation: Simulation) {
+  const { count, working } = (
+    simulation.processors.get("miner-0") as MinerManager | undefined
+  )?.data ?? { count: 0, working: 0 };
+  return { count, working };
 }

@@ -5,7 +5,7 @@ import {
   tickConsumption,
   tickProduction,
 } from "../../gameStateStore";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
 export type RefinerManager = EventProcessor<
@@ -160,4 +160,11 @@ export function refinerProcess(
     }
   }
   return [refiner, emitted];
+}
+
+export function getRefiners(simulation: Simulation) {
+  const { count, working } = (
+    simulation.processors.get("refiner-0") as RefinerManager | undefined
+  )?.data ?? { count: 0, working: 0 };
+  return { count, working };
 }

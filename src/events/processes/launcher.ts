@@ -1,6 +1,6 @@
 import type { Event, Events } from "../events";
 import type { EventProcessor } from "./index";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import { Construct, Resource, tickConsumption } from "../../gameStateStore";
 
 export type LauncherManager = EventProcessor<
@@ -144,4 +144,11 @@ export function launcherProcess(
     }
   }
   return [launcher, emitted];
+}
+
+export function getLaunchers(simulation: Simulation) {
+  const { count, working, charge } = (
+    simulation.processors.get("launcher-0") as LauncherManager | undefined
+  )?.data ?? { count: 0, working: 0, charge: 0 };
+  return { count, working, charge };
 }

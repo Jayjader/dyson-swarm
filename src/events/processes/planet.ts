@@ -1,5 +1,5 @@
 import type { Event, Events } from "../events";
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import { Resource, tickProduction } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
 
@@ -14,10 +14,19 @@ export type Planet = EventProcessor<
 >;
 
 export function createPlanet(
-  id: Planet["id"] = "planet-0",
-  mass = 100
+  options: Partial<{ id: Planet["id"]; mass: number }> = {}
 ): Planet {
-  return { id, tag: "planet", incoming: [], data: { mass, received: [] } };
+  const values = {
+    id: "planet-0" as Planet["id"],
+    mass: 100,
+    ...options,
+  };
+  return {
+    id: values.id,
+    tag: "planet",
+    incoming: [],
+    data: { mass: values.mass, received: [] },
+  };
 }
 
 export function planetProcess(planet: Planet): [Planet, Event[]] {
@@ -47,4 +56,11 @@ export function planetProcess(planet: Planet): [Planet, Event[]] {
     }
   }
   return [planet, emitted];
+}
+
+export function getPlanetMass(simulation: Simulation) {
+  return (
+    (simulation.processors.get("planet-0") as Planet | undefined)?.data.mass ??
+    0
+  );
 }
