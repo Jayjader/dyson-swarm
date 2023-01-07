@@ -15,7 +15,7 @@ import {
 } from "./processes/collector";
 import { createFactoryManager, factoryProcess } from "./processes/satFactory";
 import { createLauncherManager, launcherProcess } from "./processes/launcher";
-import { swarmProcess } from "./processes/satelliteSwarm";
+import { createSwarm, swarmProcess } from "./processes/satelliteSwarm";
 import { createFabricator, fabricatorProcess } from "./processes/fabricator";
 import { writable } from "svelte/store";
 
@@ -272,7 +272,8 @@ export function blankSave(): SaveState {
       createRefinerManager(),
       createFactoryManager(),
       createLauncherManager(),
-      createFabricator(),
+      createSwarm(),
+      createFabricator()
     ],
   };
 }
