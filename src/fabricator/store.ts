@@ -100,12 +100,20 @@ export const uiState = {
     uiStateStack.set([{ future: [], past: [], present: { queue } }]);
   },
   cancelEdits: () => uiStateStack.set([]),
-  saveEdits: () =>
+  saveEdits: (): BuildOrder[] => {
+    let newQueue: BuildOrder[] = [];
     uiStateStack.update((stack) => {
       const [head] = stack;
-      if (isEditState(head)) buildQueue.replace(head.present.queue);
+      if (isEditState(head)) {
+        newQueue = head.present.queue;
+      } else {
+        const [_, tail] = stack;
+        newQueue = tail?.present.queue ?? [];
+      }
       return [];
-    }),
+    });
+    return newQueue;
+  },
   undoEdit: () =>
     uiStateStack.update((stack) => {
       const [head] = stack;

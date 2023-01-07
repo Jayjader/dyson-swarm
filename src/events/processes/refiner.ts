@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import {
   Construct,
   Resource,
@@ -43,9 +43,9 @@ export function createRefinerManager(
 
 export function refinerProcess(
   refiner: RefinerManager
-): [RefinerManager, Event[]] {
+): [RefinerManager, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = refiner.incoming.shift())) {
     switch (event.tag) {
       case "command-set-working-count":
@@ -98,52 +98,39 @@ export function refinerProcess(
         const powerNeeded =
           refiner.data.working *
           tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
+        let powerDrawn = powerNeeded;
         if (received[Resource.ELECTRICITY] < powerNeeded) {
           enoughSupplied = false;
-          emitted.push({
-            tag: "draw",
-            resource: Resource.ELECTRICITY,
-            amount: powerNeeded - received[Resource.ELECTRICITY],
-            forId: refiner.id,
-            receivedTick: event.tick + 1,
-          });
+          powerDrawn -= received[Resource.ELECTRICITY];
         }
+        emitted.push({
+          tag: "draw",
+          resource: Resource.ELECTRICITY,
+          amount: powerDrawn,
+          forId: refiner.id,
+          receivedTick: event.tick + 1,
+        });
+
         const oreNeeded =
           refiner.data.working *
           tickConsumption[Construct.REFINER].get(Resource.ORE)!;
+        const leftOverOre = received[Resource.ORE] - oreNeeded;
+        let oreDrawn = oreNeeded;
         if (received[Resource.ORE] < oreNeeded) {
           enoughSupplied = false;
-          emitted.push({
-            tag: "draw",
-            resource: Resource.ORE,
-            amount: oreNeeded - received[Resource.ORE],
-            forId: refiner.id,
-            receivedTick: event.tick + 1,
-          });
+          oreDrawn -= received[Resource.ORE];
+        } else if (received[Resource.ORE] > oreNeeded) {
+          oreDrawn = oreNeeded - leftOverOre;
         }
+        emitted.push({
+          tag: "draw",
+          resource: Resource.ORE,
+          amount: oreDrawn,
+          forId: refiner.id,
+          receivedTick: event.tick + 1,
+        });
 
-        if (enoughSupplied) {
-          const leftOverOre = received[Resource.ORE] - oreNeeded;
-          if (leftOverOre > 0) {
-            refiner.data.received = [
-              {
-                tag: "supply",
-                resource: Resource.ORE,
-                amount: leftOverOre,
-                toId: refiner.id,
-                receivedTick: event.tick,
-              },
-            ];
-          }
-          emitted.push({
-            tag: "produce",
-            resource: Resource.METAL,
-            amount:
-              refiner.data.working *
-              tickProduction[Construct.REFINER].get(Resource.METAL)!,
-            receivedTick: event.tick + 1,
-          });
-        } else {
+        if (!enoughSupplied) {
           for (const entry of Object.entries(received)) {
             const [resource, amount] = entry as [Resource, number];
             if (amount > 0) {
@@ -156,7 +143,27 @@ export function refinerProcess(
               });
             }
           }
+          break;
         }
+        if (leftOverOre > 0) {
+          refiner.data.received = [
+            {
+              tag: "supply",
+              resource: Resource.ORE,
+              amount: leftOverOre,
+              toId: refiner.id,
+              receivedTick: event.tick,
+            },
+          ];
+        }
+        emitted.push({
+          tag: "produce",
+          resource: Resource.METAL,
+          amount:
+            refiner.data.working *
+            tickProduction[Construct.REFINER].get(Resource.METAL)!,
+          receivedTick: event.tick + 1,
+        });
       }
     }
   }

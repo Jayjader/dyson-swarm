@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import { Resource } from "../../gameStateStore";
 import type { SubscriptionsFor, Simulation } from "../index";
 import type { EventProcessor } from "./index";
@@ -37,9 +37,9 @@ export function createPowerGrid(
   };
 }
 
-export function powerGridProcess(grid: PowerGrid): [PowerGrid, Event[]] {
+export function powerGridProcess(grid: PowerGrid): [PowerGrid, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = grid.incoming.shift())) {
     switch (event.tag) {
       case "produce":

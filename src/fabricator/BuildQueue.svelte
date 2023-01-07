@@ -4,29 +4,31 @@
   import BuildQueueItem from "./BuildQueueItem.svelte";
   import type { BuildOrder } from "../types";
   import { isRepeat } from "../types";
-  import { buildQueue, mode, uiState } from "./store";
-  import { clock } from "../time/store";
+  import type { BusEvent, Events } from "../events/events";
+  import { mode, uiState } from "./store";
   import { Construct } from "../gameStateStore";
+  import { getContext, onDestroy } from "svelte";
+  import { SIMULATION_STORE } from "../events";
+  import { getFabricator } from "../events/processes/fabricator";
+  import { getClock } from "../events/processes/clock";
+  import { getPrimitive } from "../time/store";
+
+  const simulation = getContext(SIMULATION_STORE).simulation;
 
   let queue: BuildOrder[] = [];
+  let savedQueue: BuildOrder[] = [];
+  let tick = 0;
+  // let uiMode = 'read-only';
 
-  function enterEdit() {
-    clock.startIndirectPause();
-    uiState.enterEdit(queue);
-  }
-  function saveEdits() {
-    clock.stopIndirectPause();
-    uiState.saveEdits();
-  }
-  function cancelEdits() {
-    clock.stopIndirectPause();
-    uiState.cancelEdits();
-  }
-  $: {
-    if ($mode === "read-only") {
-      queue = $buildQueue;
+  const unsubSim = simulation.subscribe((sim) => {
+    savedQueue = getFabricator(sim).queue;
+    tick = getPrimitive(getClock(sim)).tick;
+  });
+  const unsubUi = uiState.subscribe(([first, ...tail]) => {
+    if (!first) {
+      queue = savedQueue;
     } else {
-      const [first, second] = $uiState;
+      const [second] = tail;
       if (second) {
         queue = second.present.queue;
       } else if (first.present) {
@@ -35,8 +37,45 @@
         queue = [];
       }
     }
+  });
+  function enterEdit() {
+    // clock.startIndirectPause();
+    simulation.broadcastEvent({
+      tag: "command-simulation-clock-indirect-pause",
+      afterTick: tick,
+      timeStamp: performance.now(),
+    });
+    uiState.enterEdit(queue);
+  }
+  function saveEdits() {
+    // clock.stopIndirectPause();
+    const newQueue: BuildOrder[] = uiState.saveEdits();
+    const busEE: Events<"command-set-fabricator-queue"> = {
+      tag: "command-set-fabricator-queue",
+      afterTick: tick,
+      timeStamp: performance.now(),
+      queue: newQueue,
+    };
+    console.debug(busEE);
+    simulation.broadcastEvent(busEE);
+    simulation.broadcastEvent({
+      tag: "command-simulation-clock-indirect-resume",
+      afterTick: tick,
+      timeStamp: performance.now(),
+    });
+  }
+  function cancelEdits() {
+    // clock.stopIndirectPause();
+    simulation.broadcastEvent({
+      tag: "command-simulation-clock-indirect-resume",
+      afterTick: tick,
+      timeStamp: performance.now(),
+    });
+    uiState.cancelEdits();
   }
   export let visible = true;
+  onDestroy(unsubSim);
+  onDestroy(unsubUi);
 </script>
 
 <section
@@ -68,7 +107,7 @@
     </h3>
     {#if $mode === "read-only"}
       <button
-        class="my-2 px-2 border-2 border-indigo-300 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
+        class="my-2 border-2 border-indigo-300 px-2 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
         on:click={enterEdit}
       >
         Edit

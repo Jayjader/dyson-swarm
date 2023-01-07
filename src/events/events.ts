@@ -5,7 +5,7 @@ import type { BuildOrder } from "../types";
 type TimeStamped = { timeStamp: DOMHighResTimeStamp };
 type AfterTick = { afterTick: number };
 type BeforeTick = { beforeTick: number };
-export type Event =
+export type BusEvent =
   | ({ tag: "outside-clock-tick" } & TimeStamped)
   | { tag: "simulation-clock-tick"; tick: number }
   | ({ tag: "command-simulation-clock-play" } & AfterTick & TimeStamped)
@@ -70,7 +70,7 @@ export type Event =
     } & TimeStamped &
       AfterTick)
   | ({ tag: "fabricator-queue-set"; queue: BuildOrder[] } & BeforeTick);
-export type EventTag = Event["tag"];
+export type EventTag = BusEvent["tag"];
 
 // helper type to extract a subset of possible events based on just their tags
-export type Events<Tags extends EventTag> = Event & { tag: Tags };
+export type Events<Tags extends EventTag> = BusEvent & { tag: Tags };

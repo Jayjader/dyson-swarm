@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { EventProcessor } from "./index";
 import type { Simulation, SubscriptionsFor } from "../index";
 import {
@@ -35,9 +35,9 @@ export function createFactoryManager(
 }
 export function factoryProcess(
   factory: SatelliteFactoryManager
-): [SatelliteFactoryManager, Event[]] {
+): [SatelliteFactoryManager, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = factory.incoming.shift())) {
     switch (event.tag) {
       case "command-set-working-count":

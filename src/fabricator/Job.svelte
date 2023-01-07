@@ -6,29 +6,38 @@
   import { currentJob } from "./store";
   import type { Input } from "../types";
   import { constructionCosts } from "../actions";
-  import { Resource } from "../gameStateStore";
+  import { Construct, Resource } from "../gameStateStore";
+  import { getContext } from "svelte";
+  import { SIMULATION_STORE } from "../events";
+  import { getFabricator } from "../events/processes/fabricator";
 
-  const matsProgress = tweened<number | undefined>(0, {
+  const simulation = getContext(SIMULATION_STORE).simulation;
+
+  const matsProgress = tweened<number>(0, {
     duration: 150,
     easing: cubicOut,
   });
-  const elecProgress = tweened<number | undefined>(1, {
+  const elecProgress = tweened<number>(1, {
     duration: 150,
     easing: cubicOut,
   });
-  let buildOrder: undefined | BuildOrder;
+  let buildOrder: null | Construct;
   let costs: null | Input = null as null | Input;
-  currentJob.subscribe((newVal) => {
-    buildOrder = newVal;
+  simulation.subscribe((sim) => {
+    const nextOrder = getFabricator(sim).job;
+    if (nextOrder === buildOrder) {
+      return;
+    }
+    buildOrder = nextOrder;
     if (buildOrder) {
       console.debug({ command: "new-job-received", buildOrder }); // TODO: verify log level
-      costs = constructionCosts[buildOrder.building];
+      costs = constructionCosts[buildOrder];
       matsProgress.update(() => 0);
       elecProgress.update(() => 0);
     } else {
       costs = null;
-      matsProgress.set(undefined);
-      elecProgress.set(undefined);
+      matsProgress.update(() => 0);
+      elecProgress.update(() => 0);
     }
   });
   export let resources;
@@ -38,7 +47,7 @@
         (accu, [resource, cost]) =>
           resource === Resource.ELECTRICITY
             ? accu
-            : accu + Math.min(cost, resources[resource]),
+            : accu + Math.min(cost, resources[resource] ?? 0),
         0
       );
   $: matsTotal = !costs
@@ -48,7 +57,7 @@
           resource === Resource.ELECTRICITY ? accu : accu + cost,
         0
       );
-  $: elecCurrent = resources[Resource.ELECTRICITY];
+  $: elecCurrent = resources[Resource.ELECTRICITY] ?? 0;
   $: elecTotal = !costs ? 1 : costs.get(Resource.ELECTRICITY);
   $: {
     matsProgress.update(() => matsCurrent);
@@ -73,7 +82,7 @@
     <h3>Current Job</h3>
   </div>
   <span class="inline-block" style="width: 8rem">
-    <SingleBuildOrder {buildOrder} />
+    <SingleBuildOrder buildOrder={{ building: buildOrder }} />
   </span>
   <h4 class="mt-3">Power</h4>
   <progress

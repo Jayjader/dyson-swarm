@@ -3,7 +3,7 @@
   import { getClock } from "../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
-  import type { Event as BusEvent } from "../events/events";
+  import type { BusEvent as BusEvent } from "../events/events";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 

@@ -33,3 +33,36 @@ export function includes<T extends U, U>(
 ): element is T {
   return collection.has(element as T);
 }
+
+export function popQueue([head, ...tail]: BuildOrder[]): [
+  null | Construct,
+  BuildOrder[]
+] {
+  if (!head || !isRepeat(head)) {
+    return [head?.building ?? null, tail];
+  }
+  const [repeatHead, repeatTail] = popQueue(head.repeat);
+  return head.count <= 1
+    ? [repeatHead, [...repeatTail, ...tail]]
+    : [
+        repeatHead,
+        [
+          ...repeatTail,
+          { repeat: head.repeat, count: head.count - 1 },
+          ...tail,
+        ],
+      ];
+  // if (queue.length === 0) {
+  //   return [null, []];
+  // }
+  // const top = queue[0];
+  // if (isRepeat(top)) {
+  //   (queue[0] as Repeat).count -= 1;
+  //   const [innerTop, innerRest] = popQueue(top.repeat);
+  //   queue.unshift(...innerRest);
+  //   return [innerTop, queue];
+  // } else {
+  //   const job = (queue.pop()! as SingleBuildOrder).building;
+  //   return [job, queue];
+  // }
+}

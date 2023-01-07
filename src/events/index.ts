@@ -1,6 +1,6 @@
 import type { Id, Processor } from "./processes";
 import { createMemoryStream, memoryStreamProcess } from "./processes";
-import type { Event, EventTag } from "./events";
+import type { BusEvent, EventTag } from "./events";
 import { Resource } from "../gameStateStore";
 import { storageProcess } from "./processes/storage";
 import { clockProcess, createClock } from "./processes/clock";
@@ -147,7 +147,7 @@ export function insertProcessor(sim: Simulation, p: Processor) {
   sim.processors.set(p.id, p);
 }
 
-export function broadcastEvent(sim: Simulation, event: Event): Simulation {
+export function broadcastEvent(sim: Simulation, event: BusEvent): Simulation {
   const processorIds = sim.bus.subscriptions.get(event.tag);
   if (processorIds) {
     for (let id of processorIds) {
@@ -161,7 +161,7 @@ export function broadcastEvent(sim: Simulation, event: Event): Simulation {
   return sim;
 }
 
-function process(p: Processor): [Processor, Event[]] {
+function process(p: Processor): [Processor, BusEvent[]] {
   switch (p.tag) {
     case "stream":
       return [memoryStreamProcess(p), []];
@@ -204,7 +204,7 @@ function process(p: Processor): [Processor, Event[]] {
 
 export function processUntilSettled(sim: Simulation): Simulation {
   while ([...sim.processors.values()].some((p) => p.incoming.length > 0)) {
-    const emitted = [] as Event[];
+    const emitted = [] as BusEvent[];
     for (let processor of sim.processors.values()) {
       const [updatedProcessor, newEmitted] = process(processor);
       sim.processors.set(updatedProcessor.id, updatedProcessor);
@@ -272,13 +272,7 @@ export const store = {
       processors.forEach((p) => insertProcessor(sim, p));
       return sim;
     }),
-  processUntilSettled: () => {
-    update((sim) => processUntilSettled(sim));
-  },
-  broadcastEvent: (e: Event) => {
-    update((sim) => broadcastEvent(sim, e));
-  },
-  loadSave: (s: SaveState) => {
-    set(loadSave(s));
-  },
+  processUntilSettled: () => update((sim) => processUntilSettled(sim)),
+  broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
+  loadSave: (s: SaveState) => set(loadSave(s))
 };

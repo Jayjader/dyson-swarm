@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
 import { Construct, Resource, tickConsumption } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
@@ -30,9 +30,9 @@ export function createMinerManager(
   };
 }
 
-export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
+export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = miner.incoming.shift())) {
     switch (event.tag) {
       case "command-set-working-count":
@@ -102,11 +102,20 @@ export function minerProcess(miner: MinerManager): [MinerManager, Event[]] {
               });
             }
           } else {
-            emitted.push({
-              tag: "mine-planet-surface",
-              minerCount: miner.data.working,
-              receivedTick: event.tick + 1,
-            });
+            emitted.push(
+              {
+                tag: "draw",
+                resource: Resource.ELECTRICITY,
+                amount: powerNeeded,
+                forId: miner.id,
+                receivedTick: event.tick + 1,
+              },
+              {
+                tag: "mine-planet-surface",
+                minerCount: miner.data.working,
+                receivedTick: event.tick + 1,
+              }
+            );
           }
         }
     }

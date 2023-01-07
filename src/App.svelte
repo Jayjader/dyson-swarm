@@ -43,12 +43,12 @@
     createStar(),
     createPlanet({ mass: 10 ** 4 }),
     createCollectorManager({ count: 60 }),
-    createMinerManager({ count: 4 }),
+    createMinerManager({ count: 1 }),
     createRefinerManager({ count: 1 }),
     createFactoryManager({ count: 0 }),
     createLauncherManager({ count: 0 }),
     createFabricator(),
-    createClock(timeStampOfLastTick, "clock-0", { mode: "pause" })
+    createClock(timeStampOfLastTick, "clock-0", { mode: "play" })
   );
 
   setContext(SIMULATION_STORE, { simulation });
@@ -57,9 +57,9 @@
     swarm = 0;
 
   const unsubscribe = simulation.subscribe((sim) => {
-    if (clockFrame % (5 * 60) === 0) {
-      console.debug({ sim });
-    }
+    // if (clockFrame % (20 * 60) === 0) {
+    //   console.debug({ sim });
+    // }
     const gridState_ = gridState(sim);
     resources = [
       [Resource.ELECTRICITY, gridState_.stored],

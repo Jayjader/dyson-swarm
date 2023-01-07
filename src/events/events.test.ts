@@ -8,7 +8,7 @@ import {
   loadSave,
   processUntilSettled,
 } from "./index";
-import type { Event as BusEvent, Events } from "./events";
+import type { BusEvent as BusEvent, Events } from "./events";
 import {
   Construct,
   Resource,

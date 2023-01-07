@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { EventProcessor } from "./index";
 import type { Simulation, SubscriptionsFor } from "../index";
 import { Construct, Resource, tickConsumption } from "../../gameStateStore";
@@ -36,9 +36,9 @@ export function createLauncherManager(
 }
 export function launcherProcess(
   launcher: LauncherManager
-): [LauncherManager, Event[]] {
+): [LauncherManager, BusEvent[]] {
   let event;
-  let emitted = [] as Event[];
+  let emitted = [] as BusEvent[];
   while ((event = launcher.incoming.shift())) {
     switch (event.tag) {
       case "command-set-working-count":

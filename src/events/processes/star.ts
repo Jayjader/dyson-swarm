@@ -1,4 +1,4 @@
-import type { Event } from "../events";
+import type { BusEvent } from "../events";
 import type { EventProcessor } from "./index";
 import type { Simulation } from "../index";
 
@@ -11,9 +11,9 @@ export function createStar(
   return { id, incoming: [], tag: "star", data: { mass } };
 }
 
-export function starProcess(star: Star): [Star, Event[]] {
+export function starProcess(star: Star): [Star, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = star.incoming.shift())) {
     switch (event.tag) {
       case "simulation-clock-tick":

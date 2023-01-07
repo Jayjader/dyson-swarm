@@ -1,5 +1,5 @@
 import type { EventProcessor } from "./index";
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { SubscriptionsFor, Simulation } from "../index";
 
 export type SatelliteSwarm = EventProcessor<
@@ -27,9 +27,9 @@ export function createSwarm(
   };
 }
 
-export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, Event[]] {
+export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, BusEvent[]] {
   let event,
-    emitted = [] as Event[];
+    emitted = [] as BusEvent[];
   while ((event = swarm.incoming.shift())) {
     switch (event.tag) {
       case "star-flux-emission":

@@ -1,4 +1,4 @@
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
 import { Resource, tickProduction } from "../../gameStateStore";
 import type { EventProcessor } from "./index";
@@ -29,9 +29,9 @@ export function createPlanet(
   };
 }
 
-export function planetProcess(planet: Planet): [Planet, Event[]] {
+export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = planet.incoming.shift())) {
     switch (event.tag) {
       case "mine-planet-surface":
@@ -43,6 +43,7 @@ export function planetProcess(planet: Planet): [Planet, Event[]] {
           planet.data.received.reduce((accu, e) => accu + e.minerCount, 0) *
             tickProduction.miner.get(Resource.ORE)!
         );
+        planet.data.received = [];
         if (totalOreMined > 0) {
           planet.data.mass -= totalOreMined;
           emitted.push({

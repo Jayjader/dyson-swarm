@@ -1,5 +1,5 @@
 import type { Resource } from "../../gameStateStore";
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { SubscriptionsFor, Simulation } from "../index";
 import type { EventProcessor, Id } from "./index";
 
@@ -29,9 +29,9 @@ export function createStorage<
 export function storageProcess(
   resource: Exclude<Resource, Resource.ELECTRICITY>,
   storage: Storage<typeof resource>
-): [typeof storage, Event[]] {
+): [typeof storage, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = storage.incoming.shift())) {
     switch (event.tag) {
       case "draw":
@@ -51,7 +51,7 @@ export function storageProcess(
         while (
           (e = storage.data.received.shift() as Events<"draw" | "produce">) !==
             undefined &&
-          e.receivedTick === event.tick
+          e.receivedTick <= event.tick
         ) {
           if (e.tag === "produce") {
             totalResourceReceived += e.amount;

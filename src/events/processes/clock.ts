@@ -5,7 +5,7 @@ import {
   isPause,
   isPlay,
 } from "../../time/store";
-import type { Event, Events } from "../events";
+import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
@@ -47,9 +47,9 @@ export function createClock(
   };
 }
 
-export function clockProcess(clock: Clock): [Clock, Event[]] {
+export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
   let event;
-  const emitted = [] as Event[];
+  const emitted = [] as BusEvent[];
   while ((event = clock.incoming.shift())) {
     switch (event.tag) {
       case "command-simulation-clock-play":
