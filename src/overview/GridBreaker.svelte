@@ -20,7 +20,7 @@
 <label
   class="basis-full rounded-xl border-8 {border} flex flex-col items-stretch justify-center pt-1 pb-2 text-center {text} cursor-pointer"
 >
-  Circuit Breaker for Power Grid
+  Power Grid
   <input
     type="checkbox"
     checked={tripped}
@@ -34,6 +34,7 @@
       })}
     class="cursor-pointer"
   />
+  Circuit Breaker
 </label>
 
 <style>

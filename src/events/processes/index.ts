@@ -1,4 +1,4 @@
-import type { SubscriptionsFor } from "../index";
+import type { Simulation, SubscriptionsFor } from "../index";
 import {
   blankSave,
   broadcastEvent,
@@ -79,6 +79,10 @@ export function memoryStreamProcess(stream: EventStream): EventStream {
   stream.data.received.push(...stream.incoming);
   stream.incoming = [];
   return stream;
+}
+
+export function getEventStream(simulation: Simulation) {
+  return (simulation.processors.get("stream-0") as EventStream).data.received;
 }
 
 /* ================================= */
