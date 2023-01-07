@@ -1,11 +1,7 @@
-import type {Construct} from "./gameRules";
+import type { Construct } from "./gameRules";
 
 export type BuildChoice = null | Construct;
 
-export type Time = "play" | "pause";
-export type SwarmHUD = {
-  satellites: number;
-};
 type Repeat = {
   count: number;
   repeat: [BuildOrder, ...BuildOrder[]];
