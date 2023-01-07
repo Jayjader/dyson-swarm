@@ -92,9 +92,6 @@ export const mode = derived<
   if (!head) return "read-only";
   if (isEditState(head)) return "edit";
   return head.mode;
-  // if (head.mode === "remove-build-order") return "remove-build-order";
-  // if (head.mode === "add-build-order") return "add-build-order";
-  // throw new Error(`unknown fabricator ui stack head value: ${head}`);
 });
 export const uiState = {
   ...derived(uiStateStack, (stack) => stack),

@@ -44,9 +44,9 @@ export function createRefinerManager(
 export function refinerProcess(
   refiner: RefinerManager
 ): [RefinerManager, BusEvent[]] {
-  let event;
+  let event: BusEvent;
   const emitted = [] as BusEvent[];
-  while ((event = refiner.incoming.shift())) {
+  while ((event = refiner.incoming.shift()!)) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.REFINER) {
@@ -86,14 +86,33 @@ export function refinerProcess(
             fabricated: 0,
           }
         );
-        refiner.data.working += received.fabricated;
-        refiner.data.count += received.fabricated;
+        refiner.data.received = [];
+
+        if (received.fabricated > 0) {
+          refiner.data.working += received.fabricated;
+          refiner.data.count += received.fabricated;
+        }
         if (refiner.data.working <= 0) {
+          refiner.data.received.push(
+            {
+              tag: "supply",
+              resource: Resource.ELECTRICITY,
+              amount: received[Resource.ELECTRICITY],
+              receivedTick: event.tick,
+              toId: refiner.id,
+            },
+            {
+              tag: "supply",
+              resource: Resource.ORE,
+              amount: received[Resource.ORE],
+              receivedTick: event.tick,
+              toId: refiner.id,
+            }
+          );
           break;
         }
 
         let enoughSupplied = true;
-        refiner.data.received = [];
 
         const powerNeeded =
           refiner.data.working *
@@ -131,18 +150,20 @@ export function refinerProcess(
         });
 
         if (!enoughSupplied) {
-          for (const entry of Object.entries(received)) {
-            const [resource, amount] = entry as [Resource, number];
-            if (amount > 0) {
-              refiner.data.received.push({
-                tag: "supply",
-                resource,
-                amount,
-                toId: refiner.id,
-                receivedTick: event.tick,
-              });
+          ([Resource.ELECTRICITY, Resource.ORE] as const).forEach(
+            (resource) => {
+              const amount = received[resource];
+              if (amount > 0) {
+                refiner.data.received.push({
+                  tag: "supply",
+                  resource,
+                  amount,
+                  toId: refiner.id,
+                  receivedTick: (event as Events<"simulation-clock-tick">).tick,
+                });
+              }
             }
-          }
+          );
           break;
         }
         if (leftOverOre > 0) {

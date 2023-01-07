@@ -1,5 +1,4 @@
 import type { Id, Processor } from "./processes";
-import { createMemoryStream, memoryStreamProcess } from "./processes";
 import type { BusEvent, EventTag } from "./events";
 import { Resource } from "../gameStateStore";
 import { createStorage, storageProcess } from "./processes/storage";
@@ -18,6 +17,10 @@ import { createLauncherManager, launcherProcess } from "./processes/launcher";
 import { createSwarm, swarmProcess } from "./processes/satelliteSwarm";
 import { createFabricator, fabricatorProcess } from "./processes/fabricator";
 import { writable } from "svelte/store";
+import {
+  createMemoryStream,
+  memoryStreamProcess,
+} from "./processes/eventStream";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;

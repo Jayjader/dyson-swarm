@@ -20,11 +20,11 @@
     SIMULATION_STORE,
     store as simulation,
   } from "./events";
-  import { createMemoryStream } from "./events/processes";
   import { swarmCount } from "./events/processes/satelliteSwarm";
   import { readStored } from "./events/processes/storage";
   import { gridState } from "./events/processes/powerGrid";
   import { createClock } from "./events/processes/clock";
+  import { createMemoryStream } from "./events/processes/eventStream";
 
   export let init: GameState;
 

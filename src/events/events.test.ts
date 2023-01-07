@@ -1,5 +1,4 @@
-import type { EventStream, Id, Processor } from "./processes";
-import { createMemoryStream } from "./processes";
+import type { Id, Processor } from "./processes";
 import type { SubscriptionsFor } from "./index";
 import {
   broadcastEvent,
@@ -37,6 +36,7 @@ import {
 import { createSwarm } from "./processes/satelliteSwarm";
 import { createFabricator, type Fabricator } from "./processes/fabricator";
 import { constructionCosts } from "../actions";
+import { createMemoryStream, type EventStream } from "./processes/eventStream";
 
 function emptySave() {
   return { processors: [] };

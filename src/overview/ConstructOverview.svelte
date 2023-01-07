@@ -24,13 +24,17 @@
   import { swarmCount } from "../events/processes/satelliteSwarm";
   import { getFabricator } from "../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
+  import { getPrimitive } from "../time/types";
+  import { getClock } from "../events/processes/clock";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
   let constructs = new Map();
   let fabricator = { working: false, job: null as Construct | null };
+  let lastTick = 0;
 
   const unsubscribe = simulation.subscribe((sim) => {
+    lastTick = getPrimitive(getClock(sim)).tick;
     constructs.set(Construct.SOLAR_COLLECTOR, getCollectorCount(sim));
     constructs.set(Construct.MINER, getMiners(sim));
     constructs.set(Construct.REFINER, getRefiners(sim));
@@ -39,19 +43,23 @@
     constructs.set("star", getStarMass(sim));
     constructs.set("planet", getPlanetMass(sim));
     constructs.set("swarm", swarmCount(sim));
+    constructs = constructs;
     const fab = getFabricator(sim);
     fabricator.working = fab.working;
     fabricator.job = fab.job;
   });
 
-  const count = (tag) => {
-    console.debug({ command: "count construct", tag, constructs });
-    return constructs.get(tag)?.count ?? 0;
-  };
-  const working = (tag) => {
-    console.debug({ command: "working construct", tag });
-    return constructs.get(tag)?.working ?? 0;
-  };
+  const count = (map, tag) => map.get(tag)?.count ?? 0;
+  const working = (map, tag) => map.get(tag)?.working ?? 0;
+
+  const setCount = (construct, count) =>
+    simulation.broadcastEvent({
+      tag: "command-set-working-count",
+      count,
+      construct,
+      afterTick: lastTick,
+      timeStamp: performance.now(),
+    });
   onDestroy(unsubscribe);
 </script>
 
@@ -133,7 +141,7 @@
     consumes={[
       {
         name: "energy-flux",
-        value: "1-300",
+        value: "1+",
         unit: wattsPerSquareMeter,
         icon: ICON["flux"],
       },
@@ -192,16 +200,29 @@
       <div class="flex flex-col">
         <h5 class="font-bold">Working:</h5>
         <span class="flex flex-row gap-1">
-          <button class="rounded border-2 border-zinc-50">None</button>
+          <button
+            class="rounded border-2 border-zinc-50 px-1"
+            disabled={working(constructs, Construct.MINER) === 0}
+            on:click={() => setCount(Construct.MINER, 0)}>None</button
+          >
           <input
             type="number"
-            max={count(Construct.MINER)}
+            max={count(constructs, Construct.MINER)}
             min={0}
-            value={working(Construct.MINER)}
+            value={working(constructs, Construct.MINER)}
+            on:change={(e) =>
+              setCount(Construct.MINER, parseInt(e.target.value, 10))}
             style="max-width: 6ch"
           />
-          <output>/{count(Construct.MINER)}</output>
-          <button class="rounded border-2 border-zinc-50">All</button>
+          <output>/{count(constructs, Construct.MINER)}</output>
+          <button
+            class="rounded border-2 border-zinc-50 px-1"
+            disabled={working(constructs, Construct.MINER) ===
+              count(constructs, Construct.MINER)}
+            on:click={() =>
+              setCount(Construct.MINER, count(constructs, Construct.MINER))}
+            >All</button
+          >
         </span>
       </div>
     </ConstructOverview>
@@ -232,16 +253,29 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="rounded border-2 border-zinc-50">None</button>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.REFINER) === 0}
+          on:click={() => setCount(Construct.REFINER, 0)}>None</button
+        >
         <input
           type="number"
           min={0}
-          max={count(Construct.REFINER)}
-          value={working(Construct.REFINER)}
+          max={count(constructs, Construct.REFINER)}
+          value={working(constructs, Construct.REFINER)}
+          on:change={(e) =>
+            setCount(Construct.REFINER, parseInt(e.target.value, 10))}
           style="max-width: 6ch"
         />
-        <output>/{count(Construct.REFINER)}</output>
-        <button class="rounded border-2 border-zinc-50">All</button>
+        <output>/{count(constructs, Construct.REFINER)}</output>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.REFINER) ===
+            count(constructs, Construct.REFINER)}
+          on:click={() =>
+            setCount(Construct.REFINER, count(constructs, Construct.REFINER))}
+          >All</button
+        >
       </span>
     </div>
   </ConstructOverview>
@@ -275,16 +309,31 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="rounded border-2 border-zinc-50">None</button>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.SATELLITE_FACTORY) === 0}
+          on:click={() => setCount(Construct.SATELLITE_FACTORY, 0)}>None</button
+        >
         <input
           type="number"
           min={0}
-          max={count(Construct.SATELLITE_FACTORY)}
-          value={working(Construct.SATELLITE_FACTORY)}
+          max={count(constructs, Construct.SATELLITE_FACTORY)}
+          value={working(constructs, Construct.SATELLITE_FACTORY)}
+          on:change={(e) =>
+            setCount(Construct.SATELLITE_FACTORY, parseInt(e.target.value, 10))}
           style="max-width: 6ch"
         />
-        <output>/{count(Construct.SATELLITE_FACTORY)}</output>
-        <button class="rounded border-2 border-zinc-50">All</button>
+        <output>/{count(constructs, Construct.SATELLITE_FACTORY)}</output>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.SATELLITE_FACTORY) ===
+            count(constructs, Construct.SATELLITE_FACTORY)}
+          on:click={() =>
+            setCount(
+              Construct.SATELLITE_FACTORY,
+              count(constructs, Construct.SATELLITE_FACTORY)
+            )}>All</button
+        >
       </span>
     </div>
   </ConstructOverview>
@@ -314,16 +363,35 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button class="rounded border-2 border-zinc-50">None</button>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.SATELLITE_LAUNCHER) === 0}
+          on:click={() => setCount(Construct.SATELLITE_LAUNCHER, 0)}
+          >None</button
+        >
         <input
           type="number"
           min={0}
-          max={count(Construct.SATELLITE_LAUNCHER)}
-          value={working(Construct.SATELLITE_LAUNCHER)}
+          max={count(constructs, Construct.SATELLITE_LAUNCHER)}
+          value={working(constructs, Construct.SATELLITE_LAUNCHER)}
+          on:change={(e) =>
+            setCount(
+              Construct.SATELLITE_LAUNCHER,
+              parseInt(e.target.value, 10)
+            )}
           style="max-width: 6ch"
         />
-        <output>/{count(Construct.SATELLITE_LAUNCHER)}</output>
-        <button class="rounded border-2 border-zinc-50">All</button>
+        <output>/{count(constructs, Construct.SATELLITE_LAUNCHER)}</output>
+        <button
+          class="rounded border-2 border-zinc-50 px-1"
+          disabled={working(constructs, Construct.SATELLITE_LAUNCHER) ===
+            count(constructs, Construct.SATELLITE_LAUNCHER)}
+          on:click={() =>
+            setCount(
+              Construct.SATELLITE_LAUNCHER,
+              count(constructs, Construct.SATELLITE_LAUNCHER)
+            )}>All</button
+        >
       </span>
     </div>
   </ConstructOverview>

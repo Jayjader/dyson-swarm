@@ -1,13 +1,5 @@
-import type { Simulation, SubscriptionsFor } from "../index";
-import {
-  blankSave,
-  broadcastEvent,
-  loadSave,
-  processUntilSettled,
-  SUBSCRIPTIONS,
-} from "../index";
+import type { SUBSCRIPTIONS, SubscriptionsFor } from "../index";
 import type { Events } from "../events";
-import type { BuildOrder, SingleBuildOrder } from "../../types";
 import type { Resource } from "../../gameStateStore";
 import type { Storage } from "./storage";
 import type { Clock } from "./clock";
@@ -21,6 +13,7 @@ import type { SatelliteFactoryManager } from "./satFactory";
 import type { LauncherManager } from "./launcher";
 import type { SatelliteSwarm } from "./satelliteSwarm";
 import type { Fabricator } from "./fabricator";
+import type { EventStream } from "./eventStream";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -35,13 +28,6 @@ export type EventProcessor<
     ? ProcessorCore<Tag>
     : { data: Data } & ProcessorCore<Tag>
   : never;
-
-export type EventStream = EventProcessor<
-  "stream",
-  {
-    received: Events<SubscriptionsFor<"stream">>[];
-  }
->;
 
 export type Processor =
   | EventStream
@@ -58,49 +44,3 @@ export type Processor =
   | SatelliteSwarm
   | Fabricator;
 export type Id = Processor["id"];
-
-export function createMemoryStream(
-  id: EventStream["id"] = "stream-0"
-): EventStream {
-  return {
-    id,
-    incoming: [],
-    tag: "stream",
-    data: { received: [] },
-  };
-}
-export function memoryStreamProcess(stream: EventStream): EventStream {
-  if (
-    stream.incoming.length >= 1 &&
-    stream.incoming[0].tag !== "outside-clock-tick"
-  ) {
-    console.debug({ eventStream: stream.incoming });
-  }
-  stream.data.received.push(...stream.incoming);
-  stream.incoming = [];
-  return stream;
-}
-
-export function getEventStream(simulation: Simulation) {
-  return (simulation.processors.get("stream-0") as EventStream).data.received;
-}
-
-/* ================================= */
-function App() {
-  const savedState = blankSave();
-  let simulation = loadSave(savedState, {
-    enforce: { clock: true, stream: true },
-  });
-
-  let clockFrame: number;
-
-  function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
-    simulation = processUntilSettled(
-      broadcastEvent(simulation, { tag: "outside-clock-tick", timeStamp })
-    );
-    clockFrame = window.requestAnimationFrame(outsideClockLoop);
-  }
-  clockFrame = window.requestAnimationFrame(outsideClockLoop);
-
-  return () => window.cancelAnimationFrame(clockFrame);
-}

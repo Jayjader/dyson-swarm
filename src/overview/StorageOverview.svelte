@@ -5,8 +5,8 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
   import { getPrimitive } from "../time/types";
-  import { getEventStream } from "../events/processes";
   import type { Events } from "../events/events";
+  import { getEventStream } from "../events/processes/eventStream";
 
   const watt = "W";
   const wattTick = `${watt}t`;
@@ -29,7 +29,9 @@
     const stream = getEventStream(sim);
     const currentTick = getPrimitive(getClock(sim)).tick;
     if (currentTick > last.tick) {
-      const start = stream.findIndex(e=>e?.receivedTick===currentTick-1);
+      const start = stream.findIndex(
+        (e) => e?.receivedTick === currentTick - 1
+      );
       last.resources = stream.slice(start).reduce(
         (accu, e) => {
           if (!["produce", "supply"].includes(e.tag)) {
