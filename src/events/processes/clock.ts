@@ -55,6 +55,8 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
       case "command-simulation-clock-play":
         if (isPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
+          clock.data.lastOutsideTickProvokingSimulationTick =
+            event.timeStamp - 1;
           emitted.push({
             tag: "simulation-clock-play",
             beforeTick: event.afterTick + 1,
@@ -82,6 +84,8 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
       case "command-simulation-clock-indirect-resume":
         if (isIndirectPause(clock.data.state)) {
           clock.data.state = [clock.data.state[1]];
+          clock.data.lastOutsideTickProvokingSimulationTick =
+            event.timeStamp - 1;
           emitted.push({
             tag: "simulation-clock-indirect-resume",
             beforeTick: event.afterTick + 1,
