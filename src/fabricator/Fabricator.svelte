@@ -1,6 +1,6 @@
 <script lang="ts">
   import Job from "./Job.svelte";
-  import type { Resource } from "../gameStateStore";
+  import type { Resource } from "../gameRules";
   import BuildQueue from "./BuildQueue.svelte";
 
   export let resources: Map<Resource, number> = new Map();

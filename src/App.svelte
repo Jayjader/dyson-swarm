@@ -1,17 +1,15 @@
 <!-- @component Top-level of dyson swarm application -->
 <script lang="ts">
   import "./app.css";
-  import ResourceHud from "./ResourceHud.svelte";
+  import ResourceHud from "./hud/ResourceHud.svelte";
   import SwarmHud from "./hud/SwarmHud.svelte";
   import Fabricator from "./fabricator/Fabricator.svelte";
   import { onDestroy, setContext } from "svelte";
-  import type { GameState } from "./gameStateStore";
-  import { Resource } from "./gameStateStore";
-  import { fabricator } from "./fabricator/store";
+  import { Resource } from "./gameRules";
   import PanelSelector from "./panel-control/PanelSelector.svelte";
   import { uiPanelsState } from "./panel-control/store";
-  import TimeControl from "./time/TimeControl.svelte";
-  import ProgressOverview from "./overview/ProgressOverview.svelte";
+  import TimeControl from "./hud/TimeControl.svelte";
+  import ProgressOverview from "./hud/ProgressOverview.svelte";
   import ConstructOverview from "./overview/ConstructOverview.svelte";
   import StorageOverview from "./overview/StorageOverview.svelte";
   import {
@@ -25,8 +23,6 @@
   import { gridState } from "./events/processes/powerGrid";
   import { createClock } from "./events/processes/clock";
   import { createMemoryStream } from "./events/processes/eventStream";
-
-  export let init: GameState;
 
   simulation.loadSave(blankSave());
   let timeStampOfLastTick = window.performance.now();

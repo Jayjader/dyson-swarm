@@ -1,14 +1,13 @@
 <script lang="ts">
   import ConstructOverview from "./Construct.svelte";
-  import type { CircuitBreaker } from "../gameStateStore";
+  import type { CircuitBreaker } from "../gameRules";
   import {
-    Construct,
+    Construct, launchCost,
     Resource,
     tickConsumption,
     tickProduction,
-  } from "../gameStateStore";
+  } from "../gameRules";
   import { SIMULATION_STORE } from "../events";
-  import { launchCost } from "../actions";
   import Fabricator from "./Fabricator.svelte";
   import { kilogram, watt, wattsPerSquareMeter } from "../units";
   import { energy, ICON, metal, ore, satellite } from "../icons";
@@ -24,7 +23,7 @@
   import { swarmCount } from "../events/processes/satelliteSwarm";
   import { getFabricator } from "../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
-  import { getPrimitive } from "../time/types";
+  import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
 
   const simulation = getContext(SIMULATION_STORE).simulation;

@@ -1,7 +1,7 @@
 import type { BusEvent, Events } from "../events";
 import type { EventProcessor } from "./index";
 import type { Simulation, SubscriptionsFor } from "../index";
-import { Construct, Resource, tickConsumption } from "../../gameStateStore";
+import { Construct, Resource, tickConsumption } from "../../gameRules";
 
 export type LauncherManager = EventProcessor<
   "launcher",

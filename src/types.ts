@@ -1,6 +1,5 @@
-import type { Construct, Resource } from "./gameStateStore";
+import type {Construct} from "./gameRules";
 
-export type Input = Map<Resource, number>;
 export type BuildChoice = null | Construct;
 
 export type Time = "play" | "pause";

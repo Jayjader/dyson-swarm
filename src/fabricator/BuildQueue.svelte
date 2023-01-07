@@ -5,12 +5,12 @@
   import type { BuildOrder } from "../types";
   import { isRepeat } from "../types";
   import { mode, uiState } from "./store";
-  import { Construct } from "../gameStateStore";
+  import { Construct } from "../gameRules";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
   import { getFabricator } from "../events/processes/fabricator";
   import { getClock } from "../events/processes/clock";
-  import { getPrimitive } from "../time/types";
+  import { getPrimitive } from "../hud/types";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 

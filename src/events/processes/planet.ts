@@ -1,6 +1,6 @@
 import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
-import { Resource, tickProduction } from "../../gameStateStore";
+import { Resource, tickProduction } from "../../gameRules";
 import type { EventProcessor } from "./index";
 
 export type Planet = EventProcessor<

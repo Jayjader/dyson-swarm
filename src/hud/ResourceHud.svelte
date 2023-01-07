@@ -1,6 +1,6 @@
 <!-- @component Recap of overall resource state -->
 <script lang="ts">
-  import { Resource } from "./gameStateStore";
+  import { Resource } from "../gameRules";
 
   export let resources = new Map();
 

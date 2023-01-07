@@ -1,4 +1,4 @@
-import { Resource } from "./gameStateStore";
+import { Resource } from "./gameRules";
 
 export const wattsPerSquareMeter = "W/m<sup>2</sup>";
 export const kilogram = "kg";

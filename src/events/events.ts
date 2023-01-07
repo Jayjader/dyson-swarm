@@ -1,5 +1,5 @@
 import type { Id } from "./processes";
-import type { Resource, Construct } from "../gameStateStore";
+import type { Resource, Construct } from "../gameRules";
 import type { BuildOrder } from "../types";
 
 type TimeStamped = { timeStamp: DOMHighResTimeStamp };

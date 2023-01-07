@@ -4,7 +4,7 @@ import {
   Resource,
   tickConsumption,
   tickProduction,
-} from "../../gameStateStore";
+} from "../../gameRules";
 import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 

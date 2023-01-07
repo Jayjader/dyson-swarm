@@ -2,17 +2,18 @@
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
-  import { currentJob } from "./store";
-  import type { Input } from "../types";
-  import { constructionCosts } from "../actions";
-  import { Construct, Resource } from "../gameStateStore";
+  import {
+    type Construct,
+    constructionCosts,
+    type Input,
+    Resource,
+  } from "../gameRules";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
   import { getFabricator } from "../events/processes/fabricator";
 
   type Job = [Construct, Input] | null;
 
-  export let resources = new Map();
   const simulation = getContext(SIMULATION_STORE).simulation;
 
   const matsProgress = tweened<number>(0, {
@@ -84,7 +85,9 @@
   <div class="flex flex-row justify-around gap-2 self-stretch">
     <button
       class="my-1 rounded border-2 border-stone-400 px-2 disabled:text-stone-600"
-      on:click={() => currentJob.set(undefined)}
+      on:click={() => {
+        /*todo*/
+      }}
       disabled={!job}>Clear Job</button
     >
     <h3>Current Job</h3>

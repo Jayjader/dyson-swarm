@@ -1,62 +1,6 @@
-import type { Readable } from "svelte/types/runtime/store";
 import { derived, writable } from "svelte/store";
-import type { BuildOrder, SingleBuildOrder } from "../types";
-import { isRepeat } from "../types";
-import { build, canBuild, constructionCosts } from "../actions";
-import type { GameAction, Construct, Resources } from "../gameStateStore";
-
-const queueData = writable<BuildOrder[]>([]);
-type Actions = {
-  push: (bo: BuildOrder) => void;
-  pop: () => undefined | SingleBuildOrder;
-  clear: (options?: { onlyAuto: boolean }) => void;
-  replace: (newData: BuildOrder[]) => void;
-};
-export const buildQueue: Actions & Readable<Array<BuildOrder>> = {
-  ...derived(queueData, (data) => data),
-  push: (bo) => queueData.update((value) => [...value, bo]),
-  pop: () => {
-    let poppedValue;
-    queueData.update(([head, ...tail]) => {
-      if (!head || !isRepeat(head)) {
-        poppedValue = head;
-        return tail;
-      } else {
-        const [repeatHead, ...repeatTail] = head.repeat;
-        poppedValue = repeatHead;
-        return head.count <= 1
-          ? [...repeatTail, ...tail]
-          : [
-              ...repeatTail,
-              { repeat: head.repeat, count: head.count - 1 },
-              ...tail,
-            ];
-      }
-    });
-    return poppedValue;
-  },
-  clear: () => queueData.set([]),
-  replace: (newData) => queueData.set(newData),
-};
-export const currentJob = writable<undefined | SingleBuildOrder>();
-type Exposed = Readable<{
-  work: (state: Resources) => void | GameAction;
-}>;
-
-export const fabricator: Exposed = derived(
-  [buildQueue, currentJob],
-  ([, job]) => ({
-    work: (resources: Resources) => {
-      if (!job) {
-        currentJob.set(buildQueue.pop());
-      }
-      if (job && canBuild(constructionCosts[job.building], resources)) {
-        currentJob.set(undefined);
-        return build(job.building);
-      }
-    },
-  })
-);
+import type { BuildOrder } from "../types";
+import type { Construct } from "../gameRules";
 
 /* UI */
 type EditInTime = { queue: BuildOrder[] };

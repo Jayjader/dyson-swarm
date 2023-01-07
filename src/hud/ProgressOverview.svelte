@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { getPrimitive } from "../time/types";
+  import { getPrimitive } from "./types";
   import ProgressHeader from "./ProgressHeader.svelte";
   import { getClock } from "../events/processes/clock";
   import { getContext } from "svelte";

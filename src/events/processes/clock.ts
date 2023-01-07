@@ -4,7 +4,7 @@ import {
   isIndirectPause,
   isPause,
   isPlay,
-} from "../../time/types";
+} from "../../hud/types";
 import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";

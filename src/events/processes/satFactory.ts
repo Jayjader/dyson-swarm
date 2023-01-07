@@ -6,7 +6,7 @@ import {
   Resource,
   tickConsumption,
   tickProduction,
-} from "../../gameStateStore";
+} from "../../gameRules";
 
 export type SatelliteFactoryManager = EventProcessor<
   "factory",

@@ -3,7 +3,7 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
   import { getClock } from "../events/processes/clock";
-  import { getPrimitive } from "../time/types";
+  import { getPrimitive } from "../hud/types";
 
   let tripped = false,
     lastTick = 0;

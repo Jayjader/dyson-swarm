@@ -1,6 +1,6 @@
 import type { SUBSCRIPTIONS, SubscriptionsFor } from "../index";
 import type { Events } from "../events";
-import type { Resource } from "../../gameStateStore";
+import type { Resource } from "../../gameRules";
 import type { Storage } from "./storage";
 import type { Clock } from "./clock";
 import type { PowerGrid } from "./powerGrid";

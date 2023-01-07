@@ -2,9 +2,9 @@ import type { EventProcessor } from "./index";
 import type { BuildChoice, BuildOrder } from "../../types";
 import { popNextConstruct } from "../../types";
 import type { BusEvent, Events } from "../events";
-import type { Resource } from "../../gameStateStore";
-import { constructionCosts } from "../../actions";
+import type { Resource } from "../../gameRules";
 import type { Simulation } from "../index";
+import {constructionCosts} from "../../gameRules";
 
 export type Fabricator = EventProcessor<
   "fabricator",

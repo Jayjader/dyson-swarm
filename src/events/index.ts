@@ -1,6 +1,6 @@
 import type { Id, Processor } from "./processes";
 import type { BusEvent, EventTag } from "./events";
-import { Resource } from "../gameStateStore";
+import { Resource } from "../gameRules";
 import { createStorage, storageProcess } from "./processes/storage";
 import { clockProcess, createClock } from "./processes/clock";
 import { createPowerGrid, powerGridProcess } from "./processes/powerGrid";
@@ -270,7 +270,7 @@ export function blankSave(): SaveState {
       createStorage(Resource.PACKAGED_SATELLITE),
       createStar(),
       createPlanet({ mass: 10 ** 4 }),
-      createCollectorManager({ count: 10 }),
+      createCollectorManager({ count: 100 }),
       createMinerManager(),
       createRefinerManager(),
       createFactoryManager(),

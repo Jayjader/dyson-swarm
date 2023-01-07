@@ -1,4 +1,4 @@
-import { Construct, Resource } from "./gameStateStore";
+import { Construct, Resource } from "./gameRules";
 
 export const flux = "/flux.svg";
 export const energy = "/electric.svg";

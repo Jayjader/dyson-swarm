@@ -1,10 +1,10 @@
 <script lang="ts">
   import Storage from "./Storage.svelte";
-  import { Resource } from "../gameStateStore";
+  import { Resource } from "../gameRules";
   import { getClock } from "../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
-  import { getPrimitive } from "../time/types";
+  import { getPrimitive } from "../hud/types";
   import type { Events } from "../events/events";
   import { getEventStream } from "../events/processes/eventStream";
 

@@ -8,11 +8,11 @@ import {
 } from "./index";
 import type { BusEvent as BusEvent, Events } from "./events";
 import {
-  Construct,
+  Construct, constructionCosts,
   Resource,
   tickConsumption,
   tickProduction,
-} from "../gameStateStore";
+} from "../gameRules";
 import { createStorage } from "./processes/storage";
 import { type Clock, createClock } from "./processes/clock";
 import type { PowerGrid } from "./processes/powerGrid";
@@ -35,7 +35,6 @@ import {
 } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
 import { createFabricator, type Fabricator } from "./processes/fabricator";
-import { constructionCosts } from "../actions";
 import { createMemoryStream, type EventStream } from "./processes/eventStream";
 
 function emptySave() {

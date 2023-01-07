@@ -1,4 +1,4 @@
-import type { Resource } from "../../gameStateStore";
+import type { Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
 import type { SubscriptionsFor, Simulation } from "../index";
 import type { EventProcessor, Id } from "./index";

@@ -1,5 +1,5 @@
 import type { BusEvent, Events } from "../events";
-import { Construct, Resource } from "../../gameStateStore";
+import { Construct, Resource } from "../../gameRules";
 import type { Simulation, SubscriptionsFor } from "../index";
 import type { EventProcessor } from "./index";
 
