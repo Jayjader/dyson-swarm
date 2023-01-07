@@ -28,11 +28,9 @@
   const simulation = getContext(SIMULATION_STORE).simulation;
 
   let constructs = new Map();
-  let circuitBreaker: CircuitBreaker = { tripped: false };
   let fabricator = { working: false, job: null as Construct | null };
 
   const unsubscribe = simulation.subscribe((sim) => {
-    circuitBreaker.tripped = gridState(sim).breakerTripped;
     constructs.set(Construct.SOLAR_COLLECTOR, getCollectorCount(sim));
     constructs.set(Construct.MINER, getMiners(sim));
     constructs.set(Construct.REFINER, getRefiners(sim));
@@ -152,7 +150,7 @@
       <output>{constructs.get(Construct.SOLAR_COLLECTOR)}</output>
     </div>
   </ConstructOverview>
-  <GridBreaker open={circuitBreaker.tripped} />
+  <GridBreaker />
   <Fabricator />
   <div class="flex flex-grow flex-row justify-items-stretch gap-1">
     <div
