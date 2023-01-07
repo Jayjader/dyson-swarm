@@ -10,7 +10,7 @@
   import { SIMULATION_STORE } from "../events";
   import { getFabricator } from "../events/processes/fabricator";
   import { getClock } from "../events/processes/clock";
-  import { getPrimitive } from "../time/store";
+  import { getPrimitive } from "../time/types";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 

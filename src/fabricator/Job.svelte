@@ -6,9 +6,11 @@
   import type { Input } from "../types";
   import { constructionCosts } from "../actions";
   import { Construct, Resource } from "../gameStateStore";
-  import { getContext } from "svelte";
+  import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
   import { getFabricator } from "../events/processes/fabricator";
+
+  type Job = [Construct, Input] | null;
 
   export let resources = new Map();
   const simulation = getContext(SIMULATION_STORE).simulation;
@@ -21,72 +23,58 @@
     duration: 150,
     easing: cubicOut,
   });
-  type Job = [Construct, Input] | null;
+
   let job = null as Job,
     pastJob = null as Job;
-  simulation.subscribe((sim) => {
-    const nextOrder = getFabricator(sim).job;
-    job = !nextOrder ? null : [nextOrder, constructionCosts[nextOrder]];
-  });
-  let elecCurrent = 0,
-    elecPast = 0,
+  let current;
+  let elecPast = 0,
     elecTotal = 0;
+  let matsPast = 0,
+    matsTotal = 0;
 
-  let matsCurrent = 0,
-    matsPast = 0,
-    matsTotal;
-  $: {
-    elecCurrent = resources.get(Resource.ELECTRICITY) ?? 0;
+  const unsubSim = simulation.subscribe((sim) => {
+    const fab = getFabricator(sim);
+    current = (
+      fab.received as {
+        tag: "supply";
+        resource: Resource.METAL | Resource.ELECTRICITY;
+        amount: number;
+      }[]
+    ).reduce<Map<Resource.METAL | Resource.ELECTRICITY, number>>(
+      (accu, e) => {
+        const resource = e.resource;
+        return accu.set(resource, e.amount + accu.get(resource) ?? 0);
+      },
+      new Map([
+        [Resource.ELECTRICITY, 0],
+        [Resource.METAL, 0],
+      ])
+    );
+
+    const nextOrder = fab.job;
+    job = !nextOrder ? null : [nextOrder, constructionCosts[nextOrder]];
+    if (job !== pastJob) {
+      elecTotal = job?.[1].get(Resource.ELECTRICITY) ?? 0;
+      matsTotal = job?.[1].get(Resource.METAL) ?? 0;
+      pastJob = job;
+      if (job === null) {
+        elecProgress.set(0);
+        matsProgress.set(0);
+      }
+    }
+
+    const elecCurrent = current.get(Resource.ELECTRICITY) ?? 0;
     if (elecCurrent !== elecPast) {
-      // console.debug({
-      //   command: "job->set-elec-progress",
-      //   current: elecCurrent,
-      //   past: elecPast,
-      // });
-      elecProgress.update(() => elecCurrent);
       elecPast = elecCurrent;
+      elecProgress.update(() => elecCurrent);
     }
-    if (!job) {
-      matsProgress.update(() => 0);
-      elecProgress.update(() => 0);
-      matsCurrent = 0;
-      matsPast = 0;
-      matsTotal = 1;
-      elecTotal = 1;
-    } else {
-      matsCurrent = [...job[1]].reduce(
-        (accu, [resource, cost]) =>
-          resource === Resource.ELECTRICITY
-            ? accu
-            : accu + Math.min(cost, resources.get(resource) ?? 0),
-        0
-      );
-      if (matsCurrent !== matsPast) {
-        matsProgress.update(() => matsCurrent);
-        // console.debug({
-        //   command: "job->set-mats-progress",
-        //   current: matsCurrent,
-        // });
-        matsPast = matsCurrent;
-      }
-      if (job !== pastJob) {
-        elecTotal = job[1].get(Resource.ELECTRICITY) ?? 0;
-        matsTotal = [...job[1]].reduce(
-          (accu, [resource, cost]) =>
-            resource === Resource.ELECTRICITY ? accu : accu + cost,
-          0
-        );
-        // console.debug({
-        //   command: "job->new-job-totals",
-        //   job,
-        //   pastJob,
-        //   elecTotal,
-        //   matsTotal,
-        // });
-        pastJob = job;
-      }
+    const matsCurrent = current.get(Resource.METAL) ?? 0;
+    if (matsCurrent !== matsPast) {
+      matsPast = matsCurrent;
+      matsProgress.update(() => matsCurrent);
     }
-  }
+  });
+  onDestroy(unsubSim);
 </script>
 
 <section
@@ -113,7 +101,7 @@
   >
     Power Need Satisfied: {Math.floor($elecProgress * 100)}%
   </progress>
-  {elecCurrent} / {elecTotal}
+  {current.get(Resource.ELECTRICITY)} / {elecTotal}
   <h4 class="mt-3">Metal</h4>
   <progress
     class="mats"
@@ -123,5 +111,5 @@
   >
     Materials Need Satisfied: {Math.floor($matsProgress * 100)}%
   </progress>
-  {matsCurrent} / {matsTotal}
+  {current.get(Resource.METAL)} / {matsTotal}
 </section>

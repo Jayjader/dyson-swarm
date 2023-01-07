@@ -1,13 +1,24 @@
 <script lang="ts">
   import { fade } from "svelte/transition";
-  import { clock } from "../time/store";
+  import { getPrimitive } from "../time/types";
   import ProgressHeader from "./ProgressHeader.svelte";
-  export let swarm: { count: number };
-  let estimatedRatePerTick: number;
+  import { getClock } from "../events/processes/clock";
+  import { getContext } from "svelte";
+  import { SIMULATION_STORE } from "../events";
+
+  export let count = 0;
+  let estimatedRatePerTick = 0,
+    lastTick = 0;
   const slidingWindow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  clock.subscribe(() => {
+  const simulation = getContext(SIMULATION_STORE).simulation;
+  simulation.subscribe((sim) => {
+    const tick = getPrimitive(getClock(sim)).tick;
+    if (tick === lastTick) {
+      return;
+    }
+    lastTick = tick;
     slidingWindow.shift();
-    slidingWindow.push(swarm.count);
+    slidingWindow.push(count);
     const [averageRate] = slidingWindow
       .slice(1)
       .reduce(
@@ -36,7 +47,7 @@
   </tr>
   <tr transition:fade={{ delay: 1000, duration: 1500 }}>
     <ProgressHeader>Percent of star's output captured</ProgressHeader>
-    <td>{(swarm.count * 100) / swarmSizeGoal}</td>
+    <td>{(count * 100) / swarmSizeGoal}</td>
   </tr>
   <tr
     transition:fade={{ delay: 1500, duration: 1500 }}
@@ -54,7 +65,7 @@
     >
     <td>
       {Math.floor(
-        (swarmSizeGoal - swarm.count) /
+        (swarmSizeGoal - count) /
           estimatedRatePerTick /
           (365 * 24 * 3600 * 1000)
       )} tick-years

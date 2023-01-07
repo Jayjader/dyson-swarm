@@ -110,8 +110,8 @@ export function fabricatorProcess(
 }
 
 export function getFabricator(simulation: Simulation) {
-  const { working, queue, job } = (
+  const { working, queue, job, received } = (
     simulation.processors.get("fabricator-0") as Fabricator | undefined
-  )?.data ?? { working: false, job: null, queue: [] };
-  return { working, queue, job };
+  )?.data ?? { working: false, job: null, queue: [], received: [] };
+  return { working, queue, job, received };
 }

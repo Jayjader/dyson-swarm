@@ -109,13 +109,13 @@
   <div class="flex flex-grow-0 flex-col gap-2">
     <div class="flex flex-row justify-between text-stone-200">
       <ResourceHud {resources} />
-      <SwarmHud swarm={{ count: swarm }} />
+      <SwarmHud count={swarm} />
     </div>
 
     <div class="flex flex-row flex-wrap justify-around gap-2">
       <TimeControl />
       {#if swarm > 0}
-        <ProgressOverview swarm={{ count: swarm }} />
+        <ProgressOverview count={swarm} />
       {/if}
     </div>
   </div>

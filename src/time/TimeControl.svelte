@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Clock as ClockState, isPlay } from "./store";
+  import { type ClockState, isPlay } from "./types";
   import { getClock } from "../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
