@@ -2,18 +2,21 @@ import type { Id, Processor } from "./processes";
 import { createMemoryStream, memoryStreamProcess } from "./processes";
 import type { BusEvent, EventTag } from "./events";
 import { Resource } from "../gameStateStore";
-import { storageProcess } from "./processes/storage";
+import { createStorage, storageProcess } from "./processes/storage";
 import { clockProcess, createClock } from "./processes/clock";
-import { powerGridProcess } from "./processes/powerGrid";
-import { minerProcess } from "./processes/miner";
-import { planetProcess } from "./processes/planet";
-import { refinerProcess } from "./processes/refiner";
-import { starProcess } from "./processes/star";
-import { collectorProcess } from "./processes/collector";
-import { factoryProcess } from "./processes/satFactory";
-import { launcherProcess } from "./processes/launcher";
+import { createPowerGrid, powerGridProcess } from "./processes/powerGrid";
+import { createMinerManager, minerProcess } from "./processes/miner";
+import { createPlanet, planetProcess } from "./processes/planet";
+import { createRefinerManager, refinerProcess } from "./processes/refiner";
+import { createStar, starProcess } from "./processes/star";
+import {
+  collectorProcess,
+  createCollectorManager,
+} from "./processes/collector";
+import { createFactoryManager, factoryProcess } from "./processes/satFactory";
+import { createLauncherManager, launcherProcess } from "./processes/launcher";
 import { swarmProcess } from "./processes/satelliteSwarm";
-import { fabricatorProcess } from "./processes/fabricator";
+import { createFabricator, fabricatorProcess } from "./processes/fabricator";
 import { writable } from "svelte/store";
 
 type EventBus = {
@@ -256,7 +259,22 @@ export function generateSave(sim: Simulation): SaveState {
 }
 
 export function blankSave(): SaveState {
-  return { processors: [] };
+  return {
+    processors: [
+      createPowerGrid({ stored: 22 ** 2 }),
+      createStorage(Resource.ORE),
+      createStorage(Resource.METAL, { stored: 200 }),
+      createStorage(Resource.PACKAGED_SATELLITE),
+      createStar(),
+      createPlanet({ mass: 10 ** 4 }),
+      createCollectorManager({ count: 10 }),
+      createMinerManager(),
+      createRefinerManager(),
+      createFactoryManager(),
+      createLauncherManager(),
+      createFabricator(),
+    ],
+  };
 }
 
 export const SIMULATION_STORE = Symbol();
@@ -274,5 +292,5 @@ export const store = {
     }),
   processUntilSettled: () => update((sim) => processUntilSettled(sim)),
   broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
-  loadSave: (s: SaveState) => set(loadSave(s))
+  loadSave: (s: SaveState) => set(loadSave(s)),
 };

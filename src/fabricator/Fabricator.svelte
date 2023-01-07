@@ -1,9 +1,9 @@
 <script lang="ts">
   import Job from "./Job.svelte";
-  import type { Resources } from "../gameStateStore";
+  import type { Resource } from "../gameStateStore";
   import BuildQueue from "./BuildQueue.svelte";
 
-  export let resources: Resources;
+  export let resources: Map<Resource, number> = new Map();
   export let visible = true;
 </script>
 

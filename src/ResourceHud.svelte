@@ -2,7 +2,7 @@
 <script lang="ts">
   import { Resource } from "./gameStateStore";
 
-  export let resources: [Resource, number][];
+  export let resources = new Map();
 
   type URL = string;
   type Name = string;

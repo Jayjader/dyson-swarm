@@ -15,14 +15,17 @@ export type Storage<R extends string> = EventProcessor<
 
 export function createStorage<
   R extends Exclude<Resource, Resource.ELECTRICITY>
->(resource: R, customId?: Storage<R>["id"]): Storage<R> {
+>(
+  resource: R,
+  options: Partial<{ id: Storage<R>["id"]; stored: number }> = {}
+): Storage<R> {
   const tag = `storage-${resource}`;
-  const id = customId ?? `${tag}-0`;
+  const values = { id: `${tag}-0`, stored: 0, ...options };
   return {
-    id,
+    id: values.id,
     tag,
     incoming: [],
-    data: { stored: 0, received: [] },
+    data: { stored: values.stored, received: [] },
   } as unknown as Storage<R>;
 }
 

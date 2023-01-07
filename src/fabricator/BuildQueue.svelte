@@ -4,7 +4,6 @@
   import BuildQueueItem from "./BuildQueueItem.svelte";
   import type { BuildOrder } from "../types";
   import { isRepeat } from "../types";
-  import type { BusEvent, Events } from "../events/events";
   import { mode, uiState } from "./store";
   import { Construct } from "../gameStateStore";
   import { getContext, onDestroy } from "svelte";
@@ -15,10 +14,10 @@
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
-  let queue: BuildOrder[] = [];
   let savedQueue: BuildOrder[] = [];
+  let uiQueue: BuildOrder[] = [];
   let tick = 0;
-  // let uiMode = 'read-only';
+  let showProcessorQueue = true;
 
   const unsubSim = simulation.subscribe((sim) => {
     savedQueue = getFabricator(sim).queue;
@@ -26,20 +25,22 @@
   });
   const unsubUi = uiState.subscribe(([first, ...tail]) => {
     if (!first) {
-      queue = savedQueue;
+      showProcessorQueue = true;
+      uiQueue = [];
     } else {
+      showProcessorQueue = false;
       const [second] = tail;
       if (second) {
-        queue = second.present.queue;
+        uiQueue = second.present.queue;
       } else if (first.present) {
-        queue = first.present.queue;
+        uiQueue = first.present.queue;
       } else {
-        queue = [];
+        uiQueue = [];
       }
     }
   });
+  $: queue = showProcessorQueue ? savedQueue : uiQueue;
   function enterEdit() {
-    // clock.startIndirectPause();
     simulation.broadcastEvent({
       tag: "command-simulation-clock-indirect-pause",
       afterTick: tick,
@@ -48,24 +49,22 @@
     uiState.enterEdit(queue);
   }
   function saveEdits() {
-    // clock.stopIndirectPause();
     const newQueue: BuildOrder[] = uiState.saveEdits();
-    const busEE: Events<"command-set-fabricator-queue"> = {
+    const timeStamp = performance.now();
+    simulation.broadcastEvent({
       tag: "command-set-fabricator-queue",
-      afterTick: tick,
-      timeStamp: performance.now(),
       queue: newQueue,
-    };
-    console.debug(busEE);
-    simulation.broadcastEvent(busEE);
+      afterTick: tick,
+      timeStamp,
+    });
+    // todo: merge into previous event by adding set-queue to clock's subscriptions?
     simulation.broadcastEvent({
       tag: "command-simulation-clock-indirect-resume",
       afterTick: tick,
-      timeStamp: performance.now(),
+      timeStamp,
     });
   }
   function cancelEdits() {
-    // clock.stopIndirectPause();
     simulation.broadcastEvent({
       tag: "command-simulation-clock-indirect-resume",
       afterTick: tick,
@@ -73,7 +72,6 @@
     });
     uiState.cancelEdits();
   }
-  export let visible = true;
   onDestroy(unsubSim);
   onDestroy(unsubUi);
 </script>
@@ -81,7 +79,6 @@
 <section
   style="min-width: 30rem; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
   class="grid shrink-0 flex-grow gap-1 rounded-sm border-2 p-1"
-  class:visible
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}
   class:border-indigo-400={$mode === "add-build-order"}

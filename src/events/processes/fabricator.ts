@@ -1,11 +1,10 @@
-import type {EventProcessor} from "./index";
-import type {BuildChoice, BuildOrder} from "../../types";
-import {popQueue} from "../../types";
-import type {BusEvent, Events} from "../events";
-import type {Resource} from "../../gameStateStore";
-import {Construct} from "../../gameStateStore";
-import {constructionCosts} from "../../actions";
-import type {Simulation} from "../index";
+import type { EventProcessor } from "./index";
+import type { BuildChoice, BuildOrder } from "../../types";
+import { popNextConstruct } from "../../types";
+import type { BusEvent, Events } from "../events";
+import type { Resource } from "../../gameStateStore";
+import { constructionCosts } from "../../actions";
+import type { Simulation } from "../index";
 
 export type Fabricator = EventProcessor<
   "fabricator",
@@ -24,11 +23,12 @@ export function createFabricator(
     id,
     tag: "fabricator",
     incoming: [],
-    data: { working: true, job: null, queue: [
-        {building: Construct.SOLAR_COLLECTOR},
-        {building: Construct.SOLAR_COLLECTOR},
-        {building: Construct.SOLAR_COLLECTOR},
-      ], received: [] },
+    data: {
+      working: true,
+      job: null,
+      queue: [],
+      received: [],
+    },
   };
 }
 
@@ -60,9 +60,9 @@ export function fabricatorProcess(
           break;
         }
         if (currentJob === null) {
-          const [newJob, newQueue] = popQueue(fabricator.data.queue);
+          const [nextJob, newQueue] = popNextConstruct(fabricator.data.queue);
           fabricator.data = {
-            job: newJob,
+            job: nextJob,
             queue: newQueue,
             working: true,
             received: [],

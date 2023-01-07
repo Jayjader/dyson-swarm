@@ -14,20 +14,17 @@
   import ProgressOverview from "./overview/ProgressOverview.svelte";
   import ConstructOverview from "./overview/ConstructOverview.svelte";
   import StorageOverview from "./overview/StorageOverview.svelte";
-  import { blankSave, SIMULATION_STORE, store as simulation } from "./events";
+  import {
+    blankSave,
+    type Simulation,
+    SIMULATION_STORE,
+    store as simulation,
+  } from "./events";
   import { createMemoryStream } from "./events/processes";
   import { swarmCount } from "./events/processes/satelliteSwarm";
-  import { createStorage, readStored } from "./events/processes/storage";
-  import { createPowerGrid, gridState } from "./events/processes/powerGrid";
+  import { readStored } from "./events/processes/storage";
+  import { gridState } from "./events/processes/powerGrid";
   import { createClock } from "./events/processes/clock";
-  import { createStar } from "./events/processes/star";
-  import { createPlanet } from "./events/processes/planet";
-  import { createCollectorManager } from "./events/processes/collector";
-  import { createMinerManager } from "./events/processes/miner";
-  import { createRefinerManager } from "./events/processes/refiner";
-  import { createFactoryManager } from "./events/processes/satFactory";
-  import { createLauncherManager } from "./events/processes/launcher";
-  import { createFabricator } from "./events/processes/fabricator";
 
   export let init: GameState;
 
@@ -36,40 +33,35 @@
   let clockFrame: number = 0;
   simulation.insertProcessors(
     createMemoryStream(),
-    createPowerGrid({ stored: 22 ** 2 }),
-    createStorage(Resource.ORE),
-    createStorage(Resource.METAL),
-    createStorage(Resource.PACKAGED_SATELLITE),
-    createStar(),
-    createPlanet({ mass: 10 ** 4 }),
-    createCollectorManager({ count: 60 }),
-    createMinerManager({ count: 1 }),
-    createRefinerManager({ count: 1 }),
-    createFactoryManager({ count: 0 }),
-    createLauncherManager({ count: 0 }),
-    createFabricator(),
-    createClock(timeStampOfLastTick, "clock-0", { mode: "play" })
+    createClock(timeStampOfLastTick, "clock-0", { mode: "pause" })
   );
 
   setContext(SIMULATION_STORE, { simulation });
 
-  let resources = [],
-    swarm = 0;
+  let resources = new Map();
+  let swarm = 0;
 
+  function readStoredResource(
+    simulation: Simulation,
+    resource: Resource
+  ): number {
+    return resource === Resource.ELECTRICITY
+      ? gridState(simulation).stored
+      : readStored(simulation, resource);
+  }
   const unsubscribe = simulation.subscribe((sim) => {
     // if (clockFrame % (20 * 60) === 0) {
     //   console.debug({ sim });
     // }
-    const gridState_ = gridState(sim);
-    resources = [
-      [Resource.ELECTRICITY, gridState_.stored],
-      [Resource.ORE, readStored(sim, Resource.ORE)],
-      [Resource.METAL, readStored(sim, Resource.METAL)],
-      [
-        Resource.PACKAGED_SATELLITE,
-        readStored(sim, Resource.PACKAGED_SATELLITE),
-      ],
-    ];
+    [
+      Resource.ELECTRICITY,
+      Resource.ORE,
+      Resource.METAL,
+      Resource.PACKAGED_SATELLITE,
+    ].forEach((resource) =>
+      resources.set(resource, readStoredResource(sim, resource))
+    );
+    resources = resources;
     swarm = swarmCount(sim);
   });
 
@@ -133,7 +125,7 @@
       <ConstructOverview />
     {/if}
     {#if $uiPanelsState.has("storage-overview")}
-      <StorageOverview resources={new Map(resources)} />
+      <StorageOverview {resources} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
       <Fabricator {resources} />

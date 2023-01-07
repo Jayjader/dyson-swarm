@@ -4,7 +4,7 @@
 </script>
 
 <button
-  class={"rounded border-2 " +
+  class={"rounded border-2 px-1 " +
     (on
       ? "border-stone-400 text-stone-300"
       : "border-stone-600 text-stone-500")}
