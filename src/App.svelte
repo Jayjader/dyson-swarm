@@ -85,6 +85,9 @@
 
   onDestroy(unsubscribe);
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
+
+  let showProgress = true;
+
   scheduleCallback(outsideClockLoop);
 </script>
 
@@ -100,7 +103,16 @@
     <div class="flex flex-row flex-wrap justify-around gap-2">
       <TimeControl />
       {#if swarm > 0}
-        <ProgressOverview count={swarm} />
+        <button
+          on:click={() => {
+            showProgress = !showProgress;
+          }}
+          class="max-w-min break-normal rounded border-2 border-slate-100 text-stone-300"
+          >{#if showProgress}Hide{:else}Show{/if} Progress</button
+        >
+        {#if showProgress}
+          <ProgressOverview count={swarm} />
+        {/if}
       {/if}
     </div>
   </div>
@@ -118,23 +130,31 @@
   </div>
   <PanelSelector />
 </main>
+<a
+  class="text-slate-400 hover:underline hover:visited:text-slate-500"
+  href="https://github.com/Jayjader/dyson-swarm#readme"
+  target="_blank"
+  rel="noreferrer"
+>
+  Credits & Attribution
+</a>
 
 <style>
   main {
-    height: calc(100dvh - 1rem);
-    max-height: calc(100dvh - 1rem);
+    height: calc(100dvh - 2.5em);
+    max-height: calc(100dvh - 2.5em);
   }
   .grid-auto {
     --gap: initial;
     gap: var(--gap);
     /*
     thank you css tricks for the following implementation of a grid with:
-     - max number of columns (this is grid columns, not "columns of content" => +1)
+     - max number of columns (this is grid/gutter columns, not "columns of content" => +1)
      - min width of column content
      https://css-tricks.com/an-auto-filling-css-grid-with-max-columns/
     */
-    --item-min-width: 30rem;
     --max-columns: 3;
+    --item-min-width: 20rem;
     --item-max-width: calc(
       (100% - ((var(--max-columns) - 1) * var(--gap))) /
         (var(--max-columns) - 1)

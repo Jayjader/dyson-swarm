@@ -19,14 +19,14 @@
 
 <div class="flex flex-row gap-1">
   {#each [...resources] as [resource, amount] (resource)}
-    <div class="flex flex-row gap-1">
+    <div class="flex flex-row flex-wrap justify-around items-center gap-1">
       <img
-        class="h-8"
+        style="height: clamp(1ch, 4vh, 2rem)"
         src={resourceInfo.get(resource)[1]}
         title={resourceInfo.get(resource)[0]}
         alt={resourceInfo.get(resource)[0]}
       />
-      <output>{amount}</output>
+      <output>{amount > 9999 ? amount.toExponential(1) : amount}</output>
     </div>
   {/each}
 </div>

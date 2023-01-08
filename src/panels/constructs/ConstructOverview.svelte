@@ -1,6 +1,5 @@
 <script lang="ts">
   import ConstructOverview from "./Construct.svelte";
-  import type { CircuitBreaker } from "../../gameRules";
   import {
     Construct,
     launchCost,
@@ -15,7 +14,6 @@
   import GridBreaker from "./GridBreaker.svelte";
   import { getCollectorCount } from "../../events/processes/collector";
   import { getMiners } from "../../events/processes/miner";
-  import { gridState } from "../../events/processes/powerGrid";
   import { getRefiners } from "../../events/processes/refiner";
   import { getFactories } from "../../events/processes/satFactory";
   import { getLaunchers } from "../../events/processes/launcher";
@@ -104,7 +102,6 @@
         </div>
       </div>
     </div>
-    <!-- TODO: Swarm Overview appears when count > 0 -->
     <div
       class="flex flex-grow basis-3/5 flex-row gap-1 rounded border-2 border-zinc-300 bg-slate-500 p-1 text-zinc-50"
     >
@@ -202,22 +199,26 @@
     >
       <div class="flex flex-col">
         <h5 class="font-bold">Working:</h5>
-        <span class="flex flex-row gap-1">
+        <span
+          class="flex max-w-min flex-shrink flex-grow-0 flex-row flex-wrap justify-end gap-1"
+        >
           <button
             class="rounded border-2 border-zinc-50 px-1"
             disabled={working(constructs, Construct.MINER) === 0}
             on:click={() => setCount(Construct.MINER, 0)}>None</button
           >
-          <input
-            type="number"
-            max={count(constructs, Construct.MINER)}
-            min={0}
-            value={working(constructs, Construct.MINER)}
-            on:change={(e) =>
-              setCount(Construct.MINER, parseInt(e.target.value, 10))}
-            style="max-width: 6ch"
-          />
-          <output>/{count(constructs, Construct.MINER)}</output>
+          <span class="flex-no-wrap flex flex-row">
+            <input
+              type="number"
+              max={count(constructs, Construct.MINER)}
+              min={0}
+              value={working(constructs, Construct.MINER)}
+              on:change={(e) =>
+                setCount(Construct.MINER, parseInt(e.target.value, 10))}
+              style="max-width: 6ch"
+            />
+            <output>/{count(constructs, Construct.MINER)}</output>
+          </span>
           <button
             class="rounded border-2 border-zinc-50 px-1"
             disabled={working(constructs, Construct.MINER) ===

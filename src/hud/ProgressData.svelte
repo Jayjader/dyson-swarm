@@ -1,0 +1,1 @@
+<td class="max-w-min"><slot/></td>

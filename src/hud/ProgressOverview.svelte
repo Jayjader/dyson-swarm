@@ -5,6 +5,7 @@
   import { getClock } from "../events/processes/clock";
   import { getContext } from "svelte";
   import { SIMULATION_STORE } from "../events";
+  import ProgressData from "./ProgressData.svelte";
 
   export let count = 0;
   let estimatedRatePerTick = 0,
@@ -39,36 +40,37 @@
 <table
   class="border-separate rounded border-2 border-slate-100 p-1 text-slate-100"
 >
-  <tr transition:fade={{ delay: 150, duration: 1500 }}>
+  <tr in:fade={{ delay: 150, duration: 1500 }}>
     <ProgressHeader
       >Number needed to capture 100% of the star's output</ProgressHeader
     >
-    <td>{swarmSizeGoal}</td>
+    <ProgressData>{swarmSizeGoal.toPrecision(6)}</ProgressData>
   </tr>
-  <tr transition:fade={{ delay: 1000, duration: 1500 }}>
+  <tr in:fade={{ delay: 1000, duration: 1500 }}>
     <ProgressHeader>Percent of star's output captured</ProgressHeader>
-    <td>{(count * 100) / swarmSizeGoal}</td>
+    <ProgressData>{((count * 100) / swarmSizeGoal).toPrecision(6)}</ProgressData
+    >
   </tr>
   <tr
-    transition:fade={{ delay: 1500, duration: 1500 }}
+    in:fade={{ delay: 1500, duration: 1500 }}
     title="Estimated over the past 10 ticks"
   >
     <ProgressHeader>Estimated rate of deployment</ProgressHeader>
-    <td>{estimatedRatePerTick.toFixed(1)}/tick</td>
+    <ProgressData>{estimatedRatePerTick.toPrecision(8)} /tick</ProgressData>
   </tr>
   <tr
-    transition:fade={{ delay: 2000, duration: 1500 }}
+    in:fade={{ delay: 2000, duration: 1500 }}
     title="Estimated over the past 10 ticks"
   >
     <ProgressHeader
       >Estimated time to reach 100% at current rate:</ProgressHeader
     >
-    <td>
+    <ProgressData>
       {Math.floor(
         (swarmSizeGoal - count) /
           estimatedRatePerTick /
           (365 * 24 * 3600 * 1000)
-      )} tick-years
-    </td>
+      ).toPrecision(8)} tick-years
+    </ProgressData>
   </tr>
 </table>

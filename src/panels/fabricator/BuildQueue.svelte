@@ -85,7 +85,7 @@
 </script>
 
 <section
-  style="min-width: 30rem; grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
+  style="grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
   class="grid shrink-0 flex-grow gap-1 rounded-sm border-2 p-1"
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}
@@ -94,7 +94,7 @@
 >
   <div class="col-start-2 row-start-1 flex flex-row justify-evenly ">
     <h3
-      class="font-bold"
+      class="max-w-min break-normal font-bold"
       class:text-sky-500={$mode === "read-only"}
       class:text-violet-400={$mode === "edit"}
       class:text-indigo-400={$mode === "add-build-order"}
@@ -150,7 +150,7 @@
         disabled={$uiState?.[0]?.present?.queue?.length === 0}
       />
     </div>
-    <div class="col-start-3 row-span-2 flex flex-col gap-0.5">
+    <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
       <MenuButton
         text="Add Build Order"
         on:click={uiState.enterAddBuildOrder}
@@ -195,7 +195,7 @@
         on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINER)}
       />
     </div>
-    <div class="col-start-3 row-span-2 flex flex-col gap-0.5">
+    <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
       <MenuButton
         text="Satellite Launcher"
         on:click={uiState.selectNewBuildOrder.bind(
