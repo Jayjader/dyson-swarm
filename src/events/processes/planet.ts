@@ -18,7 +18,7 @@ export function createPlanet(
 ): Planet {
   const values = {
     id: "planet-0" as Planet["id"],
-    mass: 100,
+    mass: 3.301e23,
     ...options,
   };
   return {
