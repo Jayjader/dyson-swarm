@@ -101,6 +101,7 @@ export const SUBSCRIPTIONS = {
     "simulation-clock-tick",
     "supply",
     "command-set-fabricator-queue",
+    "command-clear-fabricator-job",
   ] as const),
   stream: new Set([
     "outside-clock-tick",
@@ -270,13 +271,13 @@ export function blankSave(): SaveState {
       createStorage(Resource.PACKAGED_SATELLITE),
       createStar(),
       createPlanet({ mass: 10 ** 4 }),
-      createCollectorManager({ count: 100 }),
+      createCollectorManager({ count: 10 }),
       createMinerManager(),
       createRefinerManager(),
       createFactoryManager(),
       createLauncherManager(),
       createSwarm(),
-      createFabricator()
+      createFabricator(),
     ],
   };
 }

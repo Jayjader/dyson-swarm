@@ -1,9 +1,7 @@
 <script lang="ts">
   import Job from "./Job.svelte";
-  import type { Resource } from "../gameRules";
   import BuildQueue from "./BuildQueue.svelte";
 
-  export let resources: Map<Resource, number> = new Map();
   export let visible = true;
 </script>
 
@@ -13,7 +11,7 @@
 >
   <h2 class="text-center">Fabricator</h2>
   <div class="flex flex-row flex-wrap gap-2">
-    <Job {resources} />
+    <Job />
     <BuildQueue />
   </div>
 </section>

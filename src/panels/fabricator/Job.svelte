@@ -7,10 +7,12 @@
     constructionCosts,
     type Input,
     Resource,
-  } from "../gameRules";
+  } from "../../gameRules";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../events";
-  import { getFabricator } from "../events/processes/fabricator";
+  import { SIMULATION_STORE } from "../../events";
+  import { getFabricator } from "../../events/processes/fabricator";
+  import { getPrimitive } from "../../hud/types";
+  import { getClock } from "../../events/processes/clock";
 
   type Job = [Construct, Input] | null;
 
@@ -32,8 +34,10 @@
     elecTotal = 0;
   let matsPast = 0,
     matsTotal = 0;
+  let lastTick = 0;
 
   const unsubSim = simulation.subscribe((sim) => {
+    lastTick = getPrimitive(getClock(sim)).tick;
     const fab = getFabricator(sim);
     current = (
       fab.received as {
@@ -86,7 +90,13 @@
     <button
       class="my-1 rounded border-2 border-stone-400 px-2 disabled:text-stone-600"
       on:click={() => {
-        /*todo*/
+        const busEvent = {
+          tag: "command-clear-fabricator-job",
+          afterTick: lastTick,
+          timeStamp: performance.now(),
+        };
+        console.info(busEvent);
+        simulation.broadcastEvent(busEvent);
       }}
       disabled={!job}>Clear Job</button
     >

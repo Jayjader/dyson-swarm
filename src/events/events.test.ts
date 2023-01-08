@@ -8,7 +8,8 @@ import {
 } from "./index";
 import type { BusEvent as BusEvent, Events } from "./events";
 import {
-  Construct, constructionCosts,
+  Construct,
+  constructionCosts,
   Resource,
   tickConsumption,
   tickProduction,
@@ -34,7 +35,11 @@ import {
   type LauncherManager,
 } from "./processes/launcher";
 import { createSwarm } from "./processes/satelliteSwarm";
-import { createFabricator, type Fabricator } from "./processes/fabricator";
+import {
+  createFabricator,
+  type Fabricator,
+  getFabricator,
+} from "./processes/fabricator";
 import { createMemoryStream, type EventStream } from "./processes/eventStream";
 
 function emptySave() {
@@ -1147,6 +1152,23 @@ describe("event bus", () => {
       expect(manager.data.count).toEqual(1);
     }
   );
+  test("fabricator should clear internal job when receiving command to do so", () => {
+    let simulation = loadSave(emptySave());
+    insertProcessor(simulation, createMemoryStream());
+    const fabricator = createFabricator();
+    fabricator.data.job = Construct.SATELLITE_FACTORY
+    insertProcessor(simulation, fabricator);
+    // act
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-clear-fabricator-job",
+        afterTick: 1,
+        timeStamp: 67892,
+      })
+    );
+    // assert
+    expect(getFabricator(simulation).job).toBeNull();
+  });
 
   test("grid should trip breaker when receiving more draw than it can supply in a given simulation clock tick", () => {
     let simulation = loadSave(emptySave());

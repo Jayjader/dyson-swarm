@@ -2,15 +2,15 @@
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import MenuButton from "./MenuButton.svelte";
   import BuildQueueItem from "./BuildQueueItem.svelte";
-  import type { BuildOrder } from "../types";
-  import { isRepeat } from "../types";
+  import type { BuildOrder } from "../../types";
+  import { isRepeat } from "../../types";
   import { mode, uiState } from "./store";
-  import { Construct } from "../gameRules";
+  import { Construct } from "../../gameRules";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../events";
-  import { getFabricator } from "../events/processes/fabricator";
-  import { getClock } from "../events/processes/clock";
-  import { getPrimitive } from "../hud/types";
+  import { SIMULATION_STORE } from "../../events";
+  import { getFabricator } from "../../events/processes/fabricator";
+  import { getClock } from "../../events/processes/clock";
+  import { getPrimitive } from "../../hud/types";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -41,35 +41,43 @@
   });
   $: queue = showProcessorQueue ? savedQueue : uiQueue;
   function enterEdit() {
-    simulation.broadcastEvent({
+    const busEvent = {
       tag: "command-simulation-clock-indirect-pause",
       afterTick: tick,
       timeStamp: performance.now(),
-    });
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
     uiState.enterEdit(queue);
   }
   function saveEdits() {
     const newQueue: BuildOrder[] = uiState.saveEdits();
     const timeStamp = performance.now();
-    simulation.broadcastEvent({
+    const busEvent = {
       tag: "command-set-fabricator-queue",
       queue: newQueue,
       afterTick: tick,
       timeStamp,
-    });
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
     // todo: merge into previous event by adding set-queue to clock's subscriptions?
-    simulation.broadcastEvent({
+    const busEvent_following = {
       tag: "command-simulation-clock-indirect-resume",
       afterTick: tick,
       timeStamp,
-    });
+    } as const;
+    console.info(busEvent_following);
+    simulation.broadcastEvent(busEvent_following);
   }
   function cancelEdits() {
-    simulation.broadcastEvent({
+    const busEvent = {
       tag: "command-simulation-clock-indirect-resume",
       afterTick: tick,
       timeStamp: performance.now(),
-    });
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
     uiState.cancelEdits();
   }
   onDestroy(unsubSim);

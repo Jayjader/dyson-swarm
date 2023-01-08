@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { ICON } from "../icons";
-  import { UNIT } from "../units";
+  import { ICON } from "../../icons";
+  import { UNIT } from "../../units";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../events";
-  import { getFabricator } from "../events/processes/fabricator";
-  import type { Construct } from "../gameRules";
-  import { constructionCosts } from "../gameRules";
+  import { SIMULATION_STORE } from "../../events";
+  import { getFabricator } from "../../events/processes/fabricator";
+  import type { Construct } from "../../gameRules";
+  import { constructionCosts } from "../../gameRules";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 

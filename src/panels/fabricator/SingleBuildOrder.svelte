@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { BuildOrder } from "../types";
-  import { isRepeat, isInfinite } from "../types";
-  import { ICON } from "../icons";
+  import type { BuildOrder } from "../../types";
+  import { isRepeat, isInfinite } from "../../types";
+  import { ICON } from "../../icons";
 
   export let buildOrder: undefined | BuildOrder;
 </script>

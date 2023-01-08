@@ -46,9 +46,11 @@ export function fabricatorProcess(
           queue: event.queue,
           beforeTick: event.afterTick + 1,
         } as const;
-        console.debug(busEvent);
         emitted.push(busEvent);
         break;
+      case 'command-clear-fabricator-job':
+        fabricator.data.job = null;
+        break
       case "supply":
         if (event.toId === fabricator.id) {
           fabricator.data.received.push(event);

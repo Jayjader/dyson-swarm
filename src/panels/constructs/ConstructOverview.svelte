@@ -1,30 +1,31 @@
 <script lang="ts">
   import ConstructOverview from "./Construct.svelte";
-  import type { CircuitBreaker } from "../gameRules";
+  import type { CircuitBreaker } from "../../gameRules";
   import {
-    Construct, launchCost,
+    Construct,
+    launchCost,
     Resource,
     tickConsumption,
     tickProduction,
-  } from "../gameRules";
-  import { SIMULATION_STORE } from "../events";
+  } from "../../gameRules";
+  import { SIMULATION_STORE } from "../../events";
   import Fabricator from "./Fabricator.svelte";
-  import { kilogram, watt, wattsPerSquareMeter } from "../units";
-  import { energy, ICON, metal, ore, satellite } from "../icons";
+  import { kilogram, watt, wattsPerSquareMeter } from "../../units";
+  import { energy, ICON, metal, ore, satellite } from "../../icons";
   import GridBreaker from "./GridBreaker.svelte";
-  import { getCollectorCount } from "../events/processes/collector";
-  import { getMiners } from "../events/processes/miner";
-  import { gridState } from "../events/processes/powerGrid";
-  import { getRefiners } from "../events/processes/refiner";
-  import { getFactories } from "../events/processes/satFactory";
-  import { getLaunchers } from "../events/processes/launcher";
-  import { getStarMass } from "../events/processes/star";
-  import { getPlanetMass } from "../events/processes/planet";
-  import { swarmCount } from "../events/processes/satelliteSwarm";
-  import { getFabricator } from "../events/processes/fabricator";
+  import { getCollectorCount } from "../../events/processes/collector";
+  import { getMiners } from "../../events/processes/miner";
+  import { gridState } from "../../events/processes/powerGrid";
+  import { getRefiners } from "../../events/processes/refiner";
+  import { getFactories } from "../../events/processes/satFactory";
+  import { getLaunchers } from "../../events/processes/launcher";
+  import { getStarMass } from "../../events/processes/star";
+  import { getPlanetMass } from "../../events/processes/planet";
+  import { swarmCount } from "../../events/processes/satelliteSwarm";
+  import { getFabricator } from "../../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
-  import { getPrimitive } from "../hud/types";
-  import { getClock } from "../events/processes/clock";
+  import { getPrimitive } from "../../hud/types";
+  import { getClock } from "../../events/processes/clock";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -51,14 +52,17 @@
   const count = (map, tag) => map.get(tag)?.count ?? 0;
   const working = (map, tag) => map.get(tag)?.working ?? 0;
 
-  const setCount = (construct, count) =>
-    simulation.broadcastEvent({
+  const setCount = (construct, count) => {
+    const busEvent = {
       tag: "command-set-working-count",
       count,
       construct,
       afterTick: lastTick,
       timeStamp: performance.now(),
-    });
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+  };
   onDestroy(unsubscribe);
 </script>
 

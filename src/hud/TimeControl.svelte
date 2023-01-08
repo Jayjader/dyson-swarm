@@ -74,7 +74,7 @@
           timeStamp: performance.now(),
           afterTick: clock[1].tick,
         } as const;
-        console.debug(busEvent);
+        console.info(busEvent);
         simulation.broadcastEvent(busEvent);
         displayedSpeed = newSpeed;
       }

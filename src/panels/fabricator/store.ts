@@ -1,6 +1,6 @@
 import { derived, writable } from "svelte/store";
-import type { BuildOrder } from "../types";
-import type { Construct } from "../gameRules";
+import type { BuildOrder } from "../../types";
+import type { Construct } from "../../gameRules";
 
 /* UI */
 type EditInTime = { queue: BuildOrder[] };

@@ -69,7 +69,8 @@ export type BusEvent =
       queue: BuildOrder[];
     } & TimeStamped &
       AfterTick)
-  | ({ tag: "fabricator-queue-set"; queue: BuildOrder[] } & BeforeTick);
+  | ({ tag: "fabricator-queue-set"; queue: BuildOrder[] } & BeforeTick)
+  | ({ tag: "command-clear-fabricator-job" } & AfterTick & TimeStamped);
 export type EventTag = BusEvent["tag"];
 
 // helper type to extract a subset of possible events based on just their tags

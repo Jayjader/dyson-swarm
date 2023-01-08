@@ -3,15 +3,15 @@
   import "./app.css";
   import ResourceHud from "./hud/ResourceHud.svelte";
   import SwarmHud from "./hud/SwarmHud.svelte";
-  import Fabricator from "./fabricator/Fabricator.svelte";
+  import Fabricator from "./panels/fabricator/Fabricator.svelte";
   import { onDestroy, setContext } from "svelte";
   import { Resource } from "./gameRules";
   import PanelSelector from "./panel-control/PanelSelector.svelte";
   import { uiPanelsState } from "./panel-control/store";
   import TimeControl from "./hud/TimeControl.svelte";
   import ProgressOverview from "./hud/ProgressOverview.svelte";
-  import ConstructOverview from "./overview/ConstructOverview.svelte";
-  import StorageOverview from "./overview/StorageOverview.svelte";
+  import ConstructOverview from "./panels/constructs/ConstructOverview.svelte";
+  import StorageOverview from "./panels/storage/StorageOverview.svelte";
   import {
     blankSave,
     type Simulation,
@@ -23,6 +23,14 @@
   import { gridState } from "./events/processes/powerGrid";
   import { createClock } from "./events/processes/clock";
   import { createMemoryStream } from "./events/processes/eventStream";
+
+  const readStoredResource = (
+    simulation: Simulation,
+    resource: Resource
+  ): number =>
+    resource === Resource.ELECTRICITY
+      ? gridState(simulation).stored
+      : readStored(simulation, resource);
 
   simulation.loadSave(blankSave());
   let timeStampOfLastTick = window.performance.now();
@@ -37,14 +45,6 @@
   let resources = new Map();
   let swarm = 0;
 
-  function readStoredResource(
-    simulation: Simulation,
-    resource: Resource
-  ): number {
-    return resource === Resource.ELECTRICITY
-      ? gridState(simulation).stored
-      : readStored(simulation, resource);
-  }
   const unsubscribe = simulation.subscribe((sim) => {
     // if (clockFrame % (20 * 60) === 0) {
     //   console.debug({ sim });
@@ -83,17 +83,6 @@
     scheduleCallback(outsideClockLoop);
   }
 
-  function advanceClock(
-    nextTimeStamp: DOMHighResTimeStamp,
-    options: { resume: boolean } = { resume: false }
-  ) {
-    // don't catch up passed time if clock was paused
-    if (options.resume) {
-      timeStampOfLastTick = nextTimeStamp;
-    }
-    const timeElapsed = Math.floor(nextTimeStamp - timeStampOfLastTick);
-  }
-
   onDestroy(unsubscribe);
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
   scheduleCallback(outsideClockLoop);
@@ -124,7 +113,7 @@
       <StorageOverview {resources} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
-      <Fabricator {resources} />
+      <Fabricator />
     {/if}
   </div>
   <PanelSelector />
@@ -132,11 +121,8 @@
 
 <style>
   main {
-    height: calc(100vh - 1rem);
-    max-height: calc(100vh - 1rem);
-  }
-  .panels {
-    min-height: 10rem;
+    height: calc(100dvh - 1rem);
+    max-height: calc(100dvh - 1rem);
   }
   .grid-auto {
     --gap: initial;

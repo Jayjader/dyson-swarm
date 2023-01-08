@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { gridState } from "../events/processes/powerGrid";
+  import { gridState } from "../../events/processes/powerGrid";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../events";
-  import { getClock } from "../events/processes/clock";
-  import { getPrimitive } from "../hud/types";
+  import { SIMULATION_STORE } from "../../events";
+  import { getClock } from "../../events/processes/clock";
+  import { getPrimitive } from "../../hud/types";
 
   let tripped = false,
     lastTick = 0;
