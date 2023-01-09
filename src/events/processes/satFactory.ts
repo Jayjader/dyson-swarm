@@ -36,9 +36,9 @@ export function createFactoryManager(
 export function factoryProcess(
   factory: SatelliteFactoryManager
 ): [SatelliteFactoryManager, BusEvent[]] {
-  let event;
+  let event: BusEvent;
   const emitted = [] as BusEvent[];
-  while ((event = factory.incoming.shift())) {
+  while ((event = factory.incoming.shift()!)) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.SATELLITE_FACTORY) {
@@ -81,75 +81,98 @@ export function factoryProcess(
             working: null as null | number,
           }
         );
-        factory.data.working += received.fabricated;
-        factory.data.count += received.fabricated;
+        factory.data.received = [];
+        if (received.fabricated > 0) {
+          factory.data.working += received.fabricated;
+          factory.data.count += received.fabricated;
+        }
         if (received.working !== null) {
           factory.data.working = received.working;
         }
-        if (factory.data.working > 0) {
-          let enoughSupplied = true;
-          factory.data.received = [];
-          const powerNeeded =
-            factory.data.working *
-            tickConsumption.factory.get(Resource.ELECTRICITY)!;
-          if (received[Resource.ELECTRICITY] < powerNeeded) {
-            enoughSupplied = false;
-            emitted.push({
-              tag: "draw",
+        if (factory.data.working <= 0) {
+          factory.data.received.push(
+            {
+              tag: "supply",
               resource: Resource.ELECTRICITY,
-              amount: powerNeeded - received[Resource.ELECTRICITY],
-              forId: factory.id,
-              receivedTick: event.tick + 1,
-            });
-          }
-          const metalNeeded =
-            factory.data.working * tickConsumption.factory.get(Resource.METAL)!;
-          if (received[Resource.METAL] < metalNeeded) {
-            enoughSupplied = false;
-            emitted.push({
-              tag: "draw",
+              amount: received[Resource.ELECTRICITY],
+              receivedTick: event.tick,
+              toId: factory.id,
+            },
+            {
+              tag: "supply",
               resource: Resource.METAL,
-              amount: metalNeeded - received[Resource.METAL],
-              forId: factory.id,
-              receivedTick: event.tick + 1,
-            });
-          }
-          if (enoughSupplied) {
-            const metalLeftOver = received[Resource.METAL] - metalNeeded;
-            if (metalLeftOver > 0) {
-              factory.data.received = [
-                {
-                  tag: "supply",
-                  resource: Resource.METAL,
-                  amount: metalLeftOver,
-                  toId: factory.id,
-                  receivedTick: event.tick,
-                },
-              ];
+              amount: received[Resource.METAL],
+              receivedTick: event.tick,
+              toId: factory.id,
             }
-            emitted.push({
-              tag: "produce",
-              resource: Resource.PACKAGED_SATELLITE,
-              amount:
-                factory.data.working *
-                tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!,
-              receivedTick: event.tick + 1,
-            });
-          } else {
-            for (const entry of Object.entries(received)) {
-              const [resource, amount] = entry as [Resource, number];
+          );
+          break;
+        }
+
+        let enoughSupplied = true;
+
+        const powerNeeded =
+          factory.data.working *
+          tickConsumption.factory.get(Resource.ELECTRICITY)!;
+        if (received[Resource.ELECTRICITY] < powerNeeded) {
+          enoughSupplied = false;
+          emitted.push({
+            tag: "draw",
+            resource: Resource.ELECTRICITY,
+            amount: powerNeeded - received[Resource.ELECTRICITY],
+            forId: factory.id,
+            receivedTick: event.tick + 1,
+          });
+        }
+        const metalNeeded =
+          factory.data.working * tickConsumption.factory.get(Resource.METAL)!;
+        if (received[Resource.METAL] < metalNeeded) {
+          enoughSupplied = false;
+          emitted.push({
+            tag: "draw",
+            resource: Resource.METAL,
+            amount: metalNeeded - received[Resource.METAL],
+            forId: factory.id,
+            receivedTick: event.tick + 1,
+          });
+        }
+        if (!enoughSupplied) {
+          ([Resource.ELECTRICITY, Resource.METAL] as const).forEach(
+            (resource) => {
+              const amount = received[resource];
               if (amount > 0) {
                 factory.data.received.push({
                   tag: "supply",
                   resource,
                   amount,
                   toId: factory.id,
-                  receivedTick: event.tick,
+                  receivedTick: (event as Events<"simulation-clock-tick">).tick,
                 });
               }
             }
-          }
+          );
+          break;
         }
+        const metalLeftOver = received[Resource.METAL] - metalNeeded;
+        if (metalLeftOver > 0) {
+          factory.data.received = [
+            {
+              tag: "supply",
+              resource: Resource.METAL,
+              amount: metalLeftOver,
+              toId: factory.id,
+              receivedTick: event.tick,
+            },
+          ];
+        }
+        emitted.push({
+          tag: "produce",
+          resource: Resource.PACKAGED_SATELLITE,
+          amount:
+            factory.data.working *
+            tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!,
+          receivedTick: event.tick + 1,
+        });
       }
     }
   }
