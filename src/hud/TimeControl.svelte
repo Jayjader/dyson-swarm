@@ -23,7 +23,7 @@
     clock = getClock(sim);
     disabled = isIndirectPause(clock);
     if (isEditing(clock)) {
-      /* nothing to do here, the rest of ui is piloted solely by local state in this case */
+      /* nothing to do here, the rest of local state is piloted solely by ui in this case */
       return;
     }
     const { speed, tick } = getPrimitive(clock);
@@ -148,7 +148,7 @@
       Pause
       <input
         type="radio"
-        class="mr-1"
+        class="mr-1 disabled:cursor-not-allowed"
         value="pause"
         checked={!isPlay(clock)}
         on:change={pause}
@@ -162,6 +162,7 @@
       Play
       <input
         type="radio"
+        class="disabled:cursor-not-allowed"
         value="play"
         checked={isPlay(clock)}
         on:change={play}

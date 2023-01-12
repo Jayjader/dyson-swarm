@@ -4,7 +4,7 @@ type Primitive = {
 };
 export type Play = [Primitive];
 export type Pause = [Primitive, "pause"];
-export type IndirectPause = [Primitive, "indirect-pause"];
+export type IndirectPause = [...(Play | Pause), "indirect-pause"];
 export type NotEditing = Play | Pause | IndirectPause;
 export type EditingSpeed = [...NotEditing, "editing-speed"];
 export type ClockState = NotEditing | EditingSpeed;
@@ -40,13 +40,13 @@ export function pause(c: Play): Pause {
   //@ts-ignore
   return c;
 }
-export function indirectPause(c: Play): IndirectPause {
+export function indirectPause(c: Play | Pause): IndirectPause {
   // @ts-ignore
   c.push("indirect-pause");
   // @ts-ignore
   return c;
 }
-export function indirectResume(c: IndirectPause): Play {
+export function indirectResume(c: IndirectPause): Play | Pause {
   c.pop();
   // @ts-ignore
   return c;

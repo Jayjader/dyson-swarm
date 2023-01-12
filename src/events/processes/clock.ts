@@ -82,7 +82,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         }
         break;
       case "command-simulation-clock-indirect-pause":
-        if (isPlay(clock.data.state)) {
+        if (isPause(clock.data.state) || isPlay(clock.data.state)) {
           clock.data.state = indirectPause(clock.data.state);
           emitted.push({
             tag: "simulation-clock-indirect-pause",
@@ -142,7 +142,8 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         if (advanced <= 0) {
           break;
         }
-        clock.data.lastOutsideTickProvokingSimulationTick += advanced * timeStep;
+        clock.data.lastOutsideTickProvokingSimulationTick +=
+          advanced * timeStep;
         clock.data.state = setPrimitive(clock.data.state, {
           speed,
           tick: tick + advanced,
