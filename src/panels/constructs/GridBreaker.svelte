@@ -4,6 +4,7 @@
   import { SIMULATION_STORE } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
+  import type { BusEvent } from "../../events/events";
 
   let tripped = false,
     lastTick = 0;
@@ -13,6 +14,20 @@
     lastTick = getPrimitive(getClock(sim)).tick;
   });
   onDestroy(unsubSim);
+
+  const toggleBreaker = () => {
+    const timeStamp = performance.now();
+    const toggleEvent: BusEvent = tripped
+      ? {
+          tag: "command-reset-circuit-breaker",
+          afterTick: lastTick,
+          timeStamp,
+        }
+      : { tag: "command-trip-circuit-breaker", afterTick: lastTick, timeStamp };
+    console.info({ toggleEvent });
+    simulation.broadcastEvent(toggleEvent);
+  };
+
   $: border = tripped ? "border-red-400" : "border-blue-400";
   $: text = tripped ? `text-red-400` : "text-blue-400";
 </script>
@@ -24,14 +39,7 @@
   <input
     type="checkbox"
     checked={tripped}
-    on:change={() =>
-      simulation.broadcastEvent({
-        tag: tripped
-          ? "command-reset-circuit-breaker"
-          : "command-trip-circuit-breaker",
-        afterTick: lastTick,
-        timeStamp: performance.now(),
-      })}
+    on:change={toggleBreaker}
     class="cursor-pointer"
   />
   Circuit Breaker
