@@ -1,7 +1,7 @@
 <script lang="ts">
   export let meta = false;
   export let disabled: boolean = false;
-  export let on: boolean;
+  export let on: boolean = false;
 </script>
 
 <button
