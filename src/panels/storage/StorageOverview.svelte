@@ -19,10 +19,10 @@
   let last = {
     tick: 0,
     resources: new Map([
-      [Resource.ELECTRICITY, { produced: 0, consumed: 0 }],
-      [Resource.ORE, { produced: 0, consumed: 0 }],
-      [Resource.METAL, { produced: 0, consumed: 0 }],
-      [Resource.PACKAGED_SATELLITE, { produced: 0, consumed: 0 }],
+      [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
+      [Resource.ORE, { produce: 0, supply: 0 }],
+      [Resource.METAL, { produce: 0, supply: 0 }],
+      [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
     ] as const),
   };
   const unsubSim = simulation.subscribe((sim) => {
@@ -43,18 +43,14 @@
             return accu;
           }
           const previous = accu.get(e.resource as Resource);
-          if (e.tag === "produce") {
-            previous.produced += e.amount;
-          } else {
-            previous.consumed += e.amount;
-          }
+          previous[e.tag] += e.amount;
           return accu;
         },
         new Map([
-          [Resource.ELECTRICITY, { produced: 0, consumed: 0 }],
-          [Resource.ORE, { produced: 0, consumed: 0 }],
-          [Resource.METAL, { produced: 0, consumed: 0 }],
-          [Resource.PACKAGED_SATELLITE, { produced: 0, consumed: 0 }],
+          [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
+          [Resource.ORE, { produce: 0, supply: 0 }],
+          [Resource.METAL, { produce: 0, supply: 0 }],
+          [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
         ])
       );
       last.tick = currentTick;
@@ -71,30 +67,30 @@
     icon="/electric.svg"
     unit={wattTick}
     stored={resources.get(Resource.ELECTRICITY)}
-    produced={last.resources.get(Resource.ELECTRICITY).produced}
-    consumed={last.resources.get(Resource.ELECTRICITY).consumed}
+    produced={last.resources.get(Resource.ELECTRICITY).produce}
+    consumed={last.resources.get(Resource.ELECTRICITY).supply}
   />
   <Storage
     name="Ore"
     icon="/ore.svg"
     unit={kilogram}
     stored={resources.get(Resource.ORE)}
-    produced={last.resources.get(Resource.ORE).produced}
-    consumed={last.resources.get(Resource.ORE).consumed}
+    produced={last.resources.get(Resource.ORE).produce}
+    consumed={last.resources.get(Resource.ORE).supply}
   />
   <Storage
     name="Metal"
     icon="/metal-bar.svg"
     unit={kilogram}
     stored={resources.get(Resource.METAL)}
-    produced={last.resources.get(Resource.METAL).produced}
-    consumed={last.resources.get(Resource.METAL).consumed}
+    produced={last.resources.get(Resource.METAL).produce}
+    consumed={last.resources.get(Resource.METAL).supply}
   />
   <Storage
     name="Satellites"
     icon="/cardboard-box.svg"
     stored={resources.get(Resource.PACKAGED_SATELLITE)}
-    produced={last.resources.get(Resource.PACKAGED_SATELLITE).produced}
-    consumed={last.resources.get(Resource.PACKAGED_SATELLITE).consumed}
+    produced={last.resources.get(Resource.PACKAGED_SATELLITE).produce}
+    consumed={last.resources.get(Resource.PACKAGED_SATELLITE).supply}
   />
 </section>
