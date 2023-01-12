@@ -26,13 +26,9 @@
       /* nothing to do here, the rest of ui is piloted solely by local state in this case */
       return;
     }
-    if (isPlay(clock)) {
-      displayedSpeed = clock[0].speed;
-      currentTick = clock[0].tick;
-    } else {
-      displayedSpeed = clock[1].speed;
-      currentTick = clock[1].tick;
-    }
+    const { speed, tick } = getPrimitive(clock);
+    displayedSpeed = speed;
+    currentTick = tick;
   });
 
   function play() {

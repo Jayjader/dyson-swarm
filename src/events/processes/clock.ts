@@ -1,11 +1,17 @@
 import {
   type ClockState,
-  type EditingSpeed,
   getPrimitive,
+  indirectPause,
+  indirectResume,
   isEditing,
   isIndirectPause,
   isPause,
   isPlay,
+  pause,
+  setPrimitive, setSpeed,
+  startEditing,
+  stopEditing,
+  unPause,
 } from "../../hud/types";
 import type { BusEvent, Events } from "../events";
 import type { Simulation, SubscriptionsFor } from "../index";
@@ -36,7 +42,7 @@ export function createClock(
   const speed = options?.speed ?? clockDefaults.speed;
   const tick = options?.tick ?? clockDefaults.tick;
   const primitive = { speed, tick };
-  const state: ClockState = mode === "play" ? [primitive] : [mode, primitive];
+  const state: ClockState = mode === "play" ? [primitive] : [primitive, mode];
   return {
     id,
     incoming: [],
@@ -56,7 +62,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
     switch (event.tag) {
       case "command-simulation-clock-play":
         if (isPause(clock.data.state)) {
-          clock.data.state = [clock.data.state[1]];
+          clock.data.state = unPause(clock.data.state);
           clock.data.lastOutsideTickProvokingSimulationTick =
             event.timeStamp - 1;
           emitted.push({
@@ -67,7 +73,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         break;
       case "command-simulation-clock-pause":
         if (isPlay(clock.data.state)) {
-          clock.data.state = ["pause", clock.data.state[0]];
+          clock.data.state = pause(clock.data.state);
           emitted.push({
             tag: "simulation-clock-pause",
             beforeTick: event.afterTick + 1,
@@ -76,7 +82,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         break;
       case "command-simulation-clock-indirect-pause":
         if (isPlay(clock.data.state)) {
-          clock.data.state = ["indirect-pause", clock.data.state[0]];
+          clock.data.state = indirectPause(clock.data.state);
           emitted.push({
             tag: "simulation-clock-indirect-pause",
             beforeTick: event.afterTick + 1,
@@ -85,7 +91,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         break;
       case "command-simulation-clock-indirect-resume":
         if (isIndirectPause(clock.data.state)) {
-          clock.data.state = [clock.data.state[1]];
+          clock.data.state = indirectResume(clock.data.state);
           clock.data.lastOutsideTickProvokingSimulationTick =
             event.timeStamp - 1;
           emitted.push({
@@ -96,7 +102,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         break;
       case "command-simulation-clock-start-editing-speed": {
         if (!isEditing(clock.data.state)) {
-          clock.data.state = ["editing-speed", ...clock.data.state];
+          clock.data.state = startEditing(clock.data.state);
           emitted.push({
             tag: "simulation-clock-editing-speed",
             beforeTick: event.afterTick + 1,
@@ -106,18 +112,10 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
       }
       case "command-simulation-clock-set-speed":
         if (isEditing(clock.data.state)) {
-          clock.data.state.shift(); // exit 'editing-speed' state
-          clock.data.state = clock.data.state as unknown as Exclude<
-            ClockState,
-            EditingSpeed
-          >;
+          clock.data.state = stopEditing(clock.data.state);
         }
 
-        if (isPlay(clock.data.state)) {
-          clock.data.state[0].speed = event.speed;
-        } else {
-          clock.data.state[1].speed = event.speed;
-        }
+        clock.data.state = setSpeed(clock.data.state, event.speed)
         emitted.push({
           tag: "simulation-clock-new-speed",
           speed: event.speed,
@@ -128,9 +126,9 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         if (!isPlay(clock.data.state)) {
           // note: in the future we might want to replace this `break;` with something along the lines of
           // `clock.data.lastOutsideTickProvokingSimulationTick = event.timestamp;`
-          // until proven else-wise, this is not a good idea!
+          // until proven otherwise, this is not a good idea!
           // all the other relevant events will still need timestamps to order them properly between ticks regardless,
-          // and for now we save on complexity by having the "resume" command provide both the timestamp (ie data)
+          // thus for now we save on complexity by having the "resume" command provide both the timestamp (ie data)
           // for the related behavior and a single location in the codebase for said behavior (that `case`).
           break;
         }
@@ -139,18 +137,16 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
           event.timeStamp - clock.data.lastOutsideTickProvokingSimulationTick
         );
         const timeStep = Math.floor(1000 / speed);
-        const ticks = Math.floor(timeElapsed / timeStep);
-        if (ticks <= 0) {
+        const advanced = Math.floor(timeElapsed / timeStep);
+        if (advanced <= 0) {
           break;
         }
         clock.data.lastOutsideTickProvokingSimulationTick = event.timeStamp;
-        clock.data.state = [
-          {
-            speed,
-            tick: tick + ticks,
-          },
-        ];
-        for (let index = 1; index <= ticks; index++)
+        clock.data.state = setPrimitive(clock.data.state, {
+          speed,
+          tick: tick + advanced,
+        });
+        for (let index = 1; index <= advanced; index++)
           emitted.push({
             tag: "simulation-clock-tick",
             tick: tick + index,

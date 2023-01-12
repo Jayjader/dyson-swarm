@@ -41,7 +41,7 @@ import {
   getFabricator,
 } from "./processes/fabricator";
 import { createMemoryStream, type EventStream } from "./processes/eventStream";
-import { isEditing } from "../hud/types";
+import { isEditing, type Pause } from "../hud/types";
 
 function emptySave() {
   return { processors: [] };
@@ -252,7 +252,7 @@ describe("event bus", () => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
       expect(
         (simulation.processors.get("clock-0") as Clock).data.state
-      ).toEqual(["indirect-pause", { tick: 17, speed: 2 }]);
+      ).toEqual([{ tick: 17, speed: 2 }, "indirect-pause"]);
 
       expect(
         (simulation.processors.get("stream-0") as EventStream).data.received
@@ -311,10 +311,9 @@ describe("event bus", () => {
         timeStamp: 1,
       })
     );
-    expect((simulation.processors.get(clock.id) as Clock).data.state).toEqual([
-      "pause",
-      { tick: 0, speed: 30 },
-    ]);
+    expect(
+      (simulation.processors.get(clock.id) as Clock).data.state
+    ).toEqual<Pause>([{ tick: 0, speed: 30 }, "pause"]);
     expect(
       (simulation.processors.get("stream-0") as EventStream).data.received
     ).toContainEqual({
