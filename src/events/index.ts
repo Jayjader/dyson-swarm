@@ -145,7 +145,7 @@ export type SubscriptionsFor<ProcessorTag> =
 // export type HasSubscription<Tag extends string> =
 //   Tag extends keyof typeof SUBSCRIPTIONS ? Tag : never;
 
-type SaveState = { processors: Processor[] };
+export type SaveState = { processors: Processor[] };
 
 export function insertProcessor(sim: Simulation, p: Processor) {
   SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
@@ -287,18 +287,20 @@ export function blankSave(): SaveState {
 
 export const SIMULATION_STORE = Symbol();
 
-const { subscribe, update, set } = writable<Simulation>({
-  bus: { subscriptions: new Map() },
-  processors: new Map(),
-});
-export const store = {
-  subscribe,
-  insertProcessors: (...processors: Processor[]) =>
-    update((sim) => {
-      processors.forEach((p) => insertProcessor(sim, p));
-      return sim;
-    }),
-  processUntilSettled: () => update((sim) => processUntilSettled(sim)),
-  broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
-  loadSave: (s: SaveState) => set(loadSave(s)),
-};
+export function makeSimulationStore() {
+  const { subscribe, update, set } = writable<Simulation>({
+    bus: { subscriptions: new Map() },
+    processors: new Map(),
+  });
+  return {
+    subscribe,
+    insertProcessors: (...processors: Processor[]) =>
+      update((sim) => {
+        processors.forEach((p) => insertProcessor(sim, p));
+        return sim;
+      }),
+    processUntilSettled: () => update((sim) => processUntilSettled(sim)),
+    broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
+    loadSave: (s: SaveState) => set(loadSave(s)),
+  };
+}
