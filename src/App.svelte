@@ -102,17 +102,24 @@
 
     <div class="flex flex-row flex-wrap justify-around gap-2">
       <TimeControl />
-      {#if swarm > 0}
+      <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
-          on:click={() => {
-            showProgress = !showProgress;
-          }}
-          class="max-w-min break-normal rounded border-2 border-slate-100 text-stone-300"
-          >{#if showProgress}Hide{:else}Show{/if} Progress</button
+          class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
+          >Menu</button
         >
-        {#if showProgress}
-          <ProgressOverview count={swarm} />
+        {#if swarm > 0}
+          <button
+            on:click={() => {
+              showProgress = !showProgress;
+            }}
+            class={"max-w-min flex-grow break-normal rounded border-2 border-slate-100 px-2 " +
+              (showProgress ? "bg-slate-100 text-slate-900" : "text-slate-100")}
+            >Progress</button
+          >
         {/if}
+      </div>
+      {#if swarm > 0 && showProgress}
+        <ProgressOverview count={swarm} />
       {/if}
     </div>
   </div>
