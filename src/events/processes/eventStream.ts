@@ -21,12 +21,12 @@ export function createMemoryStream(
 }
 
 export function memoryStreamProcess(stream: EventStream): EventStream {
-  if (
-    stream.incoming.length >= 1 &&
-    stream.incoming[0].tag !== "outside-clock-tick"
-  ) {
-    console.debug({ eventStream: stream.incoming });
-  }
+  // if (
+  //   stream.incoming.length >= 1 &&
+  //   stream.incoming[0].tag !== "outside-clock-tick"
+  // ) {
+  //   console.debug({ eventStream: stream.incoming });
+  // }
   stream.data.received.push(...stream.incoming);
   stream.incoming = [];
   return stream;

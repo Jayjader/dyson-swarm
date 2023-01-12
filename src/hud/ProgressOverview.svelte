@@ -27,12 +27,12 @@
         [0, slidingWindow[0]]
       );
     estimatedRatePerTick = averageRate / 9;
-    console.debug({
-      command: "calculate-new-rate-per-tick",
-      slidingWindow,
-      averageRate,
-      estimatedRatePerTick,
-    });
+    // console.debug({
+    //   command: "calculate-new-rate-per-tick",
+    //   slidingWindow,
+    //   averageRate,
+    //   estimatedRatePerTick,
+    // });
   });
   const swarmSizeGoal = 2 ** 50;
 </script>
