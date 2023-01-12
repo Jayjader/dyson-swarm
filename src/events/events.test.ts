@@ -963,6 +963,29 @@ describe("event bus", () => {
       receivedTick: 3,
     });
   });
+    test("launcher should empty charge when launching satellite", () => {
+        let simulation = loadSave(emptySave());
+        insertProcessor(simulation, createMemoryStream());
+        const launcher = createLauncherManager({ count: 1 });
+        launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
+        insertProcessor(simulation, launcher);
+        simulation = processUntilSettled(
+            broadcastEvent(
+                broadcastEvent(simulation, {
+                    tag: "supply",
+                    resource: Resource.PACKAGED_SATELLITE,
+                    amount: tickConsumption.launcher.get(Resource.PACKAGED_SATELLITE)!,
+                    receivedTick: 2,
+                    toId: launcher.id,
+                }),
+                { tag: "simulation-clock-tick", tick: 2 }
+            )
+        );
+        const stream = ([...simulation.processors.values()] as Processor[]).find(
+            (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
+        )!;
+        expect((simulation.processors.get(launcher.id)! as LauncherManager).data.charge).toEqual(0);
+    });
 
   test("swarm should increase in count when satellite is launched", () => {
     let simulation = loadSave(emptySave());

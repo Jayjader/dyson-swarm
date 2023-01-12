@@ -111,6 +111,7 @@ export function launcherProcess(
           );
           break;
         }
+
         launcher.data.charge += received[Resource.ELECTRICITY];
 
         let enoughSupplied = true;
@@ -157,6 +158,7 @@ export function launcherProcess(
           });
           break;
         }
+        launcher.data.charge = 0;
         for (let i = 0; i < launcher.data.working; i++) {
           emitted.push({
             tag: "launch-satellite",
