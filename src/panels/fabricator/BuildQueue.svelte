@@ -61,7 +61,7 @@
     } as const;
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
-    // todo: merge into previous event by adding set-queue to clock's subscriptions?
+    // consider: merge into previous event by adding set-queue to clock's subscriptions?
     const busEvent_following = {
       tag: "command-simulation-clock-indirect-resume",
       afterTick: tick,
