@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { type ClockState, isPlay } from "./types";
+  import {
+    type ClockState,
+    getPrimitive,
+    isEditing,
+    isIndirectPause,
+    isPlay,
+  } from "./types";
   import { getClock } from "../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../events";
@@ -11,9 +17,15 @@
   let speedIsBeingEdited = false;
   let currentTick = 0;
   let clock: ClockState = [{ tick: 0, speed: 1 }];
+  let disabled = false;
 
   const unsubscribe = simulation.subscribe((sim) => {
     clock = getClock(sim);
+    disabled = isIndirectPause(clock);
+    if (isEditing(clock)) {
+      /* nothing to do here, the rest of ui is piloted solely by local state in this case */
+      return;
+    }
     if (isPlay(clock)) {
       displayedSpeed = clock[0].speed;
       currentTick = clock[0].tick;
@@ -24,43 +36,56 @@
   });
 
   function play() {
-    const busEvent: BusEvent = {
+    const playEvent: BusEvent = {
       tag: "command-simulation-clock-play",
       timeStamp: performance.now(),
       afterTick: currentTick,
     } as const;
-    console.info(busEvent);
-    simulation.broadcastEvent(busEvent);
+    console.info({ playEvent });
+    simulation.broadcastEvent(playEvent);
     simulation.processUntilSettled();
   }
   function pause() {
-    const busEvent = {
+    const pauseEvent = {
       tag: "command-simulation-clock-pause",
       timeStamp: performance.now(),
       afterTick: currentTick,
     } as const;
-    console.info(busEvent);
-    simulation.broadcastEvent(busEvent);
+    console.info({ pauseEvent });
+    simulation.broadcastEvent(pauseEvent);
+    simulation.processUntilSettled();
   }
   function setSpeed(event) {
+    if (!isEditing(clock)) {
+      simulation.broadcastEvent({
+        tag: "command-simulation-clock-start-editing-speed",
+        timeStamp: performance.now(),
+        afterTick: currentTick,
+      });
+    }
     const newSpeed = Number.parseInt(event.target.value);
-    const busEvent = {
-      tag: "command-simulation-clock-set-speed",
-      speed: newSpeed,
-      timeStamp: performance.now(),
-      afterTick: currentTick,
-    } as const;
-    console.info(busEvent);
-    simulation.broadcastEvent(busEvent);
+    displayedSpeed = newSpeed;
+    if (!speedIsBeingEdited) {
+      const setSpeedEvent = {
+        tag: "command-simulation-clock-set-speed",
+        speed: newSpeed,
+        timeStamp: performance.now(),
+        afterTick: currentTick,
+      } as const;
+      console.info({ setSpeedEvent });
+      simulation.broadcastEvent(setSpeedEvent);
+      simulation.processUntilSettled();
+    }
   }
   function startEditingSpeed() {
-    const busEvent: BusEvent = {
-      tag: "command-simulation-clock-indirect-pause",
+    const startSpeedEvent: BusEvent = {
+      tag: "command-simulation-clock-start-editing-speed",
       timeStamp: performance.now(),
       afterTick: currentTick,
     } as const;
-    console.info({ busEvent });
-    simulation.broadcastEvent(busEvent);
+    console.info({ startSpeedEvent });
+    simulation.broadcastEvent(startSpeedEvent);
+    simulation.processUntilSettled();
     speedIsBeingEdited = true;
   }
   function editSpeedFromMouseEvent(event) {
@@ -68,26 +93,24 @@
     if (speedIsBeingEdited) {
       const newSpeed = Number.parseInt(event.target.value);
       if (newSpeed !== displayedSpeed) {
-        const busEvent: BusEvent = {
-          tag: "command-simulation-clock-set-speed",
+        console.info({
+          command: "setting-speed-from-mouse",
           speed: newSpeed,
-          timeStamp: performance.now(),
-          afterTick: clock[1].tick,
-        } as const;
-        console.info(busEvent);
-        simulation.broadcastEvent(busEvent);
+        });
         displayedSpeed = newSpeed;
       }
     }
   }
   function stopEditingSpeed() {
-    const busEvent: BusEvent = {
-      tag: "command-simulation-clock-indirect-resume",
+    const stopEditingEvent: BusEvent = {
+      tag: "command-simulation-clock-set-speed",
+      speed: displayedSpeed,
       timeStamp: performance.now(),
-      afterTick: clock[1].tick,
+      afterTick: getPrimitive(clock).tick,
     } as const;
-    console.info(busEvent);
-    simulation.broadcastEvent(busEvent);
+    console.info({ stopEditingEvent });
+    simulation.broadcastEvent(stopEditingEvent);
+    simulation.processUntilSettled();
     speedIsBeingEdited = false;
   }
   onDestroy(unsubscribe);
@@ -119,8 +142,13 @@
     on:mousemove={editSpeedFromMouseEvent}
     on:mouseup={stopEditingSpeed}
   />
+<!--  uncomment following line to debug clock state-->
+<!--  <div class="bg-slate-50 text-stone-900">{JSON.stringify(clock)}</div>-->
   <div class="flex flex-row justify-evenly gap-1">
-    <label class="flex cursor-pointer flex-row justify-between gap-1">
+    <label
+      class="flex cursor-pointer flex-row justify-between gap-1"
+      class:cursor-not-allowed={disabled}
+    >
       Pause
       <input
         type="radio"
@@ -128,15 +156,20 @@
         value="pause"
         checked={!isPlay(clock)}
         on:change={pause}
+        {disabled}
       />
     </label>
-    <label class="flex cursor-pointer flex-row justify-between gap-1">
+    <label
+      class="flex cursor-pointer flex-row justify-between gap-1"
+      class:cursor-not-allowed={disabled}
+    >
       Play
       <input
         type="radio"
         value="play"
         checked={isPlay(clock)}
         on:change={play}
+        {disabled}
       />
     </label>
   </div>

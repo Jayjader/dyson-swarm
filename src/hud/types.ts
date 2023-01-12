@@ -5,7 +5,8 @@ type Primitive = {
 export type Play = [Primitive];
 export type Pause = ["pause", Primitive];
 export type IndirectPause = ["indirect-pause", Primitive];
-export type ClockState = Play | Pause | IndirectPause;
+export type EditingSpeed = ["editing-speed", ...(IndirectPause | Pause | Play)];
+export type ClockState = Play | Pause | IndirectPause | EditingSpeed;
 export function isPlay(c: ClockState): c is Play {
   return c.length === 1;
 }
@@ -14,6 +15,9 @@ export function isPause(c: ClockState): c is Pause {
 }
 export function isIndirectPause(c: ClockState): c is IndirectPause {
   return c[0] === "indirect-pause";
+}
+export function isEditing(c: ClockState): c is EditingSpeed {
+  return c[0] === "editing-speed";
 }
 
 export function getPrimitive(c: ClockState): Primitive {

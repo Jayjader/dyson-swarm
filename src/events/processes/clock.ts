@@ -1,6 +1,8 @@
 import {
   type ClockState,
+  type EditingSpeed,
   getPrimitive,
+  isEditing,
   isIndirectPause,
   isPause,
   isPlay,
@@ -92,21 +94,44 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
           });
         }
         break;
+      case "command-simulation-clock-start-editing-speed": {
+        if (!isEditing(clock.data.state)) {
+          clock.data.state = ["editing-speed", ...clock.data.state];
+          emitted.push({
+            tag: "simulation-clock-editing-speed",
+            beforeTick: event.afterTick + 1,
+          });
+        }
+        break;
+      }
       case "command-simulation-clock-set-speed":
-        if (!isPlay(clock.data.state)) {
-          clock.data.state[1].speed = event.speed;
-        } else {
+        if (isEditing(clock.data.state)) {
+          clock.data.state.shift(); // exit 'editing-speed' state
+          clock.data.state = clock.data.state as unknown as Exclude<
+            ClockState,
+            EditingSpeed
+          >;
+        }
+
+        if (isPlay(clock.data.state)) {
           clock.data.state[0].speed = event.speed;
+        } else {
+          clock.data.state[1].speed = event.speed;
         }
         emitted.push({
           tag: "simulation-clock-new-speed",
           speed: event.speed,
           beforeTick: event.afterTick + 1,
         });
-
         break;
       case "outside-clock-tick":
         if (!isPlay(clock.data.state)) {
+          // note: in the future we might want to replace this `break;` with something along the lines of
+          // `clock.data.lastOutsideTickProvokingSimulationTick = event.timestamp;`
+          // until proven else-wise, this is not a good idea!
+          // all the other relevant events will still need timestamps to order them properly between ticks regardless,
+          // and for now we save on complexity by having the "resume" command provide both the timestamp (ie data)
+          // for the related behavior and a single location in the codebase for said behavior (that `case`).
           break;
         }
         const { speed, tick } = getPrimitive(clock.data.state);

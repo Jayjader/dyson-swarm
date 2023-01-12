@@ -18,6 +18,9 @@ export type BusEvent =
   | ({ tag: "command-simulation-clock-indirect-resume" } & AfterTick &
       TimeStamped)
   | ({ tag: "simulation-clock-indirect-resume" } & BeforeTick)
+  | ({ tag: "command-simulation-clock-start-editing-speed" } & AfterTick &
+      TimeStamped)
+  | ({ tag: "simulation-clock-editing-speed" } & BeforeTick)
   | ({
       tag: "command-simulation-clock-set-speed";
       speed: number;

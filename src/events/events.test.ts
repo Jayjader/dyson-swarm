@@ -41,6 +41,7 @@ import {
   getFabricator,
 } from "./processes/fabricator";
 import { createMemoryStream, type EventStream } from "./processes/eventStream";
+import { isEditing } from "../hud/types";
 
 function emptySave() {
   return { processors: [] };
@@ -227,11 +228,71 @@ describe("event bus", () => {
       ).not.toContainEqual(
         expect.objectContaining({
           // we're just looking at events emitted by the clock, so we can implicitly exclude all player commands (that start with "command-")
-          tag: expect.stringMatching(/^simulation-clock-indirect/),
+          tag: expect.stringMatching(/^simulation-clock/),
         })
       );
     }
   );
+  test.each<BusEvent>([
+    { tag: "command-simulation-clock-play", afterTick: 17, timeStamp: 1 },
+    { tag: "command-simulation-clock-pause", afterTick: 17, timeStamp: 1 },
+  ])(
+    "clock should ignore direct command %j when indirectly paused",
+    (event) => {
+      let simulation = loadSave(emptySave());
+      insertProcessor(simulation, createMemoryStream());
+      insertProcessor(
+        simulation,
+        createClock(0, "clock-0", {
+          mode: "indirect-pause",
+          tick: 17,
+          speed: 2,
+        })
+      );
+      simulation = processUntilSettled(broadcastEvent(simulation, event));
+      expect(
+        (simulation.processors.get("clock-0") as Clock).data.state
+      ).toEqual(["indirect-pause", { tick: 17, speed: 2 }]);
+
+      expect(
+        (simulation.processors.get("stream-0") as EventStream).data.received
+      ).not.toContainEqual(
+        expect.objectContaining({
+          // we're just looking at events emitted by the clock, so we can implicitly exclude all player commands (that start with "command-")
+          tag: expect.stringMatching(/^simulation-clock/),
+        })
+      );
+    }
+  );
+
+  test("clock should enter editing-speed state when receiving command to start editing speed", () => {
+    let simulation = loadSave(emptySave());
+    insertProcessor(simulation, createMemoryStream());
+    const clock = createClock(0, "clock-0", {
+      speed: 1,
+      tick: 0,
+      mode: "play",
+    });
+    insertProcessor(simulation, clock);
+    simulation = processUntilSettled(
+      broadcastEvent(simulation, {
+        tag: "command-simulation-clock-start-editing-speed",
+        afterTick: 0,
+        timeStamp: 1,
+      })
+    );
+    expect(
+      isEditing((simulation.processors.get("clock-0") as Clock).data.state)
+    ).toBeTruthy();
+    expect(
+      (simulation.processors.get("stream-0") as EventStream).data.received
+    ).toContainEqual(
+      expect.objectContaining({
+        tag: "simulation-clock-editing-speed",
+        beforeTick: 1,
+      })
+    );
+  });
 
   test("clock should change speed when receiving command while paused", () => {
     let simulation = loadSave(emptySave());
