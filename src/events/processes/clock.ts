@@ -8,7 +8,8 @@ import {
   isPause,
   isPlay,
   pause,
-  setPrimitive, setSpeed,
+  setPrimitive,
+  setSpeed,
   startEditing,
   stopEditing,
   unPause,
@@ -115,7 +116,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
           clock.data.state = stopEditing(clock.data.state);
         }
 
-        clock.data.state = setSpeed(clock.data.state, event.speed)
+        clock.data.state = setSpeed(clock.data.state, event.speed);
         emitted.push({
           tag: "simulation-clock-new-speed",
           speed: event.speed,
@@ -141,7 +142,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         if (advanced <= 0) {
           break;
         }
-        clock.data.lastOutsideTickProvokingSimulationTick = event.timeStamp;
+        clock.data.lastOutsideTickProvokingSimulationTick += advanced * timeStep;
         clock.data.state = setPrimitive(clock.data.state, {
           speed,
           tick: tick + advanced,
