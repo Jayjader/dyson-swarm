@@ -6,7 +6,6 @@
 <div class="flex flex-grow-0 flex-row justify-center gap-1 break-normal">
   <PanelControl
     meta={true}
-    on={$uiPanelsState.size > 0}
     disabled={$uiPanelsState.size === 0}
     on:click={uiPanelsState.closeAllPanels}
   >

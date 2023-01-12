@@ -6,10 +6,8 @@
 
 <button
   class:meta
-  class={"rounded border-2 px- " +
-    (on
-      ? "border-stone-400 text-stone-300"
-      : "border-stone-600 text-stone-500")}
+  class={"rounded border-2 border-slate-100 text-slate-100 disabled:border-dashed" +
+    (on ? " bg-slate-100 text-slate-900" : "")}
   {disabled}
   on:click
 >
