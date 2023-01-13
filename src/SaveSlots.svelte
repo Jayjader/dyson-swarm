@@ -133,19 +133,19 @@
     (slotIndex === -1 && saveStubs.autoSave === null);
   $: overWriteDisabled = slotIndex === -1;
 
-  let dialog = { state: "closed" } as
-    | { state: "closed" }
-    | { state: "warn-overwrite-on-save" }
-    | { state: "warn-overwrite-on-import" }
-    | { state: "warn-discard-on-load" }
-    | { state: "warn-discard-on-close" }
-    | { state: "save" }
-    | { state: "import" }
-    | { state: "export" }
-    | { state: "delete" };
+  let dialog = "closed" as
+    | "closed"
+    | "warn-overwrite-on-save"
+    | "warn-overwrite-on-import"
+    | "warn-discard-on-load"
+    | "warn-discard-on-close"
+    | "save"
+    | "import"
+    | "export"
+    | "delete";
   const dialogAfterConfirm: Record<
-    Exclude<typeof dialog["state"], "closed">,
-    typeof dialog["state"]
+    Exclude<typeof dialog, "closed">,
+    typeof dialog
   > = {
     "warn-overwrite-on-save": "save",
     "warn-overwrite-on-import": "import",
@@ -183,7 +183,7 @@
   };
   let dialogElement;
   $: {
-    if (dialog.state !== "closed") {
+    if (dialog !== "closed") {
       dialogElement.showModal();
     }
   }
@@ -228,7 +228,7 @@
       {#if inSimulation && slotIndex === -2}
         <NavButton
           on:click={() => {
-            dialog = { state: "warn-discard-on-close" };
+            dialog = "warn-discard-on-close";
           }}>Close Simulation</NavButton
         >
       {/if}
@@ -271,10 +271,8 @@
         on:click={() => {
           dialog =
             saveStubs.slots.at(slotIndex) !== undefined
-              ? {
-                  state: "warn-overwrite-on-save",
-                }
-              : { state: "save" };
+              ? "warn-overwrite-on-save"
+              : "save";
         }}>Save</button
       >
     {:else}
@@ -286,14 +284,14 @@
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || overWriteDisabled}
       on:click={() => {
-        dialog = { state: "import" };
+        dialog = "import";
       }}>Import</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
       on:click={() => {
-        dialog = { state: "delete" };
+        dialog = "delete";
       }}>Delete</button
     >
     <button
@@ -301,12 +299,12 @@
       disabled={allDisabled || slotIsEmpty}
       on:click={() => {
         if (inSimulation) {
-          dialog = { state: "warn-discard-on-load" };
+          dialog = "warn-discard-on-load";
         } else {
           loadSave(
             slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
           );
-          dialog = { state: "closed" };
+          dialog = "closed";
         }
       }}>Load</button
     >
@@ -314,12 +312,22 @@
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
       on:click={() => {
-        dialog = { state: "export" };
+        dialog = "export";
       }}>Export</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      disabled={allDisabled || slotIsEmpty}>Clone</button
+      disabled={allDisabled || slotIsEmpty}
+      on:click={() => {
+        const nameToClone =
+          slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name;
+        writeSlotToStorage({
+          ...readSave(nameToClone),
+          name: `${nameToClone} (cloned)`,
+        });
+        slotIndex = -2;
+        saveStubs = readStubs();
+      }}>Clone</button
     >
   </div>
   <dialog
@@ -328,9 +336,9 @@
     on:close={(closeEvent) => {
       const playerCommand = closeEvent.target.returnValue;
       if (playerCommand === "cancel") {
-        dialog = { state: "closed" };
+        dialog = "closed";
       } else {
-        switch (dialog.state) {
+        switch (dialog) {
           case "export": {
             const fileName =
               closeEvent.target.firstChild.elements["fileName"].value;
@@ -382,32 +390,32 @@
             saveStubs = readStubs();
             break;
         }
-        dialog = { state: dialogAfterConfirm[dialog.state] };
+        dialog = dialogAfterConfirm[dialog];
       }
     }}
   >
     <form method="dialog">
-      {#if dialog.state !== "closed"}
-        {#if dialogContent[dialog.state].text}
-          <p>{dialogContent[dialog.state].text}</p>
-        {:else if dialogContent[dialog.state].label}
+      {#if dialog !== "closed"}
+        {#if dialogContent[dialog].text}
+          <p>{dialogContent[dialog].text}</p>
+        {:else if dialogContent[dialog].label}
           <label
-            >{dialogContent[dialog.state].label}:<input
+            >{dialogContent[dialog].label}:<input
               class="rounded border-2 border-slate-900 px-2"
-              name={dialog.state === "save" ? "saveName" : "fileName"}
-              type={dialog.state === "import" ? "file" : "text"}
-              title={dialog.state === "save"
+              name={dialog === "save" ? "saveName" : "fileName"}
+              type={dialog === "import" ? "file" : "text"}
+              title={dialog === "save"
                 ? "Cannot be the same as an existing save name"
                 : ""}
               required
-              value={dialog.state === "export"
+              value={dialog === "export"
                 ? `${
                     slotIndex === -1
                       ? "AUTOSAVE"
                       : saveStubs.slots[slotIndex].name
                   }.json`
                 : ""}
-              pattern={dialog.state === "export" ? ".*" : saveNamePattern}
+              pattern={dialog === "export" ? ".*" : saveNamePattern}
               autocomplete="off"
               spellcheck="false"
               autocorrect="off"
@@ -417,7 +425,7 @@
         <div class="flex flex-row justify-between gap-2">
           <button
             class="my-2 rounded border-2 border-slate-900 px-2"
-            value="confirm">{dialogContent[dialog.state].confirmText}</button
+            value="confirm">{dialogContent[dialog].confirmText}</button
           >
           <button
             class="my-2 rounded border-2 border-slate-900 px-2"
