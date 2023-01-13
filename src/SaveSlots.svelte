@@ -3,6 +3,7 @@
   import { getContext, onDestroy, onMount } from "svelte";
   import { APP_UI_CONTEXT, simulationIsLoaded } from "./appStateStore";
   import type { SaveState } from "./events";
+  import type { Processor } from "./events/processes";
 
   enum Slot {
     AUTO = "auto",
@@ -49,13 +50,17 @@
 
   function readSave(name: string): null | SaveState {
     const data = window.localStorage.getItem(slotStorageKey(Slot.NAME)(name));
-    return data === null
-      ? null
-      : { processors: JSON.parse(data) as Save["processors"] };
+    return data === null ? null : { processors: parseProcessors(data) };
   }
 
+  function parseProcessors(formatted: string): Processor[] {
+    return JSON.parse(formatted) as Processor[];
+  }
+  function formatProcessors(procs: Processor[]): string {
+    return JSON.stringify(procs);
+  }
   function writeSlotToStorage(save: Save) {
-    const formattedSave = JSON.stringify([...save.processors.values()]);
+    const formattedSave = formatProcessors([...save.processors.values()]);
     const saveKey = slotStorageKey(
       save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME
     )(save.name);
@@ -81,6 +86,18 @@
       namesArray.delete(name);
       window.localStorage.setItem(NAMES_KEY, JSON.stringify([...namesArray]));
     }
+  }
+
+  function writeSaveDataToBlob(save: SaveStub & SaveState): void {
+    const machineDrivenLink = document.createElement("a");
+    const blobData = encodeURIComponent(formatProcessors(save.processors));
+    console.info({ blobData });
+    machineDrivenLink.setAttribute(
+      "href",
+      `data:text/plain;charset=utf-8,${blobData}`
+    );
+    machineDrivenLink.setAttribute("download", save.name);
+    machineDrivenLink.click();
   }
 
   let slotIndex = -2;
@@ -177,11 +194,10 @@
       case "warn-discard-on-load":
       case "warn-discard-on-close":
       case "delete":
+      case "export":
         dialogElement.showModal();
         break;
       case "import":
-        break;
-      case "export":
         break;
     }
   }
@@ -307,7 +323,10 @@
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      disabled={allDisabled || slotIsEmpty}>Export</button
+      disabled={allDisabled || slotIsEmpty}
+      on:click={() => {
+        dialog = { state: "export" };
+      }}>Export</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
@@ -324,6 +343,16 @@
       } else {
         console.debug({ closeEvent, playerCommand });
         switch (dialog.state) {
+          case "export": {
+            const fileName =
+              closeEvent.target.firstChild.elements["fileName"].value;
+            const saveName = slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name;
+            const saveState = readSave(saveName);
+            saveState.name = fileName;
+            writeSaveDataToBlob(saveState);
+            slotIndex = -2;
+            break;
+          }
           case "save": {
             const name =
               closeEvent.target.firstChild.elements["saveName"].value;
@@ -361,12 +390,19 @@
             >{dialogContent[dialog.state].label}:<input
               class="rounded border-2 border-slate-900 px-2"
               name={dialog.state === "save" ? "saveName" : "fileName"}
-              type={dialog.state === "save" ? "text" : "file"}
+              type={dialog.state === "import" ? "file" : "text"}
               title={dialog.state === "save"
                 ? "Cannot be the same as an existing save name"
                 : ""}
               required
-              pattern={saveNamePattern}
+              value={dialog.state === "export"
+                ? `${
+                    slotIndex === -1
+                      ? "AUTOSAVE"
+                      : saveStubs.slots[slotIndex].name
+                  }.json`
+                : ""}
+              pattern={dialog.state === "export" ? ".*" : saveNamePattern}
               autocomplete="off"
               spellcheck="false"
               autocorrect="off"
