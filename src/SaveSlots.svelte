@@ -108,6 +108,7 @@
     | { state: "warn-overwrite-on-save" }
     | { state: "warn-overwrite-on-import" }
     | { state: "warn-discard-on-load" }
+    | { state: "warn-discard-on-close" }
     | { state: "save" }
     | { state: "import" }
     | { state: "export" }
@@ -119,6 +120,7 @@
     "warn-overwrite-on-save": "save",
     "warn-overwrite-on-import": "import",
     "warn-discard-on-load": "closed",
+    "warn-discard-on-close": "closed",
     import: "closed",
     save: "closed",
     export: "closed",
@@ -134,6 +136,10 @@
       confirmText: "Overwrite",
     },
     "warn-discard-on-load": {
+      text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
+      confirmText: "Discard",
+    },
+    "warn-discard-on-close": {
       text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
       confirmText: "Discard",
     },
@@ -155,6 +161,7 @@
       case "warn-overwrite-on-save":
       case "save":
       case "warn-discard-on-load":
+      case "warn-discard-on-close":
         dialogElement.showModal();
         break;
       case "import":
@@ -203,9 +210,11 @@
         <NavButton on:click={selectSlot.bind(this, -2)}>Cancel Choice</NavButton
         >
       {/if}
-      {#if inSimulation}
-        <NavButton on:click={uiStore.closeSimulation}
-          >Close Simulation</NavButton
+      {#if inSimulation && slotIndex === -2}
+        <NavButton
+          on:click={() => {
+            dialog = { state: "warn-discard-on-close" };
+          }}>Close Simulation</NavButton
         >
       {/if}
     </nav>
@@ -307,6 +316,8 @@
           loadSave(
             slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
           );
+        } else if (dialog.state === "warn-discard-on-close") {
+          uiStore.closeSimulation();
         }
         dialog = { state: dialogAfterConfirm[dialog.state] };
       }
