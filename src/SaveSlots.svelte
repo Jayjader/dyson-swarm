@@ -69,6 +69,20 @@
     }
   }
 
+  function deleteSave(name: string): void {
+    const saveKey = slotStorageKey(name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME)(
+      name
+    );
+    window.localStorage.removeItem(saveKey);
+    if (name !== "AUTOSAVE") {
+      const NAMES_KEY = slotStorageKey(Slot.NAMES)();
+      const names = window.localStorage.getItem(NAMES_KEY);
+      const namesArray = new Set(names === null ? [] : JSON.parse(names));
+      namesArray.delete(name);
+      window.localStorage.setItem(NAMES_KEY, JSON.stringify([...namesArray]));
+    }
+  }
+
   let slotIndex = -2;
   let inSimulation = false;
   let simulation = null;
@@ -145,7 +159,7 @@
     },
     delete: {
       text: "This will delete the existing simulation data in this save slot. Delete saved data?",
-      confirmText: "Overwrite",
+      confirmText: "Delete",
     },
     export: { label: "File name", confirmText: "Export" },
     import: { label: "Pick file", confirmText: "Import" },
@@ -162,13 +176,12 @@
       case "save":
       case "warn-discard-on-load":
       case "warn-discard-on-close":
+      case "delete":
         dialogElement.showModal();
         break;
       case "import":
         break;
       case "export":
-        break;
-      case "delete":
         break;
     }
   }
@@ -273,7 +286,10 @@
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      disabled={allDisabled || slotIsEmpty}>Delete</button
+      disabled={allDisabled || slotIsEmpty}
+      on:click={() => {
+        dialog = { state: "delete" };
+      }}>Delete</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
@@ -323,6 +339,13 @@
             break;
           case "warn-discard-on-close":
             uiStore.closeSimulation();
+            break;
+          case "delete":
+            deleteSave(
+              slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+            );
+            slotIndex = -2;
+            saveStubs = readStubs();
             break;
         }
         dialog = { state: dialogAfterConfirm[dialog.state] };
