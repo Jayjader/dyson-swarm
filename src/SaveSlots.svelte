@@ -284,7 +284,7 @@
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || overWriteDisabled}
       on:click={() => {
-        dialog = "import";
+        dialog = slotIsEmpty ? "import" : "warn-overwrite-on-import";
       }}>Import</button
     >
     <button
@@ -382,6 +382,7 @@
           case "warn-discard-on-close":
             uiStore.closeSimulation();
             break;
+          case "warn-overwrite-on-import":
           case "delete":
             deleteSave(
               slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
