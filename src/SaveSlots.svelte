@@ -91,7 +91,6 @@
   function writeSaveDataToBlob(save: SaveStub & SaveState): void {
     const machineDrivenLink = document.createElement("a");
     const blobData = encodeURIComponent(formatProcessors(save.processors));
-    console.info({ blobData });
     machineDrivenLink.setAttribute(
       "href",
       `data:text/plain;charset=utf-8,${blobData}`
@@ -184,21 +183,8 @@
   };
   let dialogElement;
   $: {
-    console.debug({ dialog });
-    switch (dialog.state) {
-      case "closed":
-        break;
-      case "warn-overwrite-on-import":
-      case "warn-overwrite-on-save":
-      case "save":
-      case "warn-discard-on-load":
-      case "warn-discard-on-close":
-      case "delete":
-      case "export":
-        dialogElement.showModal();
-        break;
-      case "import":
-        break;
+    if (dialog.state !== "closed") {
+      dialogElement.showModal();
     }
   }
   $: saveNamePattern =
@@ -298,7 +284,10 @@
     {/if}
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      disabled={allDisabled || overWriteDisabled}>Import</button
+      disabled={allDisabled || overWriteDisabled}
+      on:click={() => {
+        dialog = { state: "import" };
+      }}>Import</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
@@ -341,16 +330,32 @@
       if (playerCommand === "cancel") {
         dialog = { state: "closed" };
       } else {
-        console.debug({ closeEvent, playerCommand });
         switch (dialog.state) {
           case "export": {
             const fileName =
               closeEvent.target.firstChild.elements["fileName"].value;
-            const saveName = slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name;
+            const saveName =
+              slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name;
             const saveState = readSave(saveName);
             saveState.name = fileName;
             writeSaveDataToBlob(saveState);
             slotIndex = -2;
+            break;
+          }
+          case "import": {
+            const fileData =
+              closeEvent.target.firstChild.elements["fileName"].files[0];
+            const saveState = { name: fileData.name };
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              saveState.processors = parseProcessors(
+                String(event.target.result)
+              );
+              writeSlotToStorage(saveState);
+              slotIndex = -2;
+              saveStubs = readStubs();
+            };
+            reader.readAsText(fileData);
             break;
           }
           case "save": {
