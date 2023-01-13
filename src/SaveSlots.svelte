@@ -1,7 +1,7 @@
 <script lang="ts">
   import NavButton from "./NavButton.svelte";
-  import { getContext } from "svelte";
-  import { APP_UI_CONTEXT, isAtSaveFromTitle } from "./appStateStore";
+  import { getContext, onDestroy } from "svelte";
+  import { APP_UI_CONTEXT, simulationIsLoaded } from "./appStateStore";
   import type { SaveState } from "./events";
 
   type Save = { name: string } & SaveState;
@@ -9,8 +9,17 @@
     autoSave: null,
     slots: [],
   };
-  export let simulationData: null | SaveState = null;
+  let slotIndex = -2;
+  let inSimulation = false;
   const uiStore = getContext(APP_UI_CONTEXT).uiStore;
+  const uiSub = uiStore.subscribe((stack) => {
+    inSimulation = simulationIsLoaded(stack);
+  });
+  onDestroy(uiSub);
+
+  const selectSlot = (index: number) => {
+    slotIndex = index;
+  };
 </script>
 
 <main
@@ -19,61 +28,79 @@
 >
   <header class="m-2 flex flex-row justify-between gap-2">
     <nav class="flex flex-col gap-2">
-      <NavButton
-        on:click={simulationData === null
-          ? uiStore.closeSaveSlots
-          : uiStore.closeSaveSlotsInSimulation}
-        >Back to {#if simulationData === null}Title{:else}Simulation{/if}</NavButton
-      >
-      {#if simulationData !== null}
+      {#if slotIndex === -2}
+        <NavButton
+          on:click={inSimulation
+            ? uiStore.closeSaveSlots
+            : uiStore.closeSaveSlotsInSimulation}
+          >Back&nbsp;to {#if inSimulation}Simulation{:else}Title{/if}</NavButton
+        >
+      {:else}
+        <NavButton on:click={selectSlot.bind(this, -2)}>Cancel Choice</NavButton
+        >
+      {/if}
+      {#if inSimulation}
         <NavButton on:click={uiStore.closeSimulation}
           >Close Simulation</NavButton
         >
       {/if}
     </nav>
-    <h2>Choose a save slot</h2>
+    <h2>
+      {#if slotIndex === -2}Choose a save slot{:else}Choose an action{/if}
+    </h2>
   </header>
   <div class="m-2 flex flex-row flex-wrap justify-center gap-2">
     <button
-      class={"w-full flex-grow rounded-xl border-2 border-slate-900" +
-        (saveSlots.autoSave !== null ? " bg-stone-400" : "")}>AUTOSAVE</button
+      class:focus={slotIndex === -1}
+      class={"w-full flex-grow rounded-xl border-2 border-slate-900 font-mono" +
+        (saveSlots.autoSave !== null ? " bg-stone-400" : "")}
+      on:click={selectSlot.bind(this, -1)}>AUTOSAVE</button
     >
     <hr class="basis-2/3 rounded border-2 border-slate-900" />
-    {#each saveSlots.slots as save}
+    {#each saveSlots.slots as save, i}
       <button
+        class:focus={slotIndex === i}
         class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900 bg-stone-400"
-        >{save.name}</button
+        on:click={selectSlot.bind(this, i)}>{save.name}</button
       >
     {/each}
     <button
+      class:focus={slotIndex === saveSlots.slots.length}
       class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900"
+      on:click={selectSlot.bind(this, saveSlots.slots.length)}
       >(New Slot)</button
     >
   </div>
   <div class="m-2 grid grid-cols-3 grid-rows-2 gap-2">
-    {#if simulationData === null}
-      <div>
-        <!--empty div to preserve grid auto-placing in a quick and dirty way-->
-      </div>
-    {:else}
-      <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-        >Save</button
+    {#if inSimulation}
+      <button
+        class="rounded border-2 border-slate-900 disabled:border-dashed"
+        disabled={slotIndex === -2}>Save</button
       >
+    {:else}
+      <div>
+        <!--empty div to preserve how the grid auto-places the remaining buttons in a quick and dirty way-->
+      </div>
     {/if}
-    <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-      >Import</button
+    <button
+      class="rounded border-2 border-slate-900 disabled:border-dashed"
+      disabled={slotIndex === -2}>Import</button
     >
-    <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-      >Delete</button
+    <button
+      class="rounded border-2 border-slate-900 disabled:border-dashed"
+      disabled={slotIndex === -2}>Delete</button
     >
-    <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-      >Load</button
+    <button
+      class="rounded border-2 border-slate-900 disabled:border-dashed"
+      disabled={slotIndex === -2}>Load</button
     >
-    <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-      >Export</button
+    <button
+      class="rounded border-2 border-slate-900 disabled:border-dashed"
+      disabled={slotIndex === -2}>Export</button
     >
-    <button class="rounded border-2 border-slate-900 disabled:border-dashed"
-      >Clone</button
+    <button
+      class="rounded border-2 border-slate-900 disabled:border-dashed"
+      disabled={slotIndex === -2}>Clone</button
     >
   </div>
 </main>
@@ -86,5 +113,8 @@
   }
   button {
     min-height: 4rem;
+  }
+  button.focus {
+    box-shadow: inset 0 0 0.75rem 0.5rem #0f172a /*slate-900*/;
   }
 </style>

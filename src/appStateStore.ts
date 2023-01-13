@@ -27,6 +27,11 @@ export function isAtSaveFromSimulation(
 ): s is SaveSlotsFromSimulation {
   return s.length === 3 && s[2] === "load";
 }
+export function simulationIsLoaded(
+  s: AppUiState
+): s is InSimulation | SaveSlotsFromSimulation {
+  return s.length >= 2 && s[1] !== "load";
+}
 export function toNewSimulation(s: AtTitle): InSimulation {
   const store = makeSimulationStore();
   store.loadSave(blankSave());
