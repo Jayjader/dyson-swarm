@@ -15,7 +15,10 @@
 </button>
 
 <style>
+  button {
+    min-height: 3rem;
+  }
   .meta {
-    max-width: 12ch;
+    max-width: 10ch;
   }
 </style>
