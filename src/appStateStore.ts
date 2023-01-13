@@ -83,6 +83,15 @@ function backToSimulation(stack: SaveSlotsFromSimulation): InSimulation {
   return stack;
 }
 
+function loadSaveInSimulation(
+  stack: SaveSlotsFromSimulation,
+  saveState: SaveState
+): InSimulation {
+  stack[1].loadSave(saveState);
+  stack.pop();
+  // @ts-ignore
+  return stack;
+}
 export function exitToTitle(stack: SaveSlotsFromSimulation): AtTitle {
   stack.pop();
   stack.pop();
@@ -110,6 +119,10 @@ export const uiStore = {
   closeSaveSlotsInSimulation: () =>
     stackStore.update((stack) =>
       backToSimulation(<SaveSlotsFromSimulation>stack)
+    ),
+  replaceRunningSimulation: (saveState: SaveState) =>
+    stackStore.update((stack) =>
+      loadSaveInSimulation(<SaveSlotsFromSimulation>stack, saveState)
     ),
   closeSimulation: () =>
     stackStore.update((stack) => exitToTitle(<SaveSlotsFromSimulation>stack)),

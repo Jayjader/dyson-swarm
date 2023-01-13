@@ -37,7 +37,6 @@
     const existingAutosave = window.localStorage.getItem(
       slotStorageKey(Slot.AUTO)()
     );
-    // debugger
     const autoSave =
       existingAutosave === null ? null : JSON.parse(existingAutosave);
     const slotNames = window.localStorage.getItem(slotStorageKey(Slot.NAMES)());
@@ -45,26 +44,23 @@
       slotNames === null
         ? []
         : [...new Set(JSON.parse(slotNames))].map((name) => ({ name }));
-    // console.debug({ autoSave, slots });
     return { autoSave, slots };
   }
 
-  function readStub(name: string): null | Save {
+  function readSave(name: string): null | SaveState {
     const data = window.localStorage.getItem(slotStorageKey(Slot.NAME)(name));
-    return data === null ? null : (JSON.parse(data) as Save);
+    return data === null
+      ? null
+      : { processors: JSON.parse(data) as Save["processors"] };
   }
 
   function writeSlotToStorage(save: Save) {
-    if (save.name === "AUTOSAVE") {
-      window.localStorage.setItem(
-        slotStorageKey(Slot.AUTO)(),
-        JSON.stringify(save.processors)
-      );
-    } else {
-      window.localStorage.setItem(
-        slotStorageKey(Slot.NAME)(save.name),
-        JSON.stringify(save.processors)
-      );
+    const formattedSave = JSON.stringify([...save.processors.values()]);
+    const saveKey = slotStorageKey(
+      save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME
+    )(save.name);
+    window.localStorage.setItem(saveKey, formattedSave);
+    if (save.name !== "AUTOSAVE") {
       const NAMES_KEY = slotStorageKey(Slot.NAMES)();
       const names = window.localStorage.getItem(NAMES_KEY);
       const namesArray = new Set(names === null ? [] : JSON.parse(names));
@@ -102,27 +98,29 @@
     saveStubs = readStubs();
   });
   $: allDisabled = slotIndex === -2;
-  $: slotIsEmpty = slotIndex === saveStubs.slots.length;
+  $: slotIsEmpty =
+    slotIndex === saveStubs.slots.length ||
+    (slotIndex === -1 && saveStubs.autoSave === null);
   $: overWriteDisabled = slotIndex === -1;
 
   let dialog = { state: "closed" } as
     | { state: "closed" }
     | { state: "warn-overwrite-on-save" }
     | { state: "warn-overwrite-on-import" }
+    | { state: "warn-discard-on-load" }
     | { state: "save" }
-    | { state: "load" }
     | { state: "import" }
     | { state: "export" }
     | { state: "delete" };
-  const dialogTransitions: Record<
+  const dialogAfterConfirm: Record<
     Exclude<typeof dialog["state"], "closed">,
     typeof dialog["state"]
   > = {
     "warn-overwrite-on-save": "save",
     "warn-overwrite-on-import": "import",
-    save: "closed",
-    load: "closed",
+    "warn-discard-on-load": "closed",
     import: "closed",
+    save: "closed",
     export: "closed",
     delete: "closed",
   };
@@ -135,16 +133,16 @@
       text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
       confirmText: "Overwrite",
     },
+    "warn-discard-on-load": {
+      text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
+      confirmText: "Discard",
+    },
     delete: {
       text: "This will delete the existing simulation data in this save slot. Delete saved data?",
       confirmText: "Overwrite",
     },
     export: { label: "File name", confirmText: "Export" },
     import: { label: "Pick file", confirmText: "Import" },
-    load: {
-      text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
-      confirmText: "Load",
-    },
     save: { label: "Save name", confirmText: "Save" },
   };
   let dialogElement;
@@ -156,9 +154,8 @@
       case "warn-overwrite-on-import":
       case "warn-overwrite-on-save":
       case "save":
+      case "warn-discard-on-load":
         dialogElement.showModal();
-        break;
-      case "load":
         break;
       case "import":
         break;
@@ -174,6 +171,19 @@
       ? "(?!" + saveStubs.slots.map((slot) => slot.name).join(")|(?!") + ")"
       : "") +
     ".+$";
+
+  function loadSave(name: string) {
+    const saveState = readSave(name);
+    if (saveState === null) {
+      /*todo: error dialog*/
+      return;
+    }
+    if (inSimulation) {
+      uiStore.replaceRunningSimulation(saveState);
+    } else {
+      uiStore.startSimulation(saveState);
+    }
+  }
 </script>
 
 <main
@@ -258,7 +268,17 @@
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      disabled={allDisabled || slotIsEmpty}>Load</button
+      disabled={allDisabled || slotIsEmpty}
+      on:click={() => {
+        if (inSimulation) {
+          dialog = { state: "warn-discard-on-load" };
+        } else {
+          loadSave(
+            slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+          );
+          dialog = { state: "closed" };
+        }
+      }}>Load</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
@@ -283,8 +303,12 @@
           writeSlotToStorage({ name, processors: simulation.processors });
           saveStubs = readStubs();
           slotIndex = -2;
+        } else if (dialog.state === "warn-discard-on-load") {
+          loadSave(
+            slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+          );
         }
-        dialog = { state: dialogTransitions[dialog.state] };
+        dialog = { state: dialogAfterConfirm[dialog.state] };
       }
     }}
   >
