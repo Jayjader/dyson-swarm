@@ -101,7 +101,9 @@
   onMount(() => {
     saveStubs = readStubs();
   });
-  $: disabled = slotIndex === -2;
+  $: allDisabled = slotIndex === -2;
+  $: slotIsEmpty = slotIndex === saveStubs.slots.length;
+  $: overWriteDisabled = slotIndex === -1;
 
   let dialog = { state: "closed" } as
     | { state: "closed" }
@@ -231,7 +233,7 @@
     {#if inSimulation}
       <button
         class="rounded border-2 border-slate-900 disabled:border-dashed"
-        {disabled}
+        disabled={allDisabled || overWriteDisabled}
         on:click={() => {
           dialog =
             saveStubs.slots.at(slotIndex) !== undefined
@@ -248,23 +250,23 @@
     {/if}
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      {disabled}>Import</button
+      disabled={allDisabled || overWriteDisabled}>Import</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      {disabled}>Delete</button
+      disabled={allDisabled || slotIsEmpty}>Delete</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      {disabled}>Load</button
+      disabled={allDisabled || slotIsEmpty}>Load</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      {disabled}>Export</button
+      disabled={allDisabled || slotIsEmpty}>Export</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
-      {disabled}>Clone</button
+      disabled={allDisabled || slotIsEmpty}>Clone</button
     >
   </div>
   <dialog
