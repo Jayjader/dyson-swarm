@@ -102,6 +102,76 @@
     saveStubs = readStubs();
   });
   $: disabled = slotIndex === -2;
+
+  let dialog = { state: "closed" } as
+    | { state: "closed" }
+    | { state: "warn-overwrite-on-save" }
+    | { state: "warn-overwrite-on-import" }
+    | { state: "save" }
+    | { state: "load" }
+    | { state: "import" }
+    | { state: "export" }
+    | { state: "delete" };
+  const dialogTransitions: Record<
+    Exclude<typeof dialog["state"], "closed">,
+    typeof dialog["state"]
+  > = {
+    "warn-overwrite-on-save": "save",
+    "warn-overwrite-on-import": "import",
+    save: "closed",
+    load: "closed",
+    import: "closed",
+    export: "closed",
+    delete: "closed",
+  };
+  const dialogContent = {
+    "warn-overwrite-on-import": {
+      text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
+      confirmText: "Overwrite",
+    },
+    "warn-overwrite-on-save": {
+      text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
+      confirmText: "Overwrite",
+    },
+    delete: {
+      text: "This will delete the existing simulation data in this save slot. Delete saved data?",
+      confirmText: "Overwrite",
+    },
+    export: { label: "File name", confirmText: "Export" },
+    import: { label: "Pick file", confirmText: "Import" },
+    load: {
+      text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
+      confirmText: "Load",
+    },
+    save: { label: "Save name", confirmText: "Save" },
+  };
+  let dialogElement;
+  $: {
+    console.debug({ dialog });
+    switch (dialog.state) {
+      case "closed":
+        break;
+      case "warn-overwrite-on-import":
+      case "warn-overwrite-on-save":
+      case "save":
+        dialogElement.showModal();
+        break;
+      case "load":
+        break;
+      case "import":
+        break;
+      case "export":
+        break;
+      case "delete":
+        break;
+    }
+  }
+  $: saveNamePattern =
+    "^" +
+    (saveStubs.slots.length > 0
+      ? "(?!" + saveStubs.slots.map((slot) => slot.name).join(")|(?!") + ")"
+      : "") +
+    ".+$";
 </script>
 
 <main
@@ -163,13 +233,12 @@
         class="rounded border-2 border-slate-900 disabled:border-dashed"
         {disabled}
         on:click={() => {
-          const name = "a test save -=#=- " + String(Math.random());
-          writeSlotToStorage({
-            name,
-            processors: simulation.processors,
-          });
-          saveStubs.slots.push({ name });
-          slotIndex = -2;
+          dialog =
+            saveStubs.slots.at(slotIndex) !== undefined
+              ? {
+                  state: "warn-overwrite-on-save",
+                }
+              : { state: "save" };
         }}>Save</button
       >
     {:else}
@@ -198,6 +267,60 @@
       {disabled}>Clone</button
     >
   </div>
+  <dialog
+    class="rounded border-2 border-slate-900"
+    bind:this={dialogElement}
+    on:close={(closeEvent) => {
+      const playerCommand = closeEvent.target.returnValue;
+      if (playerCommand === "cancel") {
+        dialog = { state: "closed" };
+      } else {
+        console.debug({ closeEvent, playerCommand });
+        if (dialog.state === "save") {
+          const name = closeEvent.target.firstChild.elements["saveName"].value;
+          writeSlotToStorage({ name, processors: simulation.processors });
+          saveStubs = readStubs();
+          slotIndex = -2;
+        }
+        dialog = { state: dialogTransitions[dialog.state] };
+      }
+    }}
+  >
+    <form method="dialog">
+      {#if dialog.state !== "closed"}
+        {#if dialogContent[dialog.state].text}
+          <p>{dialogContent[dialog.state].text}</p>
+        {:else if dialogContent[dialog.state].label}
+          <label
+            >{dialogContent[dialog.state].label}:<input
+              class="rounded border-2 border-slate-900 px-2"
+              name={dialog.state === "save" ? "saveName" : "fileName"}
+              type={dialog.state === "save" ? "text" : "file"}
+              title={dialog.state === "save"
+                ? "Cannot be the same as an existing save name"
+                : ""}
+              required
+              pattern={saveNamePattern}
+              autocomplete="off"
+              spellcheck="false"
+              autocorrect="off"
+            /></label
+          >
+        {/if}
+        <div class="flex flex-row justify-between gap-2">
+          <button
+            class="my-2 rounded border-2 border-slate-900 px-2"
+            value="confirm">{dialogContent[dialog.state].confirmText}</button
+          >
+          <button
+            class="my-2 rounded border-2 border-slate-900 px-2"
+            value="cancel"
+            formnovalidate>Cancel</button
+          >
+        </div>
+      {/if}
+    </form>
+  </dialog>
 </main>
 
 <style>
