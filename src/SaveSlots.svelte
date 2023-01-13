@@ -307,17 +307,23 @@
         dialog = { state: "closed" };
       } else {
         console.debug({ closeEvent, playerCommand });
-        if (dialog.state === "save") {
-          const name = closeEvent.target.firstChild.elements["saveName"].value;
-          writeSlotToStorage({ name, processors: simulation.processors });
-          saveStubs = readStubs();
-          slotIndex = -2;
-        } else if (dialog.state === "warn-discard-on-load") {
-          loadSave(
-            slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
-          );
-        } else if (dialog.state === "warn-discard-on-close") {
-          uiStore.closeSimulation();
+        switch (dialog.state) {
+          case "save": {
+            const name =
+              closeEvent.target.firstChild.elements["saveName"].value;
+            writeSlotToStorage({ name, processors: simulation.processors });
+            saveStubs = readStubs();
+            slotIndex = -2;
+            break;
+          }
+          case "warn-discard-on-load":
+            loadSave(
+              slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+            );
+            break;
+          case "warn-discard-on-close":
+            uiStore.closeSimulation();
+            break;
         }
         dialog = { state: dialogAfterConfirm[dialog.state] };
       }
