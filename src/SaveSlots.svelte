@@ -131,9 +131,11 @@
       {#if slotIndex === -2}Choose a save slot{:else}Choose an action{/if}
     </h2>
   </header>
-  <div class="m-2 flex flex-row flex-wrap justify-center gap-2">
+  <div
+    class="m-2 flex flex-row flex-wrap justify-center gap-2 overflow-y-scroll"
+  >
     <button
-      class:focus={slotIndex === -1}
+      class:chosen={slotIndex === -1}
       class={"w-full flex-grow rounded-xl border-2 border-slate-900 font-mono" +
         (saveStubs.autoSave !== null ? " bg-stone-400" : "")}
       on:click={selectSlot.bind(this, -1)}
@@ -143,13 +145,13 @@
     <hr class="basis-2/3 rounded border-2 border-slate-900" />
     {#each saveStubs.slots as save, i}
       <button
-        class:focus={slotIndex === i}
+        class:chosen={slotIndex === i}
         class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900 bg-stone-400"
         on:click={selectSlot.bind(this, i)}>{save.name}</button
       >
     {/each}
     <button
-      class:focus={slotIndex === saveStubs.slots.length}
+      class:chosen={slotIndex === saveStubs.slots.length}
       class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900"
       on:click={selectSlot.bind(this, saveStubs.slots.length)}
       >(New Slot)</button
@@ -207,7 +209,7 @@
   button {
     min-height: 4rem;
   }
-  button.focus {
+  button.chosen {
     box-shadow: inset 0 0 0.75rem 0.5rem #0f172a /*slate-900*/;
   }
 </style>
