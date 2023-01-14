@@ -351,9 +351,14 @@
             break;
           }
           case "import": {
+            // todo: progress/loading dialog (using {#await}), and delete save only when loading new save succeeds
+            if (slotIndex < saveStubs.slots.length) {
+              deleteSave(
+                slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+              );
+            }
             const fileData =
               closeEvent.target.firstChild.elements["fileName"].files[0];
-            // todo: progress/loading dialog (using {#await})
             fileData.text().then((data) => {
               writeSlotToStorage({
                 name: fileData.name,
@@ -365,6 +370,11 @@
             break;
           }
           case "save": {
+            if (slotIndex < saveStubs.slots.length) {
+              deleteSave(
+                slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+              );
+            }
             const name =
               closeEvent.target.firstChild.elements["saveName"].value;
             writeSlotToStorage({ name, processors: simulation.processors });
@@ -379,12 +389,6 @@
             break;
           case "warn-discard-on-close":
             uiStore.closeSimulation();
-            break;
-          case "warn-overwrite-on-import":
-            deleteSave(
-              slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
-            );
-            saveStubs = readStubs();
             break;
           case "delete":
             deleteSave(
