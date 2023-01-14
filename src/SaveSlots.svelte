@@ -353,17 +353,15 @@
           case "import": {
             const fileData =
               closeEvent.target.firstChild.elements["fileName"].files[0];
-            const saveState = { name: fileData.name };
-            const reader = new FileReader();
-            reader.onload = (event) => {
-              saveState.processors = parseProcessors(
-                String(event.target.result)
-              );
-              writeSlotToStorage(saveState);
+            // todo: progress/loading dialog (using {#await})
+            fileData.text().then((data) => {
+              writeSlotToStorage({
+                name: fileData.name,
+                processors: parseProcessors(data),
+              });
               slotIndex = -2;
               saveStubs = readStubs();
-            };
-            reader.readAsText(fileData);
+            });
             break;
           }
           case "save": {
