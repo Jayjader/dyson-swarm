@@ -381,6 +381,11 @@
             uiStore.closeSimulation();
             break;
           case "warn-overwrite-on-import":
+            deleteSave(
+              slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
+            );
+            saveStubs = readStubs();
+            break;
           case "delete":
             deleteSave(
               slotIndex === -1 ? "AUTOSAVE" : saveStubs.slots[slotIndex].name
