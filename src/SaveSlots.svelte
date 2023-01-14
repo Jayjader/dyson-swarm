@@ -331,7 +331,7 @@
     >
   </div>
   <dialog
-    class="rounded border-2 border-slate-900"
+    class="border-2 border-slate-900"
     bind:this={dialogElement}
     on:close={(closeEvent) => {
       const playerCommand = closeEvent.target.returnValue;
