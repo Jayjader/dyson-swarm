@@ -133,7 +133,9 @@ export const SUBSCRIPTIONS = {
     "command-trip-circuit-breaker",
     "command-set-working-count",
     "working-count-set",
+    "command-set-fabricator-queue",
     "fabricator-queue-set",
+    "command-clear-fabricator-job",
   ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
