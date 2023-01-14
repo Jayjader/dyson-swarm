@@ -14,13 +14,13 @@
     {/each}
   </ol>
 {:else}
-  <figure class="flex flex-row flex-wrap items-center">
+  <figure class="flex flex-row flex-wrap items-center justify-between p-0.5">
     <img
       src={buildOrder === undefined ? "./empty.png" : ICON[buildOrder.building]}
       alt={buildOrder?.building ?? "Empty slot"}
       title={buildOrder?.building ?? "None"}
-      class="mx-auto"
+      class="mr-auto rounded border-2 border-slate-900"
     />
-    <figcaption class="mx-auto">{buildOrder?.building ?? "None"}</figcaption>
+    <figcaption class="ml-auto">{buildOrder?.building ?? "None"}</figcaption>
   </figure>
 {/if}

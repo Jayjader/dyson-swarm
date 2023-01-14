@@ -112,19 +112,18 @@
     </h3>
     {#if $mode === "read-only"}
       <button
-        class="my-2 border-2 border-indigo-300 px-2 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
+        class="my-2 rounded border-2 border-indigo-300 px-2 text-indigo-300 hover:bg-stone-700 hover:text-indigo-300 active:bg-stone-900 active:text-indigo-300"
         on:click={enterEdit}
       >
         Edit
       </button>
     {/if}
   </div>
-  <ol class="col-start-2 row-start-2 mx-1 flex flex-col gap-1">
+  <ol class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1">
     {#each queue as buildOrder, i (buildOrder)}
       <BuildQueueItem mode={$mode} isRepeat={isRepeat(buildOrder)}>
         {#if $mode === "remove-build-order" && !isRepeat(buildOrder)}
           <button
-            style="width: 100%"
             class="hover:bg-rose-800"
             on:click={uiState.removeBuildOrder.bind(this, i)}
           >

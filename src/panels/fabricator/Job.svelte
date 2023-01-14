@@ -88,7 +88,7 @@
 >
   <div class="flex flex-row justify-around gap-2 self-stretch">
     <button
-      class="my-1 rounded border-2 border-stone-400 px-2 disabled:text-stone-600"
+      class="my-1 ml-1 rounded border-2 border-stone-400 disabled:text-stone-600"
       on:click={() => {
         const busEvent = {
           tag: "command-clear-fabricator-job",
