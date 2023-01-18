@@ -1,12 +1,3 @@
-import type { Id, Processor } from "./processes";
-import type { SubscriptionsFor } from "./index";
-import {
-  broadcastEvent,
-  insertProcessor,
-  loadSave,
-  processUntilSettled,
-} from "./index";
-import type { BusEvent as BusEvent, Events } from "./events";
 import {
   Construct,
   constructionCosts,
@@ -14,65 +5,57 @@ import {
   tickConsumption,
   tickProduction,
 } from "../gameRules";
-import { createStorage } from "./processes/storage";
+import { isEditing, type Pause } from "../hud/types";
+import type { BusEvent as BusEvent, Events } from "./events";
+import {
+  broadcastEvent,
+  insertProcessor,
+  loadSave,
+  processUntilSettled,
+  type SaveState,
+} from "./index";
+import type { Id, Processor } from "./processes";
 import { type Clock, createClock } from "./processes/clock";
-import type { PowerGrid } from "./processes/powerGrid";
-import { createPowerGrid } from "./processes/powerGrid";
-import { createMinerManager, type MinerManager } from "./processes/miner";
-import { createPlanet } from "./processes/planet";
-import { createRefinerManager, type RefinerManager } from "./processes/refiner";
-import { createStar } from "./processes/star";
 import {
   type CollectorManager,
   createCollectorManager,
 } from "./processes/collector";
-import {
-  createFactoryManager,
-  type SatelliteFactoryManager,
-} from "./processes/satFactory";
-import {
-  createLauncherManager,
-  type LauncherManager,
-} from "./processes/launcher";
-import { createSwarm } from "./processes/satelliteSwarm";
+import { createMemoryStream, type EventStream } from "./processes/eventStream";
 import {
   createFabricator,
   type Fabricator,
   getFabricator,
 } from "./processes/fabricator";
-import { createMemoryStream, type EventStream } from "./processes/eventStream";
-import { isEditing, type Pause } from "../hud/types";
+import {
+  createLauncherManager,
+  type LauncherManager,
+} from "./processes/launcher";
+import { createMinerManager, type MinerManager } from "./processes/miner";
+import { createPlanet } from "./processes/planet";
+import type { PowerGrid } from "./processes/powerGrid";
+import { createPowerGrid } from "./processes/powerGrid";
+import { createRefinerManager, type RefinerManager } from "./processes/refiner";
+import { createSwarm } from "./processes/satelliteSwarm";
+import {
+  createFactoryManager,
+  type SatelliteFactoryManager,
+} from "./processes/satFactory";
+import { createStar } from "./processes/star";
+import { createStorage } from "./processes/storage";
+import type { SubscriptionsFor } from "./subscriptions";
 
-function emptySave() {
-  return { processors: [] };
+function emptySave(): SaveState {
+  return {
+    processors: [],
+    stream: {
+      id: "stream-0",
+      tag: "stream",
+      incoming: [],
+      data: { unfinishedTick: 0, received: [] },
+    },
+  };
 }
 describe("event bus", () => {
-  test.each<BusEvent[][]>([
-    [[{ tag: "outside-clock-tick", timeStamp: 0 }]],
-    [
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "outside-clock-tick", timeStamp: 2 },
-        { tag: "outside-clock-tick", timeStamp: 3 },
-      ],
-    ],
-    [
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "simulation-clock-tick", tick: 1 },
-        { tag: "outside-clock-tick", timeStamp: 2 },
-      ],
-    ],
-  ])("event stream should have entire stream after processing %j", (events) => {
-    let simulation = loadSave(emptySave());
-    insertProcessor(simulation, createMemoryStream());
-    events.forEach((event) => {
-      simulation = processUntilSettled(broadcastEvent(simulation, event));
-    });
-    expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
-    ).toEqual(events as Events<SubscriptionsFor<"stream">>[]);
-  });
   test.each<BusEvent[][]>([
     [[{ tag: "outside-clock-tick", timeStamp: 0 }]],
     [
@@ -120,7 +103,9 @@ describe("event bus", () => {
         simulation = processUntilSettled(broadcastEvent(simulation, event));
       });
       expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
+        (
+          simulation.processors.get("stream-0") as EventStream
+        ).data.received.get(2)
       ).toContainEqual(
         expect.objectContaining({
           tag: "simulation-clock-play",
@@ -144,7 +129,9 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        2
+      )
     ).toContainEqual(
       expect.objectContaining({
         tag: "simulation-clock-pause",
@@ -167,7 +154,9 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        1
+      )
     ).toContainEqual(
       expect.objectContaining({
         tag: "simulation-clock-indirect-pause",
@@ -190,7 +179,9 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        1
+      )
     ).toContainEqual(
       expect.objectContaining({
         tag: "simulation-clock-indirect-resume",
@@ -224,7 +215,9 @@ describe("event bus", () => {
       );
       simulation = processUntilSettled(broadcastEvent(simulation, event));
       expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
+        (
+          simulation.processors.get("stream-0") as EventStream
+        ).data.received.get(0)
       ).not.toContainEqual(
         expect.objectContaining({
           // we're just looking at events emitted by the clock, so we can implicitly exclude all player commands (that start with "command-")
@@ -285,7 +278,9 @@ describe("event bus", () => {
       isEditing((simulation.processors.get("clock-0") as Clock).data.state)
     ).toBeTruthy();
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        1
+      )
     ).toContainEqual(
       expect.objectContaining({
         tag: "simulation-clock-editing-speed",
@@ -315,7 +310,9 @@ describe("event bus", () => {
       (simulation.processors.get(clock.id) as Clock).data.state
     ).toEqual<Pause>([{ tick: 0, speed: 30 }, "pause"]);
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        1
+      )
     ).toContainEqual({
       tag: "simulation-clock-new-speed",
       speed: 30,
@@ -339,61 +336,75 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        1
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 1 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        2
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 2 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        3
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 3 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        4
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 4 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        5
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 5 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        6
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 6 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        7
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 7 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        8
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 8 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        9
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 9 });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        10
+      )
     ).toContainEqual({ tag: "simulation-clock-tick", tick: 10 });
   });
 
-  test.each<BusEvent[][]>([
+  test.each([
     [
       [
         { tag: "outside-clock-tick", timeStamp: 0 },
         { tag: "outside-clock-tick", timeStamp: 1001 },
       ],
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "outside-clock-tick", timeStamp: 1001 },
-        { tag: "simulation-clock-tick", tick: 1 },
-      ],
+      { 1: [{ tag: "simulation-clock-tick", tick: 1 }] },
     ],
     [
       [
         { tag: "outside-clock-tick", timeStamp: 0 },
         { tag: "outside-clock-tick", timeStamp: 3001 },
       ],
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "outside-clock-tick", timeStamp: 3001 },
-        { tag: "simulation-clock-tick", tick: 1 },
-        { tag: "simulation-clock-tick", tick: 2 },
-        { tag: "simulation-clock-tick", tick: 3 },
-      ],
+      {
+        1: [{ tag: "simulation-clock-tick", tick: 1 }],
+        2: [{ tag: "simulation-clock-tick", tick: 2 }],
+        3: [{ tag: "simulation-clock-tick", tick: 3 }],
+      },
     ],
     [
       [
@@ -402,19 +413,13 @@ describe("event bus", () => {
         { tag: "outside-clock-tick", timeStamp: 1002 },
         { tag: "outside-clock-tick", timeStamp: 1003 },
       ],
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "outside-clock-tick", timeStamp: 1 },
-        { tag: "outside-clock-tick", timeStamp: 1002 },
-        { tag: "simulation-clock-tick", tick: 1 },
-        { tag: "outside-clock-tick", timeStamp: 1003 },
-      ],
+      { 1: [{ tag: "simulation-clock-tick", tick: 1 }] },
     ],
-  ])(
+  ] as const)(
     "clock in play should emit simulation tick events when outside clock has advanced one or more entire time steps %j %j",
     (events, stream) => {
       let simulation = loadSave(emptySave());
-      insertProcessor(simulation, createMemoryStream());
+      // insertProcessor(simulation, createMemoryStream());
       insertProcessor(
         simulation,
         createClock(0, "clock-0", { speed: 1, tick: 0, mode: "play" })
@@ -423,46 +428,16 @@ describe("event bus", () => {
       events.forEach((event) => {
         simulation = processUntilSettled(broadcastEvent(simulation, event));
       });
-      expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
-      ).toEqual(stream);
+      Object.entries(stream).forEach(([tick, slice]) => {
+        expect(
+          (
+            simulation.processors.get("stream-0") as EventStream
+          ).data.received.get(parseInt(tick, 10))
+          // @ts-ignore
+        ).toEqual(expect.arrayContaining(slice));
+      });
     }
   );
-  test("simulation clock ticks interleaved with outside clock ticks over 'time'", () => {
-    let simulation = loadSave(emptySave());
-    insertProcessor(simulation, createMemoryStream());
-    insertProcessor(
-      simulation,
-      createClock(0, "clock-0", { speed: 1, tick: 0, mode: "play" })
-    );
-
-    (
-      [
-        { tag: "outside-clock-tick", timeStamp: 0 },
-        { tag: "outside-clock-tick", timeStamp: 1 },
-        { tag: "outside-clock-tick", timeStamp: 1002 },
-        { tag: "outside-clock-tick", timeStamp: 1003 },
-        { tag: "outside-clock-tick", timeStamp: 3002 },
-        { tag: "outside-clock-tick", timeStamp: 3003 },
-      ] as BusEvent[]
-    ).forEach((event) => {
-      simulation = processUntilSettled(broadcastEvent(simulation, event));
-    });
-
-    expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
-    ).toEqual([
-      { tag: "outside-clock-tick", timeStamp: 0 },
-      { tag: "outside-clock-tick", timeStamp: 1 },
-      { tag: "outside-clock-tick", timeStamp: 1002 },
-      { tag: "simulation-clock-tick", tick: 1 },
-      { tag: "outside-clock-tick", timeStamp: 1003 },
-      { tag: "outside-clock-tick", timeStamp: 3002 },
-      { tag: "simulation-clock-tick", tick: 2 },
-      { tag: "simulation-clock-tick", tick: 3 },
-      { tag: "outside-clock-tick", timeStamp: 3003 },
-    ]);
-  });
 
   test("star should output flux from processing simulation clock tick", () => {
     let simulation = loadSave(emptySave());
@@ -472,9 +447,10 @@ describe("event bus", () => {
       broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 1 })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        2
+      )
     ).toEqual([
-      { tag: "simulation-clock-tick", tick: 1 },
       expect.objectContaining({ tag: "star-flux-emission", receivedTick: 2 }),
     ]);
   });
@@ -493,10 +469,10 @@ describe("event bus", () => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
     });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        3
+      )
     ).toEqual([
-      { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
-      { tag: "simulation-clock-tick", tick: 2 },
       {
         tag: "produce",
         resource: Resource.ELECTRICITY,
@@ -519,11 +495,10 @@ describe("event bus", () => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
     });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        3
+      )
     ).toEqual([
-      { tag: "simulation-clock-tick", tick: 1 },
-      { tag: "star-flux-emission", flux: 1, receivedTick: 2 },
-      { tag: "simulation-clock-tick", tick: 2 },
       { tag: "star-flux-emission", flux: 1, receivedTick: 3 },
       {
         tag: "produce",
@@ -582,7 +557,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "supply",
       resource: Resource.ELECTRICITY,
       amount: 1,
@@ -603,7 +578,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(2)).toContainEqual({
       tag: "draw",
       resource: Resource.ELECTRICITY,
       amount: tickConsumption.miner.get(Resource.ELECTRICITY),
@@ -631,7 +606,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(5)).toContainEqual({
       tag: "mine-planet-surface",
       minerCount: 1,
       receivedTick: 5,
@@ -659,7 +634,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(5)).toContainEqual({
       tag: "mine-planet-surface",
       minerCount: 1,
       receivedTick: 5,
@@ -684,7 +659,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "produce",
       resource: Resource.ORE,
       amount: tickProduction.miner.get(Resource.ORE),
@@ -747,7 +722,7 @@ describe("event bus", () => {
         simulation.processors.get("stream-0") as Processor & {
           tag: `stream`;
         }
-      ).data.received
+      ).data.received.get(3)
     ).toContainEqual({
       tag: "supply",
       resource,
@@ -776,14 +751,14 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(2)).toContainEqual({
       tag: "draw",
       resource: Resource.ELECTRICITY,
       amount: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!,
       forId: refiner.id,
       receivedTick: 2,
     });
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(2)).toContainEqual({
       tag: "draw",
       resource: Resource.ORE,
       amount: tickConsumption[Construct.REFINER].get(Resource.ORE)!,
@@ -822,7 +797,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(16)).toContainEqual({
       tag: "produce",
       resource: Resource.METAL,
       amount: tickProduction[Construct.REFINER].get(Resource.METAL),
@@ -856,7 +831,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(7)).toContainEqual({
       tag: "produce",
       resource: Resource.METAL,
       amount: tickProduction[Construct.REFINER].get(Resource.METAL),
@@ -875,14 +850,14 @@ describe("event bus", () => {
     const stream = simulation.processors.get("stream-0")! as Processor & {
       tag: "stream";
     };
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "draw",
       resource: Resource.ELECTRICITY,
       amount: tickConsumption.factory.get(Resource.ELECTRICITY)!,
       receivedTick: 3,
       forId: factory.id,
     });
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "draw",
       resource: Resource.METAL,
       amount: tickConsumption.factory.get(Resource.METAL)!,
@@ -917,7 +892,7 @@ describe("event bus", () => {
     const stream = simulation.processors.get("stream-0")! as Processor & {
       tag: "stream";
     };
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "produce",
       resource: Resource.PACKAGED_SATELLITE,
       amount: tickProduction.factory.get(Resource.PACKAGED_SATELLITE),
@@ -950,7 +925,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(4)).toContainEqual({
       tag: "produce",
       resource: Resource.PACKAGED_SATELLITE,
       amount: tickProduction.factory.get(Resource.PACKAGED_SATELLITE),
@@ -970,7 +945,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "draw",
       resource: Resource.ELECTRICITY,
       amount: tickConsumption.launcher.get(Resource.ELECTRICITY),
@@ -990,7 +965,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "draw",
       resource: Resource.PACKAGED_SATELLITE,
       amount: tickConsumption.launcher.get(Resource.PACKAGED_SATELLITE),
@@ -1019,7 +994,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(3)).toContainEqual({
       tag: "launch-satellite",
       receivedTick: 3,
     });
@@ -1080,7 +1055,7 @@ describe("event bus", () => {
     const stream = ([...simulation.processors.values()] as Processor[]).find(
       (p): p is Processor & { tag: `stream` } => p.id === "stream-0"
     )!;
-    expect(stream.data.received).toContainEqual({
+    expect(stream.data.received.get(4)).toContainEqual({
       tag: "satellite-flux-reflection",
       flux: tickProduction.satellite.get("flux")! * count,
       receivedTick: 4,
@@ -1100,10 +1075,10 @@ describe("event bus", () => {
       simulation = processUntilSettled(broadcastEvent(simulation, event));
     });
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        3
+      )
     ).toEqual([
-      { tag: "satellite-flux-reflection", flux: 1, receivedTick: 2 },
-      { tag: "simulation-clock-tick", tick: 2 },
       {
         tag: "produce",
         resource: Resource.ELECTRICITY,
@@ -1153,17 +1128,18 @@ describe("event bus", () => {
         broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 5 })
       );
       expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
-      ).toEqual([
-        { tag: "simulation-clock-tick", tick: 5 },
-        ...[...constructionCosts[construct]].map(([resource, amount]) => ({
+        (
+          simulation.processors.get("stream-0") as EventStream
+        ).data.received.get(6)
+      ).toEqual(
+        [...constructionCosts[construct]].map(([resource, amount]) => ({
           tag: "draw",
           resource,
           amount,
           forId: fabricator.id,
           receivedTick: 6,
-        })),
-      ]);
+        }))
+      );
     }
   );
   test.each<Construct>([...Object.keys(constructionCosts)] as Construct[])(
@@ -1188,7 +1164,9 @@ describe("event bus", () => {
         broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 5 })
       );
       expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
+        (
+          simulation.processors.get("stream-0") as EventStream
+        ).data.received.get(6)
       ).toContainEqual({
         tag: "construct-fabricated",
         construct,
@@ -1271,7 +1249,9 @@ describe("event bus", () => {
       broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 48 })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        48
+      )
     ).toContainEqual({ tag: "circuit-breaker-tripped", onTick: 48 });
     const gridUpdated = simulation.processors.get(grid.id) as PowerGrid;
     expect(gridUpdated.data.breakerTripped).toBeTruthy();
@@ -1303,7 +1283,9 @@ describe("event bus", () => {
       broadcastEvent(simulation, { tag: "simulation-clock-tick", tick: 48 })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        48
+      )
     ).not.toContainEqual({
       tag: "supply",
       resource: Resource.ELECTRICITY,
@@ -1328,7 +1310,9 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        78
+      )
     ).toContainEqual({ tag: "circuit-breaker-reset", onTick: 78 });
     expect(
       (simulation.processors.get("power grid-0") as PowerGrid).data
@@ -1349,7 +1333,9 @@ describe("event bus", () => {
       })
     );
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        78
+      )
     ).toContainEqual({ tag: "circuit-breaker-tripped", onTick: 78 });
     expect(
       (simulation.processors.get("power grid-0") as PowerGrid).data
@@ -1391,7 +1377,9 @@ describe("event bus", () => {
         | LauncherManager;
       expect(manager.data.working).toEqual(0);
       expect(
-        (simulation.processors.get("stream-0") as EventStream).data.received
+        (
+          simulation.processors.get("stream-0") as EventStream
+        ).data.received.get(2)
       ).toContainEqual({
         tag: "working-count-set",
         construct,
@@ -1418,7 +1406,9 @@ describe("event bus", () => {
       (simulation.processors.get(fabricator.id) as Fabricator).data.queue
     ).toEqual([{ building: Construct.SOLAR_COLLECTOR }]);
     expect(
-      (simulation.processors.get("stream-0") as EventStream).data.received
+      (simulation.processors.get("stream-0") as EventStream).data.received.get(
+        17777778
+      )
     ).toContainEqual({
       tag: "fabricator-queue-set",
       queue: [{ building: Construct.SOLAR_COLLECTOR }],

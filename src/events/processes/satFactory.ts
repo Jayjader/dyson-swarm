@@ -1,12 +1,13 @@
-import type { BusEvent, Events } from "../events";
-import type { EventProcessor } from "./index";
-import type { Simulation, SubscriptionsFor } from "../index";
 import {
   Construct,
   Resource,
   tickConsumption,
   tickProduction,
 } from "../../gameRules";
+import type { BusEvent, Events } from "../events";
+import type { Simulation } from "../index";
+import type { SubscriptionsFor } from "../subscriptions";
+import type { EventProcessor } from "./index";
 
 export type SatelliteFactoryManager = EventProcessor<
   "factory",

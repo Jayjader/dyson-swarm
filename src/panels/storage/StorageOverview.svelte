@@ -1,12 +1,14 @@
 <script lang="ts">
-  import Storage from "./Storage.svelte";
-  import { Resource } from "../../gameRules";
-  import { getClock } from "../../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE } from "../../events";
+  import { getClock } from "../../events/processes/clock";
+  import {
+    getEventStream,
+    getTickEvents,
+  } from "../../events/processes/eventStream";
+  import { Resource } from "../../gameRules";
   import { getPrimitive } from "../../hud/types";
-  import type { Events } from "../../events/events";
-  import { getEventStream } from "../../events/processes/eventStream";
+  import Storage from "./Storage.svelte";
 
   const watt = "W";
   const wattTick = `${watt}t`;
@@ -23,38 +25,33 @@
       [Resource.ORE, { produce: 0, supply: 0 }],
       [Resource.METAL, { produce: 0, supply: 0 }],
       [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
-    ] as const),
+    ]),
   };
   const unsubSim = simulation.subscribe((sim) => {
-    const stream = getEventStream(sim);
     const currentTick = getPrimitive(getClock(sim)).tick;
     if (currentTick > last.tick) {
-      const start = stream.findIndex(
-        (e) => e?.receivedTick === currentTick - 1
-      );
-      last.resources = stream.slice(start).reduce(
-        (accu, e) => {
-          if (!["produce", "supply"].includes(e.tag)) {
+      const stream = getTickEvents(getEventStream(sim), currentTick);
+      if (stream !== undefined) {
+        const receivedResources = stream.reduce(
+          (accu, e) => {
+            if (e.tag !== "produce" && e.tag !== "supply") {
+              return accu;
+            }
+            const previous = accu.get(e.resource)!;
+            previous[e.tag] += e.amount;
             return accu;
-          }
-          if (
-            (e as Events<"produce" | "supply">).receivedTick !== currentTick
-          ) {
-            return accu;
-          }
-          const previous = accu.get(e.resource as Resource);
-          previous[e.tag] += e.amount;
-          return accu;
-        },
-        new Map([
-          [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
-          [Resource.ORE, { produce: 0, supply: 0 }],
-          [Resource.METAL, { produce: 0, supply: 0 }],
-          [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
-        ])
-      );
-      last.tick = currentTick;
-      last = last;
+          },
+          new Map([
+            [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
+            [Resource.ORE, { produce: 0, supply: 0 }],
+            [Resource.METAL, { produce: 0, supply: 0 }],
+            [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
+          ])
+        );
+        last.tick = currentTick;
+        last.resources = receivedResources;
+        last = last; // trigger svelte reactivity
+      }
     }
   });
   onDestroy(unsubSim);

@@ -1,6 +1,7 @@
-import type { BusEvent, Events } from "../events";
 import { Resource } from "../../gameRules";
-import type { SubscriptionsFor, Simulation } from "../index";
+import type { BusEvent, Events } from "../events";
+import type { Simulation } from "../index";
+import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
 
 export type PowerGrid = EventProcessor<

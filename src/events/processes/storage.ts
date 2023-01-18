@@ -1,6 +1,7 @@
 import type { Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { SubscriptionsFor, Simulation } from "../index";
+import type { Simulation } from "../index";
+import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor, Id } from "./index";
 
 export type Storage<R extends string> = EventProcessor<

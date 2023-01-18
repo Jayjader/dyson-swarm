@@ -1,7 +1,5 @@
-import { blankSave, makeSimulationStore, type SaveState } from "./events";
 import { writable } from "svelte/store";
-import { createMemoryStream } from "./events/processes/eventStream";
-import { createClock } from "./events/processes/clock";
+import { makeSimulationStore, type SaveState } from "./events";
 
 type AtTitle = ["title"];
 type SaveSlotsFromTitle = [...AtTitle, "load"];
@@ -34,11 +32,7 @@ export function simulationIsLoaded(
 }
 export function toNewSimulation(s: AtTitle): InSimulation {
   const store = makeSimulationStore();
-  store.loadSave(blankSave());
-  store.insertProcessors(
-    createMemoryStream(),
-    createClock(window.performance.now(), "clock-0", { mode: "pause" })
-  );
+  store.loadNew(window.performance.now());
   // @ts-ignore
   s.push(store);
   // @ts-ignore

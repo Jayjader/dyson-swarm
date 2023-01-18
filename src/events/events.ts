@@ -1,10 +1,12 @@
-import type { Id } from "./processes";
-import type { Resource, Construct } from "../gameRules";
+import type { Construct, Resource } from "../gameRules";
 import type { BuildOrder } from "../types";
+import type { Id } from "./processes";
 
 type TimeStamped = { timeStamp: DOMHighResTimeStamp };
-type AfterTick = { afterTick: number };
-type BeforeTick = { beforeTick: number };
+export type AfterTick = { afterTick: number };
+export type BeforeTick = { beforeTick: number };
+export type ReceivedTick = { receivedTick: number };
+
 export type BusEvent =
   | ({ tag: "outside-clock-tick" } & TimeStamped)
   | { tag: "simulation-clock-tick"; tick: number }
@@ -27,31 +29,28 @@ export type BusEvent =
     } & AfterTick &
       TimeStamped)
   | ({ tag: "simulation-clock-new-speed"; speed: number } & BeforeTick)
-  | { tag: "star-flux-emission"; flux: number; receivedTick: number }
-  | { tag: "mine-planet-surface"; minerCount: number; receivedTick: number }
-  | {
+  | ({ tag: "star-flux-emission"; flux: number } & ReceivedTick)
+  | ({ tag: "mine-planet-surface"; minerCount: number } & ReceivedTick)
+  | ({
       tag: "produce";
       resource: Resource;
       amount: number;
-      receivedTick: number;
-    }
-  | {
+    } & ReceivedTick)
+  | ({
       tag: "draw";
       resource: Resource;
       amount: number;
       forId: Id;
-      receivedTick: number;
-    }
-  | {
+    } & ReceivedTick)
+  | ({
       tag: "supply";
       resource: Resource;
       amount: number;
       toId: Id;
-      receivedTick: number;
-    }
-  | { tag: "launch-satellite"; receivedTick: number }
-  | { tag: "satellite-flux-reflection"; flux: number; receivedTick: number }
-  | { tag: "construct-fabricated"; construct: Construct; receivedTick: number }
+    } & ReceivedTick)
+  | ({ tag: "launch-satellite" } & ReceivedTick)
+  | ({ tag: "satellite-flux-reflection"; flux: number } & ReceivedTick)
+  | ({ tag: "construct-fabricated"; construct: Construct } & ReceivedTick)
   | { tag: "circuit-breaker-tripped"; onTick: number }
   | ({ tag: "command-reset-circuit-breaker" } & TimeStamped & AfterTick)
   | { tag: "circuit-breaker-reset"; onTick: number }

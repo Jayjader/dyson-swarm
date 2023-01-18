@@ -1,6 +1,7 @@
-import type { EventProcessor } from "./index";
 import type { BusEvent, Events } from "../events";
-import type { SubscriptionsFor, Simulation } from "../index";
+import type { Simulation } from "../index";
+import type { SubscriptionsFor } from "../subscriptions";
+import type { EventProcessor } from "./index";
 
 export type SatelliteSwarm = EventProcessor<
   "swarm",
@@ -27,7 +28,9 @@ export function createSwarm(
   };
 }
 
-export function swarmProcess(swarm: SatelliteSwarm): [SatelliteSwarm, BusEvent[]] {
+export function swarmProcess(
+  swarm: SatelliteSwarm
+): [SatelliteSwarm, BusEvent[]] {
   let event,
     emitted = [] as BusEvent[];
   while ((event = swarm.incoming.shift())) {

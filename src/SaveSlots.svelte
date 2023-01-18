@@ -1,9 +1,9 @@
 <script lang="ts">
-  import NavButton from "./NavButton.svelte";
   import { getContext, onDestroy, onMount } from "svelte";
   import { APP_UI_CONTEXT, simulationIsLoaded } from "./appStateStore";
   import type { SaveState } from "./events";
-  import type { Processor } from "./events/processes";
+  import { generateSave } from "./events";
+  import NavButton from "./NavButton.svelte";
 
   enum Slot {
     AUTO = "auto",
@@ -50,17 +50,20 @@
 
   function readSave(name: string): null | SaveState {
     const data = window.localStorage.getItem(slotStorageKey(Slot.NAME)(name));
-    return data === null ? null : { processors: parseProcessors(data) };
+    return data === null ? null : parseProcessors(data);
   }
 
-  function parseProcessors(formatted: string): Processor[] {
-    return JSON.parse(formatted) as Processor[];
+  function parseProcessors(formatted: string): SaveState {
+    return JSON.parse(formatted) as SaveState;
   }
-  function formatProcessors(procs: Processor[]): string {
+  function formatProcessors(procs: SaveState): string {
     return JSON.stringify(procs);
   }
   function writeSlotToStorage(save: Save) {
-    const formattedSave = formatProcessors([...save.processors.values()]);
+    const formattedSave = formatProcessors({
+      stream: save.stream,
+      processors: save.processors,
+    });
     const saveKey = slotStorageKey(
       save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME
     )(save.name);
@@ -90,7 +93,11 @@
 
   function writeSaveDataToBlob(save: SaveStub & SaveState): void {
     const machineDrivenLink = document.createElement("a");
-    const blobData = encodeURIComponent(formatProcessors(save.processors));
+    const formattedSave = formatProcessors({
+      stream: save.stream,
+      processors: save.processors,
+    });
+    const blobData = encodeURIComponent(formattedSave);
     machineDrivenLink.setAttribute(
       "href",
       `data:text/plain;charset=utf-8,${blobData}`
@@ -362,7 +369,7 @@
             fileData.text().then((data) => {
               writeSlotToStorage({
                 name: fileData.name,
-                processors: parseProcessors(data),
+                ...parseProcessors(data),
               });
               slotIndex = -2;
               saveStubs = readStubs();
@@ -377,7 +384,7 @@
             }
             const name =
               closeEvent.target.firstChild.elements["saveName"].value;
-            writeSlotToStorage({ name, processors: simulation.processors });
+            writeSlotToStorage({ name, ...generateSave(simulation) });
             saveStubs = readStubs();
             slotIndex = -2;
             break;

@@ -1,26 +1,30 @@
-import type { Id, Processor } from "./processes";
-import type { BusEvent, EventTag } from "./events";
+import { type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
-import { createStorage, storageProcess } from "./processes/storage";
+import type { BusEvent, EventTag } from "./events";
+import type { Id, Processor } from "./processes";
 import { clockProcess, createClock } from "./processes/clock";
-import { createPowerGrid, powerGridProcess } from "./processes/powerGrid";
-import { createMinerManager, minerProcess } from "./processes/miner";
-import { createPlanet, planetProcess } from "./processes/planet";
-import { createRefinerManager, refinerProcess } from "./processes/refiner";
-import { createStar, starProcess } from "./processes/star";
 import {
   collectorProcess,
   createCollectorManager,
 } from "./processes/collector";
-import { createFactoryManager, factoryProcess } from "./processes/satFactory";
-import { createLauncherManager, launcherProcess } from "./processes/launcher";
-import { createSwarm, swarmProcess } from "./processes/satelliteSwarm";
-import { createFabricator, fabricatorProcess } from "./processes/fabricator";
-import { writable } from "svelte/store";
 import {
   createMemoryStream,
+  type EventStream,
   memoryStreamProcess,
+  parseStream,
+  type SerializedStream,
 } from "./processes/eventStream";
+import { createFabricator, fabricatorProcess } from "./processes/fabricator";
+import { createLauncherManager, launcherProcess } from "./processes/launcher";
+import { createMinerManager, minerProcess } from "./processes/miner";
+import { createPlanet, planetProcess } from "./processes/planet";
+import { createPowerGrid, powerGridProcess } from "./processes/powerGrid";
+import { createRefinerManager, refinerProcess } from "./processes/refiner";
+import { createSwarm, swarmProcess } from "./processes/satelliteSwarm";
+import { createFactoryManager, factoryProcess } from "./processes/satFactory";
+import { createStar, starProcess } from "./processes/star";
+import { createStorage, storageProcess } from "./processes/storage";
+import { SUBSCRIPTIONS } from "./subscriptions";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -29,125 +33,9 @@ export type Simulation = {
   bus: EventBus;
   processors: Map<Id, Processor & { id: Id }>;
 };
-export const SUBSCRIPTIONS = {
-  clock: new Set([
-    "outside-clock-tick",
-    "command-simulation-clock-play",
-    "command-simulation-clock-pause",
-    "command-simulation-clock-indirect-pause",
-    "command-simulation-clock-indirect-resume",
-    "command-simulation-clock-start-editing-speed",
-    "command-simulation-clock-set-speed",
-  ] as const),
-  star: new Set(["simulation-clock-tick"] as const),
-  planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
-  collector: new Set([
-    "star-flux-emission",
-    "satellite-flux-reflection",
-    "simulation-clock-tick",
-    "construct-fabricated",
-  ] as const),
-  "power grid": new Set([
-    "simulation-clock-tick",
-    "command-reset-circuit-breaker",
-    "command-trip-circuit-breaker",
-    "produce",
-    "draw",
-  ] as const),
-  miner: new Set([
-    "simulation-clock-tick",
-    "supply",
-    "construct-fabricated",
-    "command-set-working-count",
-  ] as const),
-  [`storage-${Resource.ORE}`]: new Set([
-    "simulation-clock-tick",
-    "produce",
-    "draw",
-  ] as const),
-  [`storage-${Resource.METAL}`]: new Set([
-    "simulation-clock-tick",
-    "produce",
-    "draw",
-  ] as const),
-  [`storage-${Resource.PACKAGED_SATELLITE}`]: new Set([
-    "simulation-clock-tick",
-    "produce",
-    "draw",
-  ] as const),
-  refiner: new Set([
-    "simulation-clock-tick",
-    "supply",
-    "construct-fabricated",
-    "command-set-working-count",
-  ] as const),
-  factory: new Set([
-    "simulation-clock-tick",
-    "supply",
-    "construct-fabricated",
-    "command-set-working-count",
-  ] as const),
-  launcher: new Set([
-    "simulation-clock-tick",
-    "supply",
-    "construct-fabricated",
-    "command-set-working-count",
-  ] as const),
-  swarm: new Set([
-    "simulation-clock-tick",
-    "launch-satellite",
-    "star-flux-emission",
-  ] as const),
-  fabricator: new Set([
-    "simulation-clock-tick",
-    "supply",
-    "command-set-fabricator-queue",
-    "command-clear-fabricator-job",
-  ] as const),
-  stream: new Set([
-    "outside-clock-tick",
-    "simulation-clock-tick",
-    "command-simulation-clock-play",
-    "simulation-clock-play",
-    "command-simulation-clock-pause",
-    "simulation-clock-pause",
-    "command-simulation-clock-indirect-pause",
-    "simulation-clock-indirect-pause",
-    "command-simulation-clock-indirect-resume",
-    "simulation-clock-indirect-resume",
-    "command-simulation-clock-start-editing-speed",
-    "simulation-clock-editing-speed",
-    "command-simulation-clock-set-speed",
-    "simulation-clock-new-speed",
-    "star-flux-emission",
-    "mine-planet-surface",
-    "draw",
-    "supply",
-    "produce",
-    "launch-satellite",
-    "satellite-flux-reflection",
-    "construct-fabricated",
-    "circuit-breaker-tripped",
-    "command-reset-circuit-breaker",
-    "circuit-breaker-reset",
-    "command-trip-circuit-breaker",
-    "command-set-working-count",
-    "working-count-set",
-    "command-set-fabricator-queue",
-    "fabricator-queue-set",
-    "command-clear-fabricator-job",
-  ] as const),
-} as const;
-export type SubscriptionsFor<ProcessorTag> =
-  ProcessorTag extends keyof typeof SUBSCRIPTIONS
-    ? typeof SUBSCRIPTIONS[ProcessorTag] extends Set<infer U>
-      ? U
-      : never
-    : never;
-// export type HasSubscription<Tag extends string> =
-//   Tag extends keyof typeof SUBSCRIPTIONS ? Tag : never;
 
-export type SaveState = { processors: Processor[] };
+export type Others = Exclude<Processor, EventStream>;
+export type SaveState = { stream: SerializedStream; processors: Others[] };
 
 export function insertProcessor(sim: Simulation, p: Processor) {
   SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
@@ -229,80 +117,104 @@ export function processUntilSettled(sim: Simulation): Simulation {
   return sim;
 }
 
-export function loadSave(
-  save: SaveState,
-  options: Partial<{
-    enforce: Partial<{ clock: boolean; stream: boolean }>;
-  }> = {}
-): Simulation {
-  const flatSubs = save.processors.flatMap((p) =>
-    [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id])
-  );
+export function loadSave(save: SaveState): Simulation {
+  const stream = parseStream(save.stream);
+  const flatSubs = save.processors
+    .flatMap((p) =>
+      [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id])
+    )
+    .concat(
+      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [tag, stream.id])
+    );
   const subsByTag = flatSubs.reduce<Map<EventTag, Set<Id>>>(
     (accu, [tag, id]) => accu.set(tag, (accu.get(tag) ?? new Set()).add(id)),
     new Map()
   );
-  const simulation = {
+  const procs: Array<[Id, Processor]> = [
+    [stream.id, stream],
+    ...save.processors.map<[Id, Processor]>((p) => [p.id, p]),
+  ];
+  const processorsById = new Map(procs);
+  save.processors;
+  return {
     bus: {
       subscriptions: subsByTag,
     },
-    processors: new Map(save.processors.map((p) => [p.id, p])),
+    processors: processorsById,
   };
-  if (
-    options?.enforce?.stream &&
-    ![...simulation.processors.values()].some((p) => p.tag === "stream")
-  ) {
-    insertProcessor(simulation, createMemoryStream());
-  }
-  if (
-    options?.enforce?.clock &&
-    ![...simulation.processors.values()].some((p) => p.tag === "clock")
-  ) {
-    insertProcessor(simulation, createClock(window.performance.now()));
-  }
-  return simulation;
 }
 
 export function generateSave(sim: Simulation): SaveState {
-  return { processors: [...sim.processors.values()] };
+  const processors = [];
+  let stream!: SerializedStream;
+  for (const proc of sim.processors.values()) {
+    if (proc.tag !== "stream") {
+      processors.push(proc);
+      continue;
+    }
+    stream = {
+      data: {
+        unfinishedTick: proc.data.unfinishedTick,
+        received: [...proc.data.received],
+      },
+      tag: proc.tag,
+      id: proc.id,
+      incoming: proc.incoming,
+    };
+  }
+  console.debug({ saveStream: stream });
+  return { processors, stream: stream };
 }
 
-export function blankSave(): SaveState {
-  return {
-    processors: [
-      createPowerGrid({ stored: 22 ** 2 }),
-      createStorage(Resource.ORE),
-      createStorage(Resource.METAL, { stored: 200 }),
-      createStorage(Resource.PACKAGED_SATELLITE),
-      createStar(),
-      createPlanet(),
-      createCollectorManager({ count: 15 }),
-      createMinerManager(),
-      createRefinerManager(),
-      createFactoryManager(),
-      createLauncherManager(),
-      createSwarm(),
-      createFabricator(),
-    ],
-  };
+export function newGame(): Processor[] {
+  return [
+    createPowerGrid({ stored: 22 ** 2 }),
+    createStorage(Resource.ORE),
+    createStorage(Resource.METAL, { stored: 200 }),
+    createStorage(Resource.PACKAGED_SATELLITE),
+    createStar(),
+    createPlanet(),
+    createCollectorManager({ count: 15 }),
+    createMinerManager(),
+    createRefinerManager(),
+    createFactoryManager(),
+    createLauncherManager(),
+    createSwarm(),
+    createFabricator(),
+  ];
 }
 
 export const SIMULATION_STORE = Symbol();
 
-export function makeSimulationStore() {
+export function makeSimulationStore(): Readable<Simulation> & {
+  processUntilSettled: () => void;
+  broadcastEvent: (e: BusEvent) => void;
+  loadSave: (s: SaveState) => void;
+  loadNew: (outsideTick: DOMHighResTimeStamp) => void;
+} {
   const { subscribe, update, set } = writable<Simulation>({
     bus: { subscriptions: new Map() },
     processors: new Map(),
   });
   return {
     subscribe,
-    insertProcessors: (...processors: Processor[]) =>
-      update((sim) => {
-        processors.forEach((p) => insertProcessor(sim, p));
-        return sim;
-      }),
     processUntilSettled: () => update((sim) => processUntilSettled(sim)),
-    broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
-    loadSave: (s: SaveState) => set(loadSave(s)),
+    broadcastEvent: (e) => update((sim) => broadcastEvent(sim, e)),
+    loadSave: (s) => set(loadSave(s)),
+    loadNew: (outsideTick) => {
+      const simulation = {
+        bus: { subscriptions: new Map() },
+        processors: new Map(),
+      };
+      newGame().forEach((p) => {
+        insertProcessor(simulation, p);
+      });
+      insertProcessor(
+        simulation,
+        createClock(outsideTick, "clock-0", { mode: "pause" })
+      );
+      insertProcessor(simulation, createMemoryStream());
+      set(simulation);
+    },
   };
 }

@@ -1,19 +1,19 @@
-import type { SUBSCRIPTIONS, SubscriptionsFor } from "../index";
-import type { Events } from "../events";
 import type { Resource } from "../../gameRules";
-import type { Storage } from "./storage";
+import type { Events } from "../events";
+import type { SUBSCRIPTIONS, SubscriptionsFor } from "../subscriptions";
 import type { Clock } from "./clock";
-import type { PowerGrid } from "./powerGrid";
+import type { CollectorManager } from "./collector";
+import type { EventStream } from "./eventStream";
+import type { Fabricator } from "./fabricator";
+import type { LauncherManager } from "./launcher";
 import type { MinerManager } from "./miner";
 import type { Planet } from "./planet";
+import type { PowerGrid } from "./powerGrid";
 import type { RefinerManager } from "./refiner";
-import type { Star } from "./star";
-import type { CollectorManager } from "./collector";
-import type { SatelliteFactoryManager } from "./satFactory";
-import type { LauncherManager } from "./launcher";
 import type { SatelliteSwarm } from "./satelliteSwarm";
-import type { Fabricator } from "./fabricator";
-import type { EventStream } from "./eventStream";
+import type { SatelliteFactoryManager } from "./satFactory";
+import type { Star } from "./star";
+import type { Storage } from "./storage";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
