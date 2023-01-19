@@ -10,7 +10,7 @@
   } from "./appStateStore";
   import Simulation from "./Simulation.svelte";
   import { setContext } from "svelte";
-  import SaveSlots from "./SaveSlots.svelte";
+  import SaveSlots from "./save/SaveSlots.svelte";
 
   let uiStack: AppUiState;
   uiStore.subscribe((stack: AppUiState) => {

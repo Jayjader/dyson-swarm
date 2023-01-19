@@ -6,14 +6,8 @@ import {
   tickProduction,
 } from "../gameRules";
 import { isEditing, type Pause } from "../hud/types";
-import type { BusEvent as BusEvent, Events } from "./events";
-import {
-  broadcastEvent,
-  insertProcessor,
-  loadSave,
-  processUntilSettled,
-  type SaveState,
-} from "./index";
+import type { BusEvent as BusEvent } from "./events";
+import { broadcastEvent, insertProcessor, processUntilSettled } from "./index";
 import type { Id, Processor } from "./processes";
 import { type Clock, createClock } from "./processes/clock";
 import {
@@ -42,7 +36,7 @@ import {
 } from "./processes/satFactory";
 import { createStar } from "./processes/star";
 import { createStorage } from "./processes/storage";
-import type { SubscriptionsFor } from "./subscriptions";
+import { loadSave, type SaveState } from "../save/save";
 
 function emptySave(): SaveState {
   return {

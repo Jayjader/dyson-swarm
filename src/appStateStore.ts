@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
-import { makeSimulationStore, type SaveState } from "./events";
+import { makeSimulationStore } from "./events";
+import type {SaveState} from "./save/save";
 
 type AtTitle = ["title"];
 type SaveSlotsFromTitle = [...AtTitle, "load"];

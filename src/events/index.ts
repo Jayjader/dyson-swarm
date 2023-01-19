@@ -3,28 +3,23 @@ import { Resource } from "../gameRules";
 import type { BusEvent, EventTag } from "./events";
 import type { Id, Processor } from "./processes";
 import { clockProcess, createClock } from "./processes/clock";
-import {
-  collectorProcess,
-  createCollectorManager,
-} from "./processes/collector";
+import { collectorProcess } from "./processes/collector";
 import {
   createMemoryStream,
-  type EventStream,
   memoryStreamProcess,
-  parseStream,
-  type SerializedStream,
 } from "./processes/eventStream";
-import { createFabricator, fabricatorProcess } from "./processes/fabricator";
-import { createLauncherManager, launcherProcess } from "./processes/launcher";
-import { createMinerManager, minerProcess } from "./processes/miner";
-import { createPlanet, planetProcess } from "./processes/planet";
-import { createPowerGrid, powerGridProcess } from "./processes/powerGrid";
-import { createRefinerManager, refinerProcess } from "./processes/refiner";
-import { createSwarm, swarmProcess } from "./processes/satelliteSwarm";
-import { createFactoryManager, factoryProcess } from "./processes/satFactory";
-import { createStar, starProcess } from "./processes/star";
-import { createStorage, storageProcess } from "./processes/storage";
+import { fabricatorProcess } from "./processes/fabricator";
+import { launcherProcess } from "./processes/launcher";
+import { minerProcess } from "./processes/miner";
+import { planetProcess } from "./processes/planet";
+import { powerGridProcess } from "./processes/powerGrid";
+import { refinerProcess } from "./processes/refiner";
+import { swarmProcess } from "./processes/satelliteSwarm";
+import { factoryProcess } from "./processes/satFactory";
+import { starProcess } from "./processes/star";
+import { storageProcess } from "./processes/storage";
 import { SUBSCRIPTIONS } from "./subscriptions";
+import { loadSave, newGame, type SaveState } from "../save/save";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -33,9 +28,6 @@ export type Simulation = {
   bus: EventBus;
   processors: Map<Id, Processor & { id: Id }>;
 };
-
-export type Others = Exclude<Processor, EventStream>;
-export type SaveState = { stream: SerializedStream; processors: Others[] };
 
 export function insertProcessor(sim: Simulation, p: Processor) {
   SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
@@ -115,73 +107,6 @@ export function processUntilSettled(sim: Simulation): Simulation {
     }
   }
   return sim;
-}
-
-export function loadSave(save: SaveState): Simulation {
-  const stream = parseStream(save.stream);
-  const flatSubs = save.processors
-    .flatMap((p) =>
-      [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id])
-    )
-    .concat(
-      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [tag, stream.id])
-    );
-  const subsByTag = flatSubs.reduce<Map<EventTag, Set<Id>>>(
-    (accu, [tag, id]) => accu.set(tag, (accu.get(tag) ?? new Set()).add(id)),
-    new Map()
-  );
-  const procs: Array<[Id, Processor]> = [
-    [stream.id, stream],
-    ...save.processors.map<[Id, Processor]>((p) => [p.id, p]),
-  ];
-  const processorsById = new Map(procs);
-  save.processors;
-  return {
-    bus: {
-      subscriptions: subsByTag,
-    },
-    processors: processorsById,
-  };
-}
-
-export function generateSave(sim: Simulation): SaveState {
-  const processors = [];
-  let stream!: SerializedStream;
-  for (const proc of sim.processors.values()) {
-    if (proc.tag !== "stream") {
-      processors.push(proc);
-      continue;
-    }
-    stream = {
-      data: {
-        unfinishedTick: proc.data.unfinishedTick,
-        received: [...proc.data.received],
-      },
-      tag: proc.tag,
-      id: proc.id,
-      incoming: proc.incoming,
-    };
-  }
-  console.debug({ saveStream: stream });
-  return { processors, stream: stream };
-}
-
-export function newGame(): Processor[] {
-  return [
-    createPowerGrid({ stored: 22 ** 2 }),
-    createStorage(Resource.ORE),
-    createStorage(Resource.METAL, { stored: 200 }),
-    createStorage(Resource.PACKAGED_SATELLITE),
-    createStar(),
-    createPlanet(),
-    createCollectorManager({ count: 15 }),
-    createMinerManager(),
-    createRefinerManager(),
-    createFactoryManager(),
-    createLauncherManager(),
-    createSwarm(),
-    createFabricator(),
-  ];
 }
 
 export const SIMULATION_STORE = Symbol();
