@@ -224,8 +224,8 @@ export const uiStore: Readable<Stack> & {
     }),
   endDeleteAction: () =>
     update((stack) => {
-      const [stubs, selectedIndex] = <DialogOpen<"delete">>stack;
-      return [stubs, selectedIndex];
+      const [stubs] = <DialogOpen<"delete">>stack;
+      return [stubs];
     }),
   /*
   deleteChosen: (storage: Storage) =>
