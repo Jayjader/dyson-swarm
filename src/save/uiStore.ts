@@ -29,16 +29,16 @@ export function slotStorageKey(s: Slot) {
 type NoSelection = [SaveStubs];
 type SlotSelected = [SaveStubs, number];
 
-// type Tag =
-//   | "closed"
-//   | "warn-overwrite-on-save"
-//   | "warn-overwrite-on-import"
-//   | "warn-discard-on-load"
-//   | "warn-discard-on-close"
-//   | "save"
-//   | "import"
-//   | "export"
-//   | "delete"
+type Tag =
+  //   | "closed"
+  //   | "warn-overwrite-on-save"
+  //   | "warn-overwrite-on-import"
+  //   | "warn-discard-on-load"
+  //   | "warn-discard-on-close"
+  | "save"
+  //   | "import"
+  //   | "export"
+  | "delete";
 //   | "loading";
 type Text = { text: string };
 type Control = { label: string };
@@ -61,18 +61,9 @@ type Control = { label: string };
 //       : never);
 // type Dialog<dialogType extends Tag> = { tag: dialogType } & Content<dialogType>;
 type WarnBeforeClose = [SaveStubs, { confirmText: string } & Text];
-type DialogOpen<D extends "delete"> = [
-  SaveStubs,
-  number,
-  "delete"
-  // ReturnType<typeof makeDeleteDialogStore>
-];
+type DialogOpen<D extends Tag> = [SaveStubs, number, D];
 
-type Stack =
-  | NoSelection
-  | SlotSelected
-  | WarnBeforeClose
-  | DialogOpen<"delete">;
+type Stack = NoSelection | SlotSelected | WarnBeforeClose | DialogOpen<Tag>;
 
 function chooseSlot(
   stack: NoSelection | SlotSelected,
@@ -138,9 +129,8 @@ export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
   chooseSlot: (index: number) => void;
   unselectChosenSlot: () => void;
-  // startSaveAction: () => void;
-  // confirmOverwrite: () => void;
-  // confirmSave: (name: string, simulation: Simulation, storage: Storage) => void;
+  startSaveAction: () => void;
+  endSaveAction: () => void;
   // deleteChosen: (storage: Storage) => void;
   // startLoadAction: (inSimulation: boolean, storage: Storage) => void;
   startDeleteAction: (name: string) => void;
@@ -161,25 +151,16 @@ export const uiStore: Readable<Stack> & {
     update((stack) => chooseSlot(<NoSelection>stack, index)),
   unselectChosenSlot: () =>
     update((stack) => unselectChosenSlot(<SlotSelected>stack)),
-  /*
   startSaveAction: () =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
-      const willOverWrite =
-        0 < selectedIndex && selectedIndex < stubs.slots.length;
-      return [
-        stubs,
-        selectedIndex,
-        willOverWrite
-          ? {
-              tag: "warn-overwrite-on-save",
-              text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
-              confirmText: "Overwrite",
-            }
-          : { tag: "save", label: "Name the save:", confirmText: "Save" },
-      ];
+      return [stubs, selectedIndex, "save"];
     }),
-*/
+  endSaveAction: () =>
+    update((stack) => {
+      const [stubs] = <DialogOpen<"save">>stack;
+      return [stubs];
+    }),
   /*
   confirmOverwrite: () =>
     update((stack) => {

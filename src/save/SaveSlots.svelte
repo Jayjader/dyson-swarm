@@ -2,17 +2,10 @@
   import { getContext, onDestroy, onMount } from "svelte";
   import { APP_UI_CONTEXT, simulationIsLoaded } from "../appStateStore";
   import NavButton from "../NavButton.svelte";
-  import {
-    deleteSave,
-    formatProcessors,
-    parseProcessors,
-    readSave,
-    type SaveState,
-    writeSlotToStorage,
-  } from "./save";
-  import type { Save, SaveStub, SaveStubs } from "./uiStore";
+  import type { SaveStubs } from "./uiStore";
   import { uiStore } from "./uiStore";
   import Delete from "./dialog/Delete.svelte";
+  import Save from "./dialog/Save.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -42,8 +35,11 @@
     selected = { index, name };
     const dialogState = stack?.[2];
     console.info({ dialogState });
-    if (dialog === 'delete' &&  dialogState === undefined) {
-      uiStore.updateStubs(window.localStorage)
+    if (
+      (dialog === "delete" && dialogState === undefined) ||
+      (dialog === "save" && dialogState === undefined)
+    ) {
+      uiStore.updateStubs(window.localStorage);
     }
     dialog = dialogState;
     // dialogStore?.subscribe((values) => {
@@ -320,6 +316,16 @@
       on:close={(event) => {
         console.log({ result: event.detail });
         uiStore.endDeleteAction();
+      }}
+    />
+  {:else if dialog === "save"}
+    <Save
+      simulationState={simulation}
+      overWrittenName={selected.name}
+      saveNames={saveStubs.slots.map((slot) => slot.name)}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endSaveAction();
       }}
     />
   {:else if dialog}
