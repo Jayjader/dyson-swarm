@@ -17,13 +17,13 @@
     console.info({ current, next: { dialog, actions } });
     if (dialog === "closed") return;
     if (dialog.state === "warn-discard") {
-      confirm = store.act.bind(
-        this,
-        actions.confirm.bind(
-          this,
-          Promise.resolve(
-            deleteSave.bind(this, window.localStorage, dialog.name)
-          ).then((deleter) => deleter())
+      confirm = store.act.bind(this, (...args) =>
+        actions.confirm(
+          new Promise((resolve) => {
+            deleteSave(window.localStorage, dialog.name);
+            resolve();
+          }),
+          ...args
         )
       );
       cancel = store.act.bind(this, actions.cancel);
@@ -42,8 +42,8 @@
     }
     if (dialog.state === "progress-delete") {
       dialog.promise.then(
-        store.act.bind(this, actions.success.bind()),
-        store.act.bind(this, actions.fail.bind())
+        store.act.bind(this, actions.success),
+        store.act.bind(this, actions.fail)
       );
     }
     current = { dialog, actions };
