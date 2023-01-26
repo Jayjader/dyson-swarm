@@ -53,12 +53,12 @@ export const delete_graph = {
 
 type StoreValue<Store> = Store extends Readable<infer V> ? V : never;
 export function makeDeleteDialogStore(saveName: string) {
-  const current = writable<DeleteDialog>(
+  const current = writable<"closed" | DeleteDialog>(
     delete_graph.closed.startDelete(saveName)
   );
   const withActions = derived(current, (dialog) => ({
     dialog,
-    actions: delete_graph[dialog.state],
+    actions: dialog === "closed" ? undefined : delete_graph[dialog.state],
   }));
   return {
     tag: "delete",

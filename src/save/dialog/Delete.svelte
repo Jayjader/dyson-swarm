@@ -66,6 +66,11 @@
         This will delete the existing simulation data in this save slot. Delete
         saved data?
       </p>
+    {:else if current.dialog.state === "progress-delete"}
+      <label>
+        Deleting...
+        <progress />
+      </label>
     {:else if current.dialog.state === "success-delete"}
       <p>Save deleted.</p>
     {:else if current.dialog.state === "failure-delete"}
