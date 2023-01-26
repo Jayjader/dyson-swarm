@@ -19,7 +19,7 @@ import { createLauncherManager } from "../events/processes/launcher";
 import { createSwarm } from "../events/processes/satelliteSwarm";
 import { createFabricator } from "../events/processes/fabricator";
 import type { Simulation } from "../events";
-import { type Save, SaveStub, Slot, slotStorageKey } from "./uiStore";
+import { type Save, type SaveStub, Slot, slotStorageKey } from "./uiStore";
 
 export type Others = Exclude<Processor, EventStream>;
 export type SaveState = { stream: SerializedStream; processors: Others[] };

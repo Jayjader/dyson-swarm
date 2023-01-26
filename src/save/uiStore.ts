@@ -1,13 +1,5 @@
 import type { SaveState } from "./save";
-import {
-  deleteSave,
-  generateSave,
-  loadSave,
-  readSave,
-  writeSlotToStorage,
-} from "./save";
 import { type Readable, writable } from "svelte/store";
-import type { Simulation } from "../events";
 
 export enum Slot {
   AUTO = "auto",
@@ -37,41 +29,50 @@ export function slotStorageKey(s: Slot) {
 type NoSelection = [SaveStubs];
 type SlotSelected = [SaveStubs, number];
 
-type Tag =
-  | "closed"
-  | "warn-overwrite-on-save"
-  | "warn-overwrite-on-import"
-  | "warn-discard-on-load"
-  | "warn-discard-on-close"
-  | "save"
-  | "import"
-  | "export"
-  | "delete"
-  | "loading";
+// type Tag =
+//   | "closed"
+//   | "warn-overwrite-on-save"
+//   | "warn-overwrite-on-import"
+//   | "warn-discard-on-load"
+//   | "warn-discard-on-close"
+//   | "save"
+//   | "import"
+//   | "export"
+//   | "delete"
+//   | "loading";
 type Text = { text: string };
 type Control = { label: string };
-type Content<tag extends Tag> = tag extends "closed"
-  ? never
-  : tag extends "loading"
-  ? {
-      previous: "save" | "import" | "export" | "delete";
-      promise: Promise<SaveState>;
-    }
-  : { confirmText: string } & (tag extends
-      | "warn-overwrite-on-save"
-      | "warn-overwrite-on-import"
-      | "warn-discard-on-load"
-      | "warn-discard-on-close"
-      | "delete"
-      ? Text
-      : tag extends "save" | "import" | "export"
-      ? Control
-      : never);
-type Dialog<dialogType extends Tag> = { tag: dialogType } & Content<dialogType>;
-type WarnBeforeClose = [SaveStubs, Dialog<"warn-discard-on-close">];
-type DialogOpen<D extends Tag> = [SaveStubs, number, Dialog<D>];
+// type Content<tag extends Tag> = tag extends "closed"
+//   ? never
+//   : tag extends "loading"
+//   ? {
+//       previous: "save" | "import" | "export" | "delete";
+//       promise: Promise<SaveState>;
+//     }
+//   : { confirmText: string } & (tag extends
+//       | "warn-overwrite-on-save"
+//       | "warn-overwrite-on-import"
+//       | "warn-discard-on-load"
+//       | "warn-discard-on-close"
+//       | "delete"
+//       ? Text
+//       : tag extends "save" | "import" | "export"
+//       ? Control
+//       : never);
+// type Dialog<dialogType extends Tag> = { tag: dialogType } & Content<dialogType>;
+type WarnBeforeClose = [SaveStubs, { confirmText: string } & Text];
+type DialogOpen<D extends "delete"> = [
+  SaveStubs,
+  number,
+  "delete"
+  // ReturnType<typeof makeDeleteDialogStore>
+];
 
-type Stack = NoSelection | SlotSelected | WarnBeforeClose | DialogOpen<Tag>;
+type Stack =
+  | NoSelection
+  | SlotSelected
+  | WarnBeforeClose
+  | DialogOpen<"delete">;
 
 function chooseSlot(
   stack: NoSelection | SlotSelected,
@@ -137,17 +138,18 @@ export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
   chooseSlot: (index: number) => void;
   unselectChosenSlot: () => void;
-  startSaveAction: () => void;
-  confirmOverwrite: () => void;
-  confirmSave: (name: string, simulation: Simulation, storage: Storage) => void;
-  deleteChosen: (storage: Storage) => void;
-  startLoadAction: (inSimulation: boolean, storage: Storage) => void;
-  startDeleteAction: () => void;
-  confirmDiscardBeforeLoad: (storage: Storage) => void;
-  finishLoading: () => void;
-  startCloseAction: () => void;
-  confirmDiscardBeforeClosing: () => void;
-  confirmExport: (fileName: string, storage: Storage, root: Document) => void;
+  // startSaveAction: () => void;
+  // confirmOverwrite: () => void;
+  // confirmSave: (name: string, simulation: Simulation, storage: Storage) => void;
+  // deleteChosen: (storage: Storage) => void;
+  // startLoadAction: (inSimulation: boolean, storage: Storage) => void;
+  startDeleteAction: (name: string) => void;
+  endDeleteAction: () => void;
+  // confirmDiscardBeforeLoad: (storage: Storage) => void;
+  // finishLoading: () => void;
+  // startCloseAction: () => void;
+  // confirmDiscardBeforeClosing: () => void;
+  // confirmExport: (fileName: string, storage: Storage, root: Document) => void;
 } = {
   subscribe,
   updateStubs: (storage: Storage) =>
@@ -159,6 +161,7 @@ export const uiStore: Readable<Stack> & {
     update((stack) => chooseSlot(<NoSelection>stack, index)),
   unselectChosenSlot: () =>
     update((stack) => unselectChosenSlot(<SlotSelected>stack)),
+  /*
   startSaveAction: () =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
@@ -176,6 +179,8 @@ export const uiStore: Readable<Stack> & {
           : { tag: "save", label: "Name the save:", confirmText: "Save" },
       ];
     }),
+*/
+  /*
   confirmOverwrite: () =>
     update((stack) => {
       const [stubs, selectedIndex] = <DialogOpen<"warn-overwrite-on-save">>(
@@ -187,6 +192,8 @@ export const uiStore: Readable<Stack> & {
         { tag: "save", label: "Name the save:", confirmText: "Save" },
       ];
     }),
+*/
+  /*
   confirmSave: (name: string, simulation: Simulation, storage: Storage) => {
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
@@ -199,19 +206,28 @@ export const uiStore: Readable<Stack> & {
       return [readStubs(storage)];
     });
   },
-  startDeleteAction: () =>
+*/
+  startDeleteAction: (name: string) =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
+      // const deleteStore = makeDeleteDialogStore(name);
       return [
         stubs,
         selectedIndex,
-        {
-          tag: "delete",
-          text: "This will delete the existing simulation data in this save slot. Delete saved data?",
-          confirmText: "Delete",
-        },
+        "delete",
+        // {
+        //   tag: "delete",
+        //   text: "This will delete the existing simulation data in this save slot. Delete saved data?",
+        //   confirmText: "Delete",
+        // },
       ];
     }),
+  endDeleteAction: () =>
+    update((stack) => {
+      const [stubs, selectedIndex] = <DialogOpen<"delete">>stack;
+      return [stubs, selectedIndex];
+    }),
+  /*
   deleteChosen: (storage: Storage) =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
@@ -221,7 +237,8 @@ export const uiStore: Readable<Stack> & {
       );
       return [stubs];
     }),
-
+*/
+  /*
   startLoadAction: (inSimulation: boolean, storage: Storage) => {
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
@@ -254,6 +271,8 @@ export const uiStore: Readable<Stack> & {
       ];
     });
   },
+*/
+  /*
   confirmDiscardBeforeLoad: (storage: Storage) =>
     update((stack) => {
       const [stubs, selectedIndex] = <DialogOpen<"warn-discard-on-load">>stack;
@@ -279,11 +298,15 @@ export const uiStore: Readable<Stack> & {
         },
       ];
     }),
+*/
+  /*
   finishLoading: () =>
     update((stack) => {
       const [stubs] = <DialogOpen<"loading">>stack;
       return [stubs];
     }),
+*/
+  /*
   startCloseAction: () =>
     update((stack) => {
       const [stubs] = <NoSelection>stack;
@@ -296,7 +319,11 @@ export const uiStore: Readable<Stack> & {
         },
       ];
     }),
+*/
+  /*
   confirmDiscardBeforeClosing: () => update(([stubs, _dialog]) => [stubs]),
+*/
+  /*
   confirmExport: (fileName, storage, root) =>
     update((stack) => {
       const [stubs, selectedIndex] = <DialogOpen<"export">>stack;
@@ -319,4 +346,5 @@ export const uiStore: Readable<Stack> & {
         },
       ];
     }),
+*/
 };

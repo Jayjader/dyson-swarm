@@ -12,6 +12,7 @@
   } from "./save";
   import type { Save, SaveStub, SaveStubs } from "./uiStore";
   import { uiStore } from "./uiStore";
+  import Delete from "./dialog/Delete.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -39,30 +40,37 @@
         ? "AUTOSAVE"
         : saveStubs.slots[index].name;
     selected = { index, name };
-    dialog = stack.at(2);
-    console.info({ dialog });
-    if (dialog?.tag === "loading") {
-      // switch (dialog.previous)
-      dialog.promise
-        .then((saveState) => {
-          uiStore.finishLoading();
-          if (inSimulation) {
-            appUiStore.replaceRunningSimulation(saveState);
-          } else {
-            appUiStore.startSimulation(saveState);
-          }
-        })
-        .catch((_e) => {
-          /*todo: error dialog*/
-        });
+    const dialogState = stack?.[2];
+    console.info({ dialogState });
+    if (dialog === 'delete' &&  dialogState === undefined) {
+      uiStore.updateStubs(window.localStorage)
     }
+    dialog = dialogState;
+    // dialogStore?.subscribe((values) => {
+    //   console.info({ values });
+    // });
+    // if (dialog?.tag === "loading") {
+    //   // switch (dialog.previous)
+    //   dialog.promise
+    //     .then((saveState) => {
+    //       uiStore.finishLoading();
+    //       if (inSimulation) {
+    //         appUiStore.replaceRunningSimulation(saveState);
+    //       } else {
+    //         appUiStore.startSimulation(saveState);
+    //       }
+    //     })
+    //     .catch((_e) => {
+    //       /*todo: error dialog*/
+    //     });
+    // }
   });
 
-  $: {
-    if (dialog !== undefined) {
-      dialogElement.showModal();
-    }
-  }
+  // $: {
+  //   if (dialog !== undefined ) {
+  //     dialogElement.showModal();
+  //   }
+  // }
 
   let inSimulation = false;
   let simulation = null;
@@ -102,6 +110,7 @@
       : "") +
     ".+$";
 
+  /*
   function onDialogClose(closeEvent) {
     const playerCommand = closeEvent.target.returnValue;
     console.info({ playerCommand, dialog });
@@ -149,7 +158,9 @@
       }
     }
   }
+*/
 
+  /*
   function exportAction(slotName: string, fileName: string): void {
     uiStore.confirmExport(fileName, window.localStorage, document);
     // const saveState = readSave(slotName, window.localStorage)! as Save;
@@ -157,7 +168,9 @@
     // writeSaveDataToBlob(saveState, document);
     // uiStore.unselectChosenSlot();
   }
+*/
 
+  /*
   function importAction(fileData: File, overWrittenSlotName?: string): void {
     if (overWrittenSlotName !== undefined) {
       deleteSave(
@@ -177,7 +190,9 @@
       uiStore.updateStubs(window.localStorage);
     });
   }
+*/
 
+  /*
   function cloneAction(this: MouseEvent, slotName: string): void {
     writeSlotToStorage(
       {
@@ -189,6 +204,7 @@
     uiStore.unselectChosenSlot();
     uiStore.updateStubs(window.localStorage);
   }
+*/
 </script>
 
 <main
@@ -270,7 +286,8 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startDeleteAction}>Delete</button
+      on:click={uiStore.startDeleteAction.bind(this, selected.name)}
+      >Delete</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
@@ -297,54 +314,64 @@
       }}>Clone</button
     >
   </div>
-  <dialog
-    class="border-2 border-slate-900"
-    bind:this={dialogElement}
-    on:close={onDialogClose}
-  >
-    <!-- todo: progress/loading dialog (using {#await}), and delete save only when loading new save succeeds -->
-    <form method="dialog">
-      {#if dialog !== undefined}
-        {#if dialog.tag === "loading"}
-          {#await dialog.promise}
-            <p>loading...</p>
-          {:catch error}
-            <p class="text-red-600">{error.message}</p>
-          {/await}
-        {:else if dialog?.text}
-          <p>{dialog?.text}</p>
-        {:else if dialog?.label}
-          <label
-            >{dialog?.label}<input
-              class="rounded border-2 border-slate-900 px-2"
-              name={dialog.tag === "save" ? "saveName" : "fileName"}
-              type={dialog.tag === "import" ? "file" : "text"}
-              title={dialog.tag === "save"
-                ? "Cannot be the same as an existing save name"
-                : ""}
-              required
-              value={dialog.tag === "export" ? `${selected.name}.json` : ""}
-              pattern={dialog.tag === "export" ? ".*" : saveNamePattern}
-              autocomplete="off"
-              spellcheck="false"
-              autocorrect="off"
-            /></label
-          >
+  {#if dialog === "delete"}
+    <Delete
+      name={selected.name}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endDeleteAction();
+      }}
+    />
+  {:else if dialog}
+    <dialog
+      class="border-2 border-slate-900"
+      bind:this={dialogElement}
+      on:close={() => {}}
+    >
+      <!-- todo: progress/loading dialog (using {#await}), and delete save only when loading new save succeeds -->
+      <form method="dialog">
+        {#if dialog !== undefined}
+          {#if dialog.tag === "loading"}
+            {#await dialog.promise}
+              <p>loading...</p>
+            {:catch error}
+              <p class="text-red-600">{error.message}</p>
+            {/await}
+          {:else if dialog?.text}
+            <p>{dialog?.text}</p>
+          {:else if dialog?.label}
+            <label
+              >{dialog?.label}<input
+                class="rounded border-2 border-slate-900 px-2"
+                name={dialog.tag === "save" ? "saveName" : "fileName"}
+                type={dialog.tag === "import" ? "file" : "text"}
+                title={dialog.tag === "save"
+                  ? "Cannot be the same as an existing save name"
+                  : ""}
+                required
+                value={dialog.tag === "export" ? `${selected.name}.json` : ""}
+                pattern={dialog.tag === "export" ? ".*" : saveNamePattern}
+                autocomplete="off"
+                spellcheck="false"
+                autocorrect="off"
+              /></label
+            >
+          {/if}
+          <div class="flex flex-row justify-between gap-2">
+            <button
+              class="my-2 rounded border-2 border-slate-900 px-2"
+              value="confirm">{dialog?.confirmText}</button
+            >
+            <button
+              class="my-2 rounded border-2 border-slate-900 px-2"
+              value="cancel"
+              formnovalidate>Cancel</button
+            >
+          </div>
         {/if}
-        <div class="flex flex-row justify-between gap-2">
-          <button
-            class="my-2 rounded border-2 border-slate-900 px-2"
-            value="confirm">{dialog?.confirmText}</button
-          >
-          <button
-            class="my-2 rounded border-2 border-slate-900 px-2"
-            value="cancel"
-            formnovalidate>Cancel</button
-          >
-        </div>
-      {/if}
-    </form>
-  </dialog>
+      </form>
+    </dialog>
+  {/if}
 </main>
 
 <style>
