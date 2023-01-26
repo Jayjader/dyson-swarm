@@ -26,12 +26,7 @@
       return;
     }
     const index = stack?.[1] ?? -2;
-    const name =
-      index === -2
-        ? undefined
-        : index === -1
-        ? "AUTOSAVE"
-        : saveStubs.slots[index].name;
+    const name = index === -1 ? "AUTOSAVE" : saveStubs.slots[index]?.name;
     selected = { index, name };
     const dialogState = stack?.[2];
     console.info({ dialogState });
