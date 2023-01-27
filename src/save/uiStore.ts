@@ -74,20 +74,10 @@ export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
   chooseSlot: (index: number) => void;
   unselectChosenSlot: () => void;
-  startSaveAction: () => void;
-  endSaveAction: () => void;
-  startLoadAction: () => void;
-  startDeleteAction: (name: string) => void;
-  endDeleteAction: () => void;
-  endLoadAction: () => void;
-  startImportAction: () => void;
-  endImportAction: () => void;
-  startExportAction: () => void;
-  endExportAction: () => void;
-  startCloneAction: () => void;
-  endCloneAction: () => void;
   startCloseAction: () => void;
   endCloseAction: () => void;
+  startAction: (action: Tag) => void;
+  endAction: () => void;
 } = {
   subscribe,
   updateStubs: (storage: Storage) =>
@@ -99,64 +89,15 @@ export const uiStore: Readable<Stack> & {
     update((stack) => chooseSlot(<NoSelection>stack, index)),
   unselectChosenSlot: () =>
     update((stack) => unselectChosenSlot(<SlotSelected>stack)),
-  startSaveAction: () =>
+  startAction: (action: Tag) => {
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "save"];
-    }),
-  endSaveAction: () =>
+      return [stubs, selectedIndex, action];
+    });
+  },
+  endAction: () =>
     update((stack) => {
-      const [stubs] = <DialogOpen<"save">>stack;
-      return [stubs];
-    }),
-  startDeleteAction: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "delete"];
-    }),
-  endDeleteAction: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"delete">>stack;
-      return [stubs];
-    }),
-  startLoadAction: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "load"];
-    }),
-  endLoadAction: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"load">>stack;
-      return [stubs];
-    }),
-  startImportAction: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "import"];
-    }),
-  endImportAction: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"import">>stack;
-      return [stubs];
-    }),
-  startExportAction: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "export"];
-    }),
-  endExportAction: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"export">>stack;
-      return [stubs];
-    }),
-  startCloneAction: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [stubs, selectedIndex, "clone"];
-    }),
-  endCloneAction: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"clone">>stack;
+      const [stubs] = <DialogOpen<Tag>>stack;
       return [stubs];
     }),
   startCloseAction: () =>

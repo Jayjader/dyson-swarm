@@ -142,7 +142,7 @@
       <button
         class="rounded border-2 border-slate-900 disabled:border-dashed"
         disabled={allDisabled || overWriteDisabled}
-        on:click={uiStore.startSaveAction}>Save</button
+        on:click={uiStore.startAction.bind(this, "save")}>Save</button
       >
     {:else}
       <div>
@@ -152,53 +152,48 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || overWriteDisabled}
-      on:click={uiStore.startImportAction}
+      on:click={uiStore.startAction.bind(this, "import")}
     >
       Import</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startDeleteAction.bind(this, selected.name)}
-      >Delete</button
+      on:click={uiStore.startAction.bind(this, "delete")}>Delete</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startLoadAction.bind(
-        this,
-        inSimulation,
-        window.localStorage
-      )}>Load</button
+      on:click={uiStore.startAction.bind(this, "load")}>Load</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startExportAction}
+      on:click={uiStore.startAction.bind(this, "export")}
     >
       Export</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startCloneAction}>Clone</button
+      on:click={uiStore.startAction.bind(this, "clone")}>Clone</button
     >
   </div>
   {#if dialog === "delete"}
-    <Delete name={selected.name} on:close={uiStore.endDeleteAction} />
+    <Delete name={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "save"}
     <Save
       simulationState={simulation}
       overWrittenName={selected.name}
       saveNames={saveStubs.slots.map((slot) => slot.name)}
-      on:close={uiStore.endSaveAction}
+      on:close={uiStore.endAction}
     />
   {:else if dialog === "load"}
     <Load
       name={selected.name}
       {inSimulation}
       on:close={(event) => {
-        uiStore.endLoadAction();
+        uiStore.endAction();
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
           (inSimulation
@@ -208,14 +203,11 @@
       }}
     />
   {:else if dialog === "import"}
-    <Import
-      overWrittenName={selected.name}
-      on:close={uiStore.endImportAction}
-    />
+    <Import overWrittenName={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "export"}
-    <Export saveName={selected.name} on:close={uiStore.endExportAction} />
+    <Export saveName={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "clone"}
-    <Clone clonedSaveName={selected.name} on:close={uiStore.endCloneAction} />
+    <Clone clonedSaveName={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "warn-discard-on-close"}
     <Close
       on:close={(event) => {
