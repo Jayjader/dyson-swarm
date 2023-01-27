@@ -9,6 +9,7 @@
   import Load from "./dialog/Load.svelte";
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
+  import Clone from "./dialog/Clone.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -34,9 +35,11 @@
     const dialogState = stack?.[2];
     console.info({ dialogState });
     if (
-      (dialog === "delete" && dialogState === undefined) ||
-      (dialog === "save" && dialogState === undefined) ||
-      (dialog === "import" && dialogState === undefined)
+      dialogState === undefined &&
+      (dialog === "clone" ||
+        dialog === "delete" ||
+        dialog === "save" ||
+        dialog === "import")
     ) {
       uiStore.updateStubs(window.localStorage);
     }
@@ -80,20 +83,6 @@
       ? "(?!" + saveStubs.slots.map((slot) => slot.name).join(")|(?!") + ")"
       : "") +
     ".+$";
-
-  /*
-  function cloneAction(this: MouseEvent, slotName: string): void {
-    writeSlotToStorage(
-      {
-        ...readSave(slotName, window.localStorage)!,
-        name: `${slotName} (cloned)`,
-      },
-      window.localStorage
-    );
-    uiStore.unselectChosenSlot();
-    uiStore.updateStubs(window.localStorage);
-  }
-*/
 </script>
 
 <main
@@ -194,9 +183,7 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={() => {
-        /*todo: cloneAction.bind(this, selected.name)*/
-      }}>Clone</button
+      on:click={uiStore.startCloneAction}>Clone</button
     >
   </div>
   {#if dialog === "delete"}
@@ -248,55 +235,14 @@
         uiStore.endExportAction();
       }}
     />
-  {:else if dialog}
-    <dialog
-      class="border-2 border-slate-900"
-      bind:this={dialogElement}
-      on:close={() => {}}
-    >
-      <!-- todo: progress/loading dialog (using {#await}), and delete save only when loading new save succeeds -->
-      <form method="dialog">
-        {#if dialog !== undefined}
-          {#if dialog.tag === "loading"}
-            {#await dialog.promise}
-              <p>loading...</p>
-            {:catch error}
-              <p class="text-red-600">{error.message}</p>
-            {/await}
-          {:else if dialog?.text}
-            <p>{dialog?.text}</p>
-          {:else if dialog?.label}
-            <label
-              >{dialog?.label}<input
-                class="rounded border-2 border-slate-900 px-2"
-                name={dialog.tag === "save" ? "saveName" : "fileName"}
-                type={dialog.tag === "import" ? "file" : "text"}
-                title={dialog.tag === "save"
-                  ? "Cannot be the same as an existing save name"
-                  : ""}
-                required
-                value={dialog.tag === "export" ? `${selected.name}.json` : ""}
-                pattern={dialog.tag === "export" ? ".*" : saveNamePattern}
-                autocomplete="off"
-                spellcheck="false"
-                autocorrect="off"
-              /></label
-            >
-          {/if}
-          <div class="flex flex-row justify-between gap-2">
-            <button
-              class="my-2 rounded border-2 border-slate-900 px-2"
-              value="confirm">{dialog?.confirmText}</button
-            >
-            <button
-              class="my-2 rounded border-2 border-slate-900 px-2"
-              value="cancel"
-              formnovalidate>Cancel</button
-            >
-          </div>
-        {/if}
-      </form>
-    </dialog>
+  {:else if dialog === "clone"}
+    <Clone
+      clonedSaveName={selected.name}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endCloneAction();
+      }}
+    />
   {/if}
 </main>
 

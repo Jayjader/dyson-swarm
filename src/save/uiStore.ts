@@ -31,7 +31,7 @@ type SlotSelected = [SaveStubs, number];
 
 type Tag =
   //   | "warn-discard-on-close"
-  "save" | "import" | "export" | "delete" | "load";
+  "save" | "import" | "export" | "delete" | "load" | "clone";
 type WarnBeforeClose = [SaveStubs, "warn-discard-on-close"];
 type DialogOpen<D extends Tag> = [SaveStubs, number, D];
 
@@ -92,6 +92,8 @@ export const uiStore: Readable<Stack> & {
   endImportAction: () => void;
   startExportAction: () => void;
   endExportAction: () => void;
+  startCloneAction: () => void;
+  endCloneAction: () => void;
   // startCloseAction: () => void;
   // confirmDiscardBeforeClosing: () => void;
 } = {
@@ -153,6 +155,16 @@ export const uiStore: Readable<Stack> & {
   endExportAction: () =>
     update((stack) => {
       const [stubs] = <DialogOpen<"export">>stack;
+      return [stubs];
+    }),
+  startCloneAction: () =>
+    update((stack) => {
+      const [stubs, selectedIndex] = <SlotSelected>stack;
+      return [stubs, selectedIndex, "clone"];
+    }),
+  endCloneAction: () =>
+    update((stack) => {
+      const [stubs] = <DialogOpen<"clone">>stack;
       return [stubs];
     }),
   /*
