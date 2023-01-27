@@ -1,11 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeSaveDialogStore } from "./saveDialog";
-  import type { Readable } from "svelte/store";
   import { deleteSave, generateSave, writeSlotToStorage } from "../save";
   import type { Simulation } from "../../events";
-
-  type StoreValue<Store> = Store extends Readable<infer V> ? V : never;
 
   const dispatch = createEventDispatcher();
 
@@ -17,12 +14,13 @@
   export let simulationState: Simulation;
   export let overWrittenName: undefined | string;
   const store = makeSaveDialogStore(overWrittenName !== undefined);
-  let current: StoreValue<typeof store>;
+  let current;
   let confirm, cancel;
   let saveName = "";
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") return;
     if (dialog.state === "warn-overwrite") {
+      cancel = store.act.bind(this, actions.cancel);
       confirm = store.act.bind(this, (...args) =>
         actions.confirm(
           new Promise((resolve) => {
@@ -32,7 +30,6 @@
           ...args
         )
       );
-      cancel = store.act.bind(this, actions.cancel);
     } else if (
       dialog.state === "progress-delete" ||
       dialog.state === "progress-write-save"
@@ -98,13 +95,13 @@
       </p>
     {:else if current.dialog.state === "progress-delete"}
       <label>
-        Deleting...
+        Deleting previous save...
         <progress />
       </label>
     {:else if current.dialog.state === "success-delete"}
-      <p>Save deleted.</p>
+      <p>Previous save deleted.</p>
     {:else if current.dialog.state === "failure-delete"}
-      <p class="rounded border-2 border-red-700">Deleting save failed.</p>
+      <p class="rounded border-2 border-red-700">Deleting previous save failed.</p>
       <p class="text-red-700">TODO ERROR MESSAGE</p>
     {:else if current.dialog.state === "input-savename"}
       <label

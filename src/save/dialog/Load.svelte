@@ -1,10 +1,7 @@
 <script lang="ts">
-  import type { Readable } from "svelte/store";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeLoadDialogStore } from "./loadDialog";
   import { readSave, type SaveState } from "../save";
-
-  type StoreValue<Store> = Store extends Readable<infer V> ? V : never;
 
   const dispatch = createEventDispatcher();
 
@@ -16,7 +13,7 @@
   export let name: string;
   export let inSimulation: boolean;
   const store = makeLoadDialogStore();
-  let current: StoreValue<typeof store>;
+  let current;
   let confirm, cancel;
   let loadedSaveState: undefined | SaveState;
   const storeSub = store.subscribe(({ dialog, actions }) => {
