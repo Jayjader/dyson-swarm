@@ -1,26 +1,36 @@
-import type { ActionGraph, Failure, Progress, Progression } from "./dialog";
+import type { Failure, Progress, Success } from "./dialog";
 import { derived, writable } from "svelte/store";
-import type { LoadDialog } from "./loadDialog";
-import { load_graph } from "./loadDialog";
 
-export type ExportDialog = { action: "export" } & {
-  state:
-    | "input-filename"
-    | Progress<"read-save">
-    | Failure<"read-save">
-    | Progression<"export-save">;
-};
-export const export_graph: ActionGraph<"export", ExportDialog> = {
+export type ExportDialog = { action: "export" } & (
+  | {
+      state:
+        | "input-filename"
+        | Failure<"read-save">
+        | Failure<"export-save">
+        | Success<"export-save">;
+    }
+  | { state: Progress<"read-save">; promise: Promise<any> }
+  | { state: Progress<"export-save">; promise: Promise<any> }
+);
+export const export_graph = {
   closed: {
-    startExport: () => ({ action: "export", state: "input-filename" }),
+    startExport: () => ({ action: "export", state: "input-filename" } as const),
   },
   "input-filename": {
     cancel: () => "closed",
-    confirm: () => ({ action: "export", state: "progress-read-save" }),
+    confirm: (promise: Promise<any>) => ({
+      action: "export",
+      state: "progress-read-save",
+      promise,
+    }),
   },
   "progress-read-save": {
     fail: () => ({ action: "export", state: "failure-read-save" }),
-    success: () => ({ action: "export", state: "progress-export-save" }),
+    success: (promise: Promise<any>) => ({
+      action: "export",
+      state: "progress-export-save",
+      promise,
+    }),
   },
   "failure-read-save": { confirm: () => "closed" },
   "progress-export-save": {
@@ -30,11 +40,13 @@ export const export_graph: ActionGraph<"export", ExportDialog> = {
   "failure-export-save": { confirm: () => "closed" },
   "success-export-save": { confirm: () => "closed" },
 };
-function makeExportDialogStore() {
-  const current = writable<"closed" | ExportDialog>("closed");
+export function makeExportDialogStore() {
+  const current = writable<"closed" | ExportDialog>(
+    export_graph.closed.startExport()
+  );
   const withActions = derived(current, (dialog) => ({
     dialog,
-    actions: export_graph[typeof dialog === "string" ? dialog : dialog.state],
+    actions: export_graph[(dialog as ExportDialog)?.state ?? "closed"],
   }));
   return {
     subscribe: withActions.subscribe,

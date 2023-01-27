@@ -7,6 +7,8 @@
   import Delete from "./dialog/Delete.svelte";
   import Save from "./dialog/Save.svelte";
   import Load from "./dialog/Load.svelte";
+  import Import from "./dialog/Import.svelte";
+  import Export from "./dialog/Export.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -33,36 +35,13 @@
     console.info({ dialogState });
     if (
       (dialog === "delete" && dialogState === undefined) ||
-      (dialog === "save" && dialogState === undefined)
+      (dialog === "save" && dialogState === undefined) ||
+      (dialog === "import" && dialogState === undefined)
     ) {
       uiStore.updateStubs(window.localStorage);
     }
     dialog = dialogState;
-    // dialogStore?.subscribe((values) => {
-    //   console.info({ values });
-    // });
-    // if (dialog?.tag === "loading") {
-    //   // switch (dialog.previous)
-    //   dialog.promise
-    //     .then((saveState) => {
-    //       uiStore.finishLoading();
-    //       if (inSimulation) {
-    //         appUiStore.replaceRunningSimulation(saveState);
-    //       } else {
-    //         appUiStore.startSimulation(saveState);
-    //       }
-    //     })
-    //     .catch((_e) => {
-    //       /*todo: error dialog*/
-    //     });
-    // }
   });
-
-  // $: {
-  //   if (dialog !== undefined ) {
-  //     dialogElement.showModal();
-  //   }
-  // }
 
   let inSimulation = false;
   let simulation = null;
@@ -101,88 +80,6 @@
       ? "(?!" + saveStubs.slots.map((slot) => slot.name).join(")|(?!") + ")"
       : "") +
     ".+$";
-
-  /*
-  function onDialogClose(closeEvent) {
-    const playerCommand = closeEvent.target.returnValue;
-    console.info({ playerCommand, dialog });
-    if (playerCommand === "cancel") {
-      dialog = undefined;
-    } else {
-      switch (dialog.tag) {
-        case undefined:
-          return;
-        case "export": {
-          exportAction(
-            selected.name!,
-            closeEvent.target.firstChild.elements["fileName"].value
-          );
-          break;
-        }
-        case "import": {
-          importAction(
-            closeEvent.target.firstChild.elements["fileName"].files[0],
-            selected.name
-          );
-          break;
-        }
-        case "save": {
-          uiStore.confirmSave(
-            closeEvent.target.firstChild.elements["saveName"].value,
-            simulation,
-            window.localStorage
-          );
-          break;
-        }
-        case "warn-overwrite-on-save":
-          uiStore.confirmOverwrite();
-          break;
-        case "warn-discard-on-load":
-          uiStore.confirmDiscardBeforeLoad(window.localStorage);
-          break;
-        case "warn-discard-on-close":
-          uiStore.confirmDiscardBeforeClosing();
-          appUiStore.closeSimulation();
-          break;
-        case "delete":
-          uiStore.deleteChosen(window.localStorage);
-          break;
-      }
-    }
-  }
-*/
-
-  /*
-  function exportAction(slotName: string, fileName: string): void {
-    uiStore.confirmExport(fileName, window.localStorage, document);
-    // const saveState = readSave(slotName, window.localStorage)! as Save;
-    // saveState.name = fileName;
-    // writeSaveDataToBlob(saveState, document);
-    // uiStore.unselectChosenSlot();
-  }
-*/
-
-  /*
-  function importAction(fileData: File, overWrittenSlotName?: string): void {
-    if (overWrittenSlotName !== undefined) {
-      deleteSave(
-        window.localStorage,
-        selected.index === -1 ? "AUTOSAVE" : saveStubs.slots[selected].name
-      );
-    }
-    fileData.text().then((data) => {
-      writeSlotToStorage(
-        {
-          name: fileData.name,
-          ...parseProcessors(data),
-        },
-        window.localStorage
-      );
-      uiStore.unselectChosenSlot();
-      uiStore.updateStubs(window.localStorage);
-    });
-  }
-*/
 
   /*
   function cloneAction(this: MouseEvent, slotName: string): void {
@@ -268,11 +165,8 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || overWriteDisabled}
-      on:click={() => {
-        /*todo*/
-      }}
+      on:click={uiStore.startImportAction}
     >
-      <!--todo: dialog = slotIsEmpty ? "import" : "warn-overwrite-on-import";-->
       Import</button
     >
     <button
@@ -293,9 +187,8 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={() => {}}
+      on:click={uiStore.startExportAction}
     >
-      <!--todo: dialog = "export";-->
       Export</button
     >
     <button
@@ -337,6 +230,22 @@
             ? appUiStore.replaceRunningSimulation
             : appUiStore.startSimulation)(saveState);
         }
+      }}
+    />
+  {:else if dialog === "import"}
+    <Import
+      overWrittenName={selected.name}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endImportAction();
+      }}
+    />
+  {:else if dialog === "export"}
+    <Export
+      saveName={selected.name}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endExportAction();
       }}
     />
   {:else if dialog}

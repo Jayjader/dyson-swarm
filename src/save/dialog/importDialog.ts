@@ -1,17 +1,21 @@
-import type { ActionGraph, Failure, Progress, Progression } from "./dialog";
+import type { Failure, Progress, Success } from "./dialog";
 import { derived, writable } from "svelte/store";
 
-export type ImportDialog = { action: "import" } & {
-  state:
-    | "warn-overwrite"
-    | "input-file"
-    | Progress<"delete">
-    | Failure<"delete">
-    | Progress<"import-save">
-    | Failure<"import-save">
-    | Progression<"write-save">;
-};
-export const import_graph: ActionGraph<"import", ImportDialog> = {
+export type ImportDialog = { action: "import" } & (
+  | {
+      state:
+        | "warn-overwrite"
+        | "input-file"
+        | Failure<"delete">
+        | Failure<"import-save">
+        | Failure<"write-save">
+        | Success<"write-save">;
+    }
+  | { state: Progress<"delete">; promise: Promise<any> }
+  | { state: Progress<"import-save">; promise: Promise<any> }
+  | { state: Progress<"write-save">; promise: Promise<any> }
+);
+export const import_graph = {
   closed: {
     startImport: (overwrite: boolean) =>
       overwrite
@@ -24,19 +28,27 @@ export const import_graph: ActionGraph<"import", ImportDialog> = {
   },
   "input-file": {
     cancel: () => "closed",
-    confirm: () => ({ action: "import", state: "progress-import-save" }),
+    confirm: (promise: Promise<any>) => ({
+      action: "import",
+      state: "progress-import-save",
+      promise,
+    }),
   },
   "progress-import-save": {
     fail: () => ({ action: "import", state: "failure-import-save" }),
-    success: (overWrite: boolean) =>
+    success: (overWrite: boolean, promise: Promise<any>) =>
       overWrite
-        ? { action: "import", state: "progress-delete" }
-        : { action: "import", state: "progress-write-save" },
+        ? { action: "import", state: "progress-delete", promise }
+        : { action: "import", state: "progress-write-save", promise },
   },
   "failure-import-save": { confirm: () => "closed" },
   "progress-delete": {
     fail: () => ({ action: "import", state: "failure-delete" }),
-    success: () => ({ action: "import", state: "progress-write-save" }),
+    success: (promise: Promise<any>) => ({
+      action: "import",
+      state: "progress-write-save",
+      promise,
+    }),
   },
   "failure-delete": { confirm: () => "closed" },
   "progress-write-save": {
@@ -46,11 +58,11 @@ export const import_graph: ActionGraph<"import", ImportDialog> = {
   "failure-write-save": { confirm: () => "closed" },
   "success-write-save": { confirm: () => "closed" },
 };
-function makeImportDialogStore() {
+export function makeImportDialogStore() {
   const current = writable<"closed" | ImportDialog>("closed");
   const withActions = derived(current, (dialog) => ({
     dialog,
-    actions: import_graph[typeof dialog === "string" ? dialog : dialog.state],
+    actions: import_graph[(dialog as ImportDialog)?.state ?? "closed"],
   }));
   return {
     subscribe: withActions.subscribe,

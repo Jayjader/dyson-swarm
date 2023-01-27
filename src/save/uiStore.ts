@@ -30,37 +30,9 @@ type NoSelection = [SaveStubs];
 type SlotSelected = [SaveStubs, number];
 
 type Tag =
-  //   | "closed"
-  //   | "warn-overwrite-on-save"
-  //   | "warn-overwrite-on-import"
-  //   | "warn-discard-on-load"
   //   | "warn-discard-on-close"
-  | "save"
-  //   | "import"
-  //   | "export"
-  | "delete"
-  | "load";
-type Text = { text: string };
-type Control = { label: string };
-// type Content<tag extends Tag> = tag extends "closed"
-//   ? never
-//   : tag extends "loading"
-//   ? {
-//       previous: "save" | "import" | "export" | "delete";
-//       promise: Promise<SaveState>;
-//     }
-//   : { confirmText: string } & (tag extends
-//       | "warn-overwrite-on-save"
-//       | "warn-overwrite-on-import"
-//       | "warn-discard-on-load"
-//       | "warn-discard-on-close"
-//       | "delete"
-//       ? Text
-//       : tag extends "save" | "import" | "export"
-//       ? Control
-//       : never);
-// type Dialog<dialogType extends Tag> = { tag: dialogType } & Content<dialogType>;
-type WarnBeforeClose = [SaveStubs, { confirmText: string } & Text];
+  "save" | "import" | "export" | "delete" | "load";
+type WarnBeforeClose = [SaveStubs, "warn-discard-on-close"];
 type DialogOpen<D extends Tag> = [SaveStubs, number, D];
 
 type Stack = NoSelection | SlotSelected | WarnBeforeClose | DialogOpen<Tag>;
@@ -101,16 +73,10 @@ const { subscribe, update, set } = writable<Stack>([
   },
 ]);
 const dialogContent = {
-  "warn-overwrite-on-import": {
-    text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
-    confirmText: "Overwrite",
-  },
   "warn-discard-on-close": {
     text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
     confirmText: "Discard",
   },
-  export: { label: "File name", confirmText: "Export" },
-  import: { label: "Pick file", confirmText: "Import" },
 };
 export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
@@ -122,9 +88,12 @@ export const uiStore: Readable<Stack> & {
   startDeleteAction: (name: string) => void;
   endDeleteAction: () => void;
   endLoadAction: () => void;
+  startImportAction: () => void;
+  endImportAction: () => void;
+  startExportAction: () => void;
+  endExportAction: () => void;
   // startCloseAction: () => void;
   // confirmDiscardBeforeClosing: () => void;
-  // confirmExport: (fileName: string, storage: Storage, root: Document) => void;
 } = {
   subscribe,
   updateStubs: (storage: Storage) =>
@@ -164,6 +133,26 @@ export const uiStore: Readable<Stack> & {
   endLoadAction: () =>
     update((stack) => {
       const [stubs] = <DialogOpen<"load">>stack;
+      return [stubs];
+    }),
+  startImportAction: () =>
+    update((stack) => {
+      const [stubs, selectedIndex] = <SlotSelected>stack;
+      return [stubs, selectedIndex, "import"];
+    }),
+  endImportAction: () =>
+    update((stack) => {
+      const [stubs] = <DialogOpen<"import">>stack;
+      return [stubs];
+    }),
+  startExportAction: () =>
+    update((stack) => {
+      const [stubs, selectedIndex] = <SlotSelected>stack;
+      return [stubs, selectedIndex, "export"];
+    }),
+  endExportAction: () =>
+    update((stack) => {
+      const [stubs] = <DialogOpen<"export">>stack;
       return [stubs];
     }),
   /*

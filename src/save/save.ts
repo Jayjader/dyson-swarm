@@ -120,7 +120,10 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
   }
 }
 
-function writeSaveDataToBlob(save: SaveStub & SaveState, root: Document): void {
+export function writeSaveDataToBlob(
+  save: SaveStub & SaveState,
+  root: Document
+): void {
   // todo: move link creation out of function; directly take link as argument
   const machineDrivenLink = root.createElement("a");
   const formattedSave = formatProcessors({
