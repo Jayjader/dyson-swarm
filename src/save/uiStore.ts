@@ -29,9 +29,7 @@ export function slotStorageKey(s: Slot) {
 type NoSelection = [SaveStubs];
 type SlotSelected = [SaveStubs, number];
 
-type Tag =
-  //   | "warn-discard-on-close"
-  "save" | "import" | "export" | "delete" | "load" | "clone";
+type Tag = "save" | "import" | "export" | "delete" | "load" | "clone";
 type WarnBeforeClose = [SaveStubs, "warn-discard-on-close"];
 type DialogOpen<D extends Tag> = [SaveStubs, number, D];
 
@@ -66,18 +64,12 @@ function readStubs(storage: Storage): SaveStubs {
   return { autoSave, slots };
 }
 
-const { subscribe, update, set } = writable<Stack>([
+const { subscribe, update } = writable<Stack>([
   {
     autoSave: null,
     slots: [],
   },
 ]);
-const dialogContent = {
-  "warn-discard-on-close": {
-    text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
-    confirmText: "Discard",
-  },
-};
 export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
   chooseSlot: (index: number) => void;
@@ -94,8 +86,8 @@ export const uiStore: Readable<Stack> & {
   endExportAction: () => void;
   startCloneAction: () => void;
   endCloneAction: () => void;
-  // startCloseAction: () => void;
-  // confirmDiscardBeforeClosing: () => void;
+  startCloseAction: () => void;
+  endCloseAction: () => void;
 } = {
   subscribe,
   updateStubs: (storage: Storage) =>
@@ -167,79 +159,14 @@ export const uiStore: Readable<Stack> & {
       const [stubs] = <DialogOpen<"clone">>stack;
       return [stubs];
     }),
-  /*
-  confirmDiscardBeforeLoad: (storage: Storage) =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <DialogOpen<"warn-discard-on-load">>stack;
-      return [
-        stubs,
-        selectedIndex,
-        {
-          tag: "loading",
-          previous: '',
-          promise: new Promise((resolve, reject) => {
-            const saveState = readSave(
-              selectedIndex === -1
-                ? "AUTOSAVE"
-                : stubs.slots[selectedIndex].name,
-              storage
-            );
-            if (saveState !== null) {
-              resolve(saveState);
-            } else {
-              reject({ message: "Could not read save state" });
-            }
-          }),
-        },
-      ];
-    }),
-*/
-  /*
-  finishLoading: () =>
-    update((stack) => {
-      const [stubs] = <DialogOpen<"loading">>stack;
-      return [stubs];
-    }),
-*/
-  /*
   startCloseAction: () =>
     update((stack) => {
       const [stubs] = <NoSelection>stack;
-      return [
-        stubs,
-        {
-          tag: "warn-discard-on-close",
-          text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
-          confirmText: "Discard",
-        },
-      ];
+      return [stubs, "warn-discard-on-close"];
     }),
-*/
-  /*
-  confirmDiscardBeforeClosing: () => update(([stubs, _dialog]) => [stubs]),
-*/
-  /*
-  confirmExport: (fileName, storage, root) =>
+  endCloseAction: () =>
     update((stack) => {
-      const [stubs, selectedIndex] = <DialogOpen<"export">>stack;
-      const slotName =
-        selectedIndex === -1 ? "AUTOSAVE" : stubs.slots[selectedIndex].name;
-      return [
-        stubs,
-        {
-          tag: "loading",
-          previous: "export",
-          promise: new Promise((resolve, reject) => {
-            const saveState = readSave(slotName, storage) as null | Save;
-            if (saveState === null) {
-              reject({ message: "Could not read save state" });
-            } else {
-              saveState.name = fileName;
-              resolve(saveState);
-            }
-          }),
-        },
-      ];
+      const [stubs] = <WarnBeforeClose>stack;
+      return [stubs];
     }),
-*/
 };

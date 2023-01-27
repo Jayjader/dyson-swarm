@@ -10,6 +10,7 @@
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
+  import Close from "./dialog/Close.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -24,7 +25,7 @@
   const uiSub = uiStore.subscribe((stack) => {
     console.info({ stack });
     saveStubs = stack[0];
-    if (stack?.[1]?.tag === "warn-discard-on-close") {
+    if (stack?.[1] === "warn-discard-on-close") {
       selected = { index: -2 };
       dialog = stack[1];
       return;
@@ -50,7 +51,6 @@
   let simulation = null;
   const appUiStore = getContext(APP_UI_CONTEXT).uiStore;
   let simSub = null;
-  let dialogElement;
   const appUiSub = appUiStore.subscribe((stack) => {
     inSimulation = simulationIsLoaded(stack);
     if (inSimulation) {
@@ -241,6 +241,16 @@
       on:close={(event) => {
         console.log({ result: event.detail });
         uiStore.endCloneAction();
+      }}
+    />
+  {:else if dialog === "warn-discard-on-close"}
+    <Close
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endCloseAction();
+        if (event.detail === "confirm") {
+          appUiStore.closeSimulation();
+        }
       }}
     />
   {/if}
