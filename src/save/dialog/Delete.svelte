@@ -14,7 +14,6 @@
   let current: StoreValue<typeof store>;
   let confirm, cancel;
   const storeSub = store.subscribe(({ dialog, actions }) => {
-    console.info({ current, next: { dialog, actions } });
     if (dialog === "closed") return;
     if (dialog.state === "warn-discard") {
       confirm = store.act.bind(this, (...args) =>

@@ -1,6 +1,5 @@
 import type { ActionGraph, Failure, Progress, Success } from "./dialog";
 import { derived, writable } from "svelte/store";
-import type { DeleteDialog } from "./deleteDialog";
 
 export type SaveDialog = { action: "save" } & (
   | ({ overWrittenName: string } & (
@@ -28,7 +27,7 @@ export const save_graph: ActionGraph<"save", SaveDialog> = {
   },
   "warn-overwrite": {
     cancel: () => "closed",
-    confirm: (promise: Promise<void>, current: State<"warn-overwrite">) => ({
+    confirm: (promise: Promise<any>, current: State<"warn-overwrite">) => ({
       action: "save",
       state: "progress-delete",
       promise,
@@ -83,7 +82,7 @@ export function makeSaveDialogStore(overWrite: boolean) {
   );
   const withActions = derived(current, (dialog) => ({
     dialog,
-    actions: dialog === "closed" ? undefined : save_graph[dialog.state],
+    actions: save_graph[dialog === "closed" ? "closed" : dialog.state],
   }));
   return {
     subscribe: withActions.subscribe,

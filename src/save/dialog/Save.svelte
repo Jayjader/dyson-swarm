@@ -21,7 +21,6 @@
   let confirm, cancel;
   let saveName = "";
   const storeSub = store.subscribe(({ dialog, actions }) => {
-    console.info({ current, next: { dialog, actions } });
     if (dialog === "closed") return;
     if (dialog.state === "warn-overwrite") {
       confirm = store.act.bind(this, (...args) =>
