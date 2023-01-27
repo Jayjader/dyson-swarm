@@ -23,7 +23,6 @@
   let dialog;
 
   const uiSub = uiStore.subscribe((stack) => {
-    console.info({ stack });
     saveStubs = stack[0];
     if (stack?.[1] === "warn-discard-on-close") {
       selected = { index: -2 };
@@ -34,7 +33,6 @@
     const name = index === -1 ? "AUTOSAVE" : saveStubs.slots[index]?.name;
     selected = { index, name };
     const dialogState = stack?.[2];
-    console.info({ dialogState });
     if (
       dialogState === undefined &&
       (dialog === "clone" ||
@@ -187,29 +185,19 @@
     >
   </div>
   {#if dialog === "delete"}
-    <Delete
-      name={selected.name}
-      on:close={(event) => {
-        console.log({ result: event.detail });
-        uiStore.endDeleteAction();
-      }}
-    />
+    <Delete name={selected.name} on:close={uiStore.endDeleteAction} />
   {:else if dialog === "save"}
     <Save
       simulationState={simulation}
       overWrittenName={selected.name}
       saveNames={saveStubs.slots.map((slot) => slot.name)}
-      on:close={(event) => {
-        console.log({ result: event.detail });
-        uiStore.endSaveAction();
-      }}
+      on:close={uiStore.endSaveAction}
     />
   {:else if dialog === "load"}
     <Load
       name={selected.name}
       {inSimulation}
       on:close={(event) => {
-        console.log({ result: event.detail });
         uiStore.endLoadAction();
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
@@ -222,31 +210,15 @@
   {:else if dialog === "import"}
     <Import
       overWrittenName={selected.name}
-      on:close={(event) => {
-        console.log({ result: event.detail });
-        uiStore.endImportAction();
-      }}
+      on:close={uiStore.endImportAction}
     />
   {:else if dialog === "export"}
-    <Export
-      saveName={selected.name}
-      on:close={(event) => {
-        console.log({ result: event.detail });
-        uiStore.endExportAction();
-      }}
-    />
+    <Export saveName={selected.name} on:close={uiStore.endExportAction} />
   {:else if dialog === "clone"}
-    <Clone
-      clonedSaveName={selected.name}
-      on:close={(event) => {
-        console.log({ result: event.detail });
-        uiStore.endCloneAction();
-      }}
-    />
+    <Clone clonedSaveName={selected.name} on:close={uiStore.endCloneAction} />
   {:else if dialog === "warn-discard-on-close"}
     <Close
       on:close={(event) => {
-        console.log({ result: event.detail });
         uiStore.endCloseAction();
         if (event.detail === "confirm") {
           appUiStore.closeSimulation();

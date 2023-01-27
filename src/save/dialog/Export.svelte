@@ -16,7 +16,6 @@
   let confirm, cancel;
   let fileName, fileData;
   const storeSub = store.subscribe(({ dialog, actions }) => {
-    console.info({ dialog, actions });
     if (dialog === "closed") return;
     if (dialog.state === "input-filename") {
       cancel = store.act.bind(this, actions.cancel);

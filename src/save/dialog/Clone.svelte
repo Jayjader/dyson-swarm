@@ -15,7 +15,6 @@
   let current;
   let confirm, cancel;
   const storeSub = store.subscribe(({ dialog, actions }) => {
-    console.info({ dialog, actions });
     if (dialog === "closed") {
       if (current === undefined) {
         store.act(() =>

@@ -28,7 +28,6 @@
         const fileData = element.firstChild.elements["fileName"].files[0];
         return actions.confirm(
           fileData.text().then((data) => {
-            console.warn({ command: "read-file", fileData });
             return { name: fileData.name, ...parseProcessors(data) };
           })
         );
@@ -50,7 +49,6 @@
             ? actions.success(
                 true,
                 new Promise((resolve) => {
-                  console.warn({ command: "delete-save", overWrittenName });
                   deleteSave(window.localStorage, overWrittenName!);
                   resolve(save);
                 })
@@ -58,7 +56,6 @@
             : actions.success(
                 false,
                 new Promise((resolve) => {
-                  console.warn({ command: "write-save", save });
                   writeSlotToStorage(save, window.localStorage);
                   resolve();
                 })
@@ -71,7 +68,6 @@
           store.act(() =>
             actions.success(
               new Promise((resolve) => {
-                console.warn({ command: "write-save", save });
                 writeSlotToStorage(save, window.localStorage);
                 resolve();
               })
