@@ -38,8 +38,8 @@ type Tag =
   | "save"
   //   | "import"
   //   | "export"
-  | "delete";
-//   | "loading";
+  | "delete"
+  | "load";
 type Text = { text: string };
 type Control = { label: string };
 // type Content<tag extends Tag> = tag extends "closed"
@@ -105,25 +105,12 @@ const dialogContent = {
     text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
     confirmText: "Overwrite",
   },
-  "warn-overwrite-on-save": {
-    text: "This will overwrite the existing simulation data in this save slot. Overwrite old data with new?",
-    confirmText: "Overwrite",
-  },
-  "warn-discard-on-load": {
-    text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
-    confirmText: "Discard",
-  },
   "warn-discard-on-close": {
     text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
     confirmText: "Discard",
   },
-  delete: {
-    text: "This will delete the existing simulation data in this save slot. Delete saved data?",
-    confirmText: "Delete",
-  },
   export: { label: "File name", confirmText: "Export" },
   import: { label: "Pick file", confirmText: "Import" },
-  save: { label: "Save name", confirmText: "Save" },
 };
 export const uiStore: Readable<Stack> & {
   updateStubs: (storage: Storage) => void;
@@ -131,12 +118,10 @@ export const uiStore: Readable<Stack> & {
   unselectChosenSlot: () => void;
   startSaveAction: () => void;
   endSaveAction: () => void;
-  // deleteChosen: (storage: Storage) => void;
-  // startLoadAction: (inSimulation: boolean, storage: Storage) => void;
+  startLoadAction: () => void;
   startDeleteAction: (name: string) => void;
   endDeleteAction: () => void;
-  // confirmDiscardBeforeLoad: (storage: Storage) => void;
-  // finishLoading: () => void;
+  endLoadAction: () => void;
   // startCloseAction: () => void;
   // confirmDiscardBeforeClosing: () => void;
   // confirmExport: (fileName: string, storage: Storage, root: Document) => void;
@@ -161,98 +146,26 @@ export const uiStore: Readable<Stack> & {
       const [stubs] = <DialogOpen<"save">>stack;
       return [stubs];
     }),
-  /*
-  confirmOverwrite: () =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <DialogOpen<"warn-overwrite-on-save">>(
-        stack
-      );
-      return [
-        stubs,
-        selectedIndex,
-        { tag: "save", label: "Name the save:", confirmText: "Save" },
-      ];
-    }),
-*/
-  /*
-  confirmSave: (name: string, simulation: Simulation, storage: Storage) => {
+  startDeleteAction: () =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
-      const willOverWrite =
-        0 < selectedIndex && selectedIndex < stubs.slots.length;
-      if (willOverWrite) {
-        deleteSave(storage, stubs.slots[selectedIndex].name);
-      }
-      writeSlotToStorage({ name, ...generateSave(simulation) }, storage);
-      return [readStubs(storage)];
-    });
-  },
-*/
-  startDeleteAction: (name: string) =>
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      // const deleteStore = makeDeleteDialogStore(name);
-      return [
-        stubs,
-        selectedIndex,
-        "delete",
-        // {
-        //   tag: "delete",
-        //   text: "This will delete the existing simulation data in this save slot. Delete saved data?",
-        //   confirmText: "Delete",
-        // },
-      ];
+      return [stubs, selectedIndex, "delete"];
     }),
   endDeleteAction: () =>
     update((stack) => {
       const [stubs] = <DialogOpen<"delete">>stack;
       return [stubs];
     }),
-  /*
-  deleteChosen: (storage: Storage) =>
+  startLoadAction: () =>
     update((stack) => {
       const [stubs, selectedIndex] = <SlotSelected>stack;
-      deleteSave(
-        storage,
-        selectedIndex === -1 ? "AUTOSAVE" : stubs.slots[selectedIndex].name
-      );
+      return [stubs, selectedIndex, "load"];
+    }),
+  endLoadAction: () =>
+    update((stack) => {
+      const [stubs] = <DialogOpen<"load">>stack;
       return [stubs];
     }),
-*/
-  /*
-  startLoadAction: (inSimulation: boolean, storage: Storage) => {
-    update((stack) => {
-      const [stubs, selectedIndex] = <SlotSelected>stack;
-      return [
-        stubs,
-        selectedIndex,
-        inSimulation
-          ? {
-              tag: "warn-discard-on-load",
-              text: "This will discard any unsaved data from the current simulation. Discard unsaved data?",
-              confirmText: "Discard",
-            }
-          : {
-              tag: "loading",
-            previous: 'load',
-              promise: new Promise((resolve, reject) => {
-                const saveState = readSave(
-                  selectedIndex === -1
-                    ? "AUTOSAVE"
-                    : stubs.slots[selectedIndex].name,
-                  storage
-                );
-                if (saveState !== null) {
-                  resolve(saveState);
-                } else {
-                  reject({ message: "Could not read save state" });
-                }
-              }),
-            },
-      ];
-    });
-  },
-*/
   /*
   confirmDiscardBeforeLoad: (storage: Storage) =>
     update((stack) => {

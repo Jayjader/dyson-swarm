@@ -6,6 +6,7 @@
   import { uiStore } from "./uiStore";
   import Delete from "./dialog/Delete.svelte";
   import Save from "./dialog/Save.svelte";
+  import Load from "./dialog/Load.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -321,6 +322,21 @@
       on:close={(event) => {
         console.log({ result: event.detail });
         uiStore.endSaveAction();
+      }}
+    />
+  {:else if dialog === "load"}
+    <Load
+      name={selected.name}
+      {inSimulation}
+      on:close={(event) => {
+        console.log({ result: event.detail });
+        uiStore.endLoadAction();
+        const saveState = event.detail.saveState;
+        if (saveState !== undefined) {
+          (inSimulation
+            ? appUiStore.replaceRunningSimulation
+            : appUiStore.startSimulation)(saveState);
+        }
       }}
     />
   {:else if dialog}

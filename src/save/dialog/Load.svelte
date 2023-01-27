@@ -1,0 +1,122 @@
+<script lang="ts">
+  import type { Readable } from "svelte/store";
+  import { createEventDispatcher, onDestroy, onMount } from "svelte";
+  import { makeLoadDialogStore } from "./loadDialog";
+  import { readSave, type SaveState } from "../save";
+
+  type StoreValue<Store> = Store extends Readable<infer V> ? V : never;
+
+  const dispatch = createEventDispatcher();
+
+  let element: HTMLDialogElement;
+  onMount(() => {
+    element.showModal();
+  });
+
+  export let name: string;
+  export let inSimulation: boolean;
+  const store = makeLoadDialogStore();
+  let current: StoreValue<typeof store>;
+  let confirm, cancel;
+  let loadedSaveState: undefined | SaveState;
+  const storeSub = store.subscribe(({ dialog, actions }) => {
+    if (dialog === "closed") {
+      if (current === undefined) {
+        store.act(
+          actions.startLoad.bind(this, {
+            inSimulation,
+            promise: inSimulation
+              ? undefined
+              : new Promise((resolve, reject) => {
+                  const saveState = readSave(name, window.localStorage);
+                  if (saveState === null) return reject(null);
+                  resolve(saveState);
+                }),
+          })
+        );
+      }
+      return;
+    } else if (dialog.state === "warn-discard") {
+      confirm = store.act.bind(this, (...args) =>
+        actions.confirm(
+          new Promise((resolve, reject) => {
+            const saveState = readSave(name, window.localStorage);
+            if (saveState === null) return reject(null);
+            resolve(saveState);
+          }),
+          ...args
+        )
+      );
+      cancel = store.act.bind(this, actions.cancel);
+    } else if (dialog.state === "progress-read-save") {
+      confirm = undefined;
+      cancel = undefined;
+    } else if (dialog.state === "success-read-save") {
+      confirm = store.act.bind(this, actions.confirm);
+    } else {
+      confirm =
+        actions.confirm === undefined
+          ? undefined
+          : store.act.bind(this, actions.confirm);
+      cancel =
+        actions.cancel === undefined
+          ? undefined
+          : store.act.bind(this, actions.cancel);
+    }
+    if (dialog.state === "progress-read-save") {
+      dialog.promise.then((saveState) => {
+        loadedSaveState = saveState;
+        store.act(actions.success);
+      }, store.act.bind(this, actions.fail));
+    }
+    current = { dialog, actions };
+  });
+  onDestroy(storeSub);
+</script>
+
+<dialog
+  class="border-2 border-slate-900"
+  bind:this={element}
+  on:close={(event) =>
+    dispatch("close", {
+      button: event.target.returnValue,
+      saveState: loadedSaveState,
+    })}
+>
+  <form method="dialog">
+    <h3>Load save</h3>
+    {#if current.dialog.state === "warn-discard"}
+      <p>
+        This will discard any unsaved data from the current simulation. Discard
+        unsaved data?
+      </p>
+    {:else if current.dialog.state === "progress-read-save"}
+      <label>
+        Reading save...
+        <progress />
+      </label>
+    {:else if current.dialog.state === "success-read-save"}
+      <p>Save read.</p>
+    {:else if current.dialog.state === "fail-read-save"}
+      <p class="rounded border-2 border-red-700">Reading save failed.</p>
+      <p class="text-red-700">TODO ERROR MESSAGE</p>
+    {/if}
+    <div class="flex flex-row justify-between gap-2">
+      {#if confirm}
+        <button
+          class="my-2 rounded border-2 border-slate-900 px-2"
+          on:click={confirm}
+          value="confirm">Confirm</button
+        >
+      {/if}
+      {#if cancel}
+        <button
+          class="my-2 rounded border-2 border-slate-900 px-2"
+          on:click={cancel}
+          value="cancel"
+          formnovalidate>Cancel</button
+        >
+      {/if}
+    </div>
+  </form>
+</dialog>
