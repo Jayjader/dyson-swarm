@@ -146,9 +146,11 @@ export function deleteSave(storage: Storage, name: string): void {
   storage.removeItem(saveKey);
   if (name !== "AUTOSAVE") {
     const NAMES_KEY = slotStorageKey(Slot.NAMES)("useless-string");
-    const names = storage.getItem(NAMES_KEY);
-    const namesArray = new Set(names === null ? [] : JSON.parse(names));
-    namesArray.delete(name);
-    storage.setItem(NAMES_KEY, JSON.stringify([...namesArray]));
+    const currentNames = storage.getItem(NAMES_KEY);
+    const nextNames = new Set(
+      currentNames === null ? [] : JSON.parse(currentNames)
+    );
+    nextNames.delete(name);
+    storage.setItem(NAMES_KEY, JSON.stringify([...nextNames]));
   }
 }
