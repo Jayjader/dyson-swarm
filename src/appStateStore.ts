@@ -1,6 +1,8 @@
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { makeSimulationStore } from "./events";
-import type {SaveState} from "./save/save";
+import type { SaveState } from "./save/save";
+import { getPrimitive } from "./hud/types";
+import { getClock } from "./events/processes/clock";
 
 type AtTitle = ["title"];
 type SaveSlotsFromTitle = [...AtTitle, "load"];
@@ -66,6 +68,14 @@ function intoSimulation(
 }
 
 function toSaveFromSimulation(stack: InSimulation): SaveSlotsFromSimulation {
+  const currentTick = getPrimitive(getClock(get(stack[1]))).tick;
+  const busEvent = {
+    tag: "command-simulation-clock-indirect-pause",
+    afterTick: currentTick,
+    timeStamp: performance.now(),
+  } as const;
+  console.info(busEvent);
+  stack[1].broadcastEvent(busEvent);
   // @ts-ignore
   stack.push("load");
   // @ts-ignore
@@ -73,6 +83,14 @@ function toSaveFromSimulation(stack: InSimulation): SaveSlotsFromSimulation {
 }
 
 function backToSimulation(stack: SaveSlotsFromSimulation): InSimulation {
+  const currentTick = getPrimitive(getClock(get(stack[1]))).tick;
+  const busEvent = {
+    tag: "command-simulation-clock-indirect-resume",
+    afterTick: currentTick,
+    timeStamp: performance.now(),
+  } as const;
+  console.info(busEvent);
+  stack[1].broadcastEvent(busEvent);
   stack.pop();
   // @ts-ignore
   return stack;
