@@ -2,6 +2,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeLoadDialogStore } from "./loadDialog";
   import { readSave, type SaveState } from "../save";
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -61,10 +62,13 @@
           : store.act.bind(this, actions.cancel);
     }
     if (dialog.state === "progress-read-save") {
-      dialog.promise.then((saveState) => {
-        loadedSaveState = saveState;
-        store.act(actions.success);
-      }, store.act.bind(this, actions.fail));
+      dialog.promise.then(
+        (saveState) => {
+          loadedSaveState = saveState;
+          store.act(actions.success);
+        },
+        (error) => store.act(actions.fail.bind(this, error))
+      );
     }
     current = { dialog, actions };
   });
@@ -95,8 +99,8 @@
     {:else if current.dialog.state === "success-read-save"}
       <p>Save read.</p>
     {:else if current.dialog.state === "fail-read-save"}
-      <p class="rounded border-2 border-red-700">Reading save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Reading save failed.</p>
+      <ErrorDisplay>TODO ERROR MESSAGE</ErrorDisplay>
     {/if}
     <div class="flex flex-row justify-between gap-2">
       {#if confirm}

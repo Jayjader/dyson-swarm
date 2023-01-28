@@ -3,17 +3,14 @@ import { derived, writable } from "svelte/store";
 
 export type ImportDialog = { action: "import" } & (
   | {
-      state:
-        | "warn-overwrite"
-        | "input-file"
-        | Failure<"delete">
-        | Failure<"import-save">
-        | Failure<"write-save">
-        | Success<"write-save">;
+      state: "warn-overwrite" | "input-file" | Success<"write-save">;
     }
   | { state: Progress<"delete">; promise: Promise<any> }
+  | { state: Failure<"delete">; error: Error }
   | { state: Progress<"import-save">; promise: Promise<any> }
+  | { state: Failure<"import-save">; error: Error }
   | { state: Progress<"write-save">; promise: Promise<any> }
+  | { state: Failure<"write-save">; error: Error }
 );
 export const import_graph = {
   closed: {
@@ -35,7 +32,11 @@ export const import_graph = {
     }),
   },
   "progress-import-save": {
-    fail: () => ({ action: "import", state: "failure-import-save" }),
+    fail: (error: Error) => ({
+      action: "import",
+      state: "failure-import-save",
+      error,
+    }),
     success: (overWrite: boolean, promise: Promise<any>) =>
       overWrite
         ? { action: "import", state: "progress-delete", promise }
@@ -43,7 +44,11 @@ export const import_graph = {
   },
   "failure-import-save": { confirm: () => "closed" },
   "progress-delete": {
-    fail: () => ({ action: "import", state: "failure-delete" }),
+    fail: (error: Error) => ({
+      action: "import",
+      state: "failure-delete",
+      error,
+    }),
     success: (promise: Promise<any>) => ({
       action: "import",
       state: "progress-write-save",
@@ -52,7 +57,11 @@ export const import_graph = {
   },
   "failure-delete": { confirm: () => "closed" },
   "progress-write-save": {
-    fail: () => ({ action: "import", state: "failure-write-save" }),
+    fail: (error: Error) => ({
+      action: "import",
+      state: "failure-write-save",
+      error,
+    }),
     success: () => ({ action: "import", state: "success-write-save" }),
   },
   "failure-write-save": { confirm: () => "closed" },

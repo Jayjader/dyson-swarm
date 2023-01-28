@@ -2,6 +2,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeExportDialogStore } from "./exportDialog";
   import { readSave, writeSaveDataToBlob } from "../save";
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -23,7 +24,8 @@
         actions.confirm(
           new Promise((resolve, reject) => {
             const saveState = readSave(saveName, window.localStorage);
-            if (saveState === null) return reject(null);
+            if (saveState === null)
+              return reject(new Error("save state is null"));
             resolve(saveState);
           })
         )
@@ -56,13 +58,16 @@
               })
             )
           ),
-        store.act.bind(this, actions.fail)
+        (error) => store.act(actions.fail.bind(this, error))
       );
     } else if (dialog.state === "progress-export-save") {
-      dialog.promise.then((data) => {
-        fileData = data;
-        store.act(actions.success);
-      }, store.act.bind(this, actions.fail));
+      dialog.promise.then(
+        (data) => {
+          fileData = data;
+          store.act(actions.success);
+        },
+        (error) => store.act(actions.fail.bind(this, error))
+      );
     }
     current = { dialog, actions };
   });
@@ -93,11 +98,17 @@
         Reading save...
         <progress />
       </label>
+    {:else if current.dialog.state === "failure-read-save"}
+      <p class="text-red-700">Reading save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "progress-export-save"}
       <label>
         Exporting save...
         <progress />
       </label>
+    {:else if current.dialog.state === "failure-export-save"}
+      <p class="text-red-700">Exporting save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {/if}
     <div class="flex flex-row justify-between gap-2">
       {#if confirm}

@@ -1,44 +1,42 @@
-import type { ActionGraph, Failure, Progress, Success } from "./dialog";
+import type { Failure, Progress, Success } from "./dialog";
 import { derived, writable } from "svelte/store";
 
 export type SaveDialog = { action: "save" } & (
-  | ({ overWrittenName: string } & (
-      | { state: "warn-overwrite" }
-      | { state: Progress<"delete">; promise: Promise<any> }
-      | { state: Failure<"delete"> }
-    ))
+  | { state: "warn-overwrite" }
   | { state: "input-savename" }
+  | { state: Progress<"delete">; promise: Promise<any> }
+  | { state: Failure<"delete">; error: Error }
   | ({ name: string } & (
       | {
           state: Progress<"write-save">;
           promise: Promise<any>;
         }
-      | { state: Failure<"write-save"> }
+      | { state: Failure<"write-save">; error: Error }
       | { state: Success<"write-save"> }
     ))
 );
 export type State<T> = SaveDialog & { state: T };
-export const save_graph: ActionGraph<"save", SaveDialog> = {
+export const save_graph = {
   closed: {
-    startSave: (overWrittenName: string) =>
-      overWrittenName
-        ? { action: "save", state: "warn-overwrite", overWrittenName }
-        : { action: "save", state: "input-savename" },
+    startSave: (overWrite: boolean) =>
+      ({
+        action: "save",
+        state: overWrite ? "warn-overwrite" : "input-savename",
+      } as const),
   },
   "warn-overwrite": {
     cancel: () => "closed",
-    confirm: (promise: Promise<any>, current: State<"warn-overwrite">) => ({
+    confirm: (promise: Promise<any>) => ({
       action: "save",
       state: "progress-delete",
       promise,
-      overWrittenName: current.overWrittenName,
     }),
   },
   "progress-delete": {
-    fail: (current: State<"warn-overwrite">) => ({
+    fail: (error: Error) => ({
       action: "save",
       state: "failure-delete",
-      overWrittenName: current.overWrittenName,
+      error,
     }),
     success: () => ({
       action: "save",
@@ -58,10 +56,11 @@ export const save_graph: ActionGraph<"save", SaveDialog> = {
     }),
   },
   "progress-write-save": {
-    fail: (current: State<"progress-write-save">) => ({
+    fail: (error: Error, current: State<"progress-write-save">) => ({
       action: "save",
       state: "failure-write-save",
       name: current.name,
+      error,
     }),
     success: (current: State<"progress-write-save">) => ({
       action: "save",
@@ -82,7 +81,7 @@ export function makeSaveDialogStore(overWrite: boolean) {
   );
   const withActions = derived(current, (dialog) => ({
     dialog,
-    actions: save_graph[dialog === "closed" ? "closed" : dialog.state],
+    actions: save_graph[dialog === "closed" ? dialog : dialog.state],
   }));
   return {
     subscribe: withActions.subscribe,

@@ -10,7 +10,7 @@ export type LoadDialog = { action: "load" } & (
           state: Progress<"read-save">;
           promise: Promise<any>;
         }
-      | { state: Failure<"read-save"> }
+      | { state: Failure<"read-save">; error: Error }
       | { state: Success<"read-save"> }
     ))
 );
@@ -39,7 +39,11 @@ export const load_graph = {
     }),
   },
   "progress-read-save": {
-    fail: () => ({ action: "load", state: "failure-read-save" }),
+    fail: (error: Error) => ({
+      action: "load",
+      state: "failure-read-save",
+      error,
+    }),
     success: () => ({ action: "load", state: "success-read-save" }),
   },
   "success-read-save": {

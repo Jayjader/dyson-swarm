@@ -1,17 +1,15 @@
 <script lang="ts">
-  import type { Readable } from "svelte/store";
   import { makeDeleteDialogStore } from "./deleteDialog";
   import { deleteSave } from "../save";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-
-  type StoreValue<Store> = Store extends Readable<infer V> ? V : never;
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
   export let name: string;
   let element: HTMLDialogElement;
   const store = makeDeleteDialogStore(name);
-  let current: StoreValue<typeof store>;
+  let current;
   let confirm, cancel;
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") return;
@@ -41,8 +39,8 @@
     }
     if (dialog.state === "progress-delete") {
       dialog.promise.then(
-        store.act.bind(this, actions.success),
-        store.act.bind(this, actions.fail)
+        () => store.act(actions.success),
+        (error) => store.act(actions.fail.bind(this, error))
       );
     }
     current = { dialog, actions };
@@ -73,8 +71,8 @@
     {:else if current.dialog.state === "success-delete"}
       <p>Save deleted.</p>
     {:else if current.dialog.state === "failure-delete"}
-      <p class="rounded border-2 border-red-700">Deleting save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Deleting save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {/if}
     <div class="flex flex-row justify-between gap-2">
       {#if confirm}

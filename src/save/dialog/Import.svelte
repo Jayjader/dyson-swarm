@@ -2,6 +2,7 @@
   import { makeImportDialogStore } from "./importDialog";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { deleteSave, parseProcessors, writeSlotToStorage } from "../save";
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -43,24 +44,26 @@
           : store.act.bind(this, actions.cancel);
     }
     if (dialog.state === "progress-import-save") {
-      dialog.promise.then((save) =>
-        store.act(() =>
-          overWrittenName !== undefined
-            ? actions.success(
-                true,
-                new Promise((resolve) => {
-                  deleteSave(window.localStorage, overWrittenName!);
-                  resolve(save);
-                })
-              )
-            : actions.success(
-                false,
-                new Promise((resolve) => {
-                  writeSlotToStorage(save, window.localStorage);
-                  resolve();
-                })
-              )
-        )
+      dialog.promise.then(
+        (save) => {
+          const overWritten = overWrittenName !== undefined;
+          store.act(
+            actions.success.bind(
+              this,
+              overWritten,
+              overWritten
+                ? new Promise((resolve) => {
+                    deleteSave(window.localStorage, overWrittenName!);
+                    resolve(save);
+                  })
+                : new Promise((resolve) => {
+                    writeSlotToStorage(save, window.localStorage);
+                    resolve();
+                  })
+            )
+          );
+        },
+        (error) => store.act(actions.fail.bind(this, error))
       );
     } else if (dialog.state === "progress-delete") {
       dialog.promise.then(
@@ -73,12 +76,11 @@
               })
             )
           ),
-        store.act.bind(this, actions.fail)
+        (error) => store.act(actions.fail.bind(this, error))
       );
     } else if (dialog.state === "progress-write-save") {
-      dialog.promise.then(
-        store.act.bind(this, actions.success),
-        store.act.bind(this, actions.fail)
+      dialog.promise.then(store.act.bind(this, actions.success), (error) =>
+        store.act(actions.fail.bind(this, error))
       );
     }
     current = { dialog, actions };
@@ -106,28 +108,24 @@
         <progress />
       </label>
     {:else if current.dialog.state === "failure-import-save"}
-      <p class="rounded border-2 border-red-700">Importing save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Importing save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "progress-delete"}
       <label>
         Deleting previous save...
         <progress />
       </label>
     {:else if current.dialog.state === "failure-delete"}
-      <p class="rounded border-2 border-red-700">
-        Deleting previous save failed.
-      </p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Deleting previous save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "progress-write-save"}
       <label>
         Writing imported save...
         <progress />
       </label>
     {:else if current.dialog.state === "failure-write-save"}
-      <p class="rounded border-2 border-red-700">
-        Writing imported save failed.
-      </p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Writing imported save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "success-write-save"}
       <p>Imported save written.</p>
     {/if}

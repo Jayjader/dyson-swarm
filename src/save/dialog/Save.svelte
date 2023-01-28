@@ -3,6 +3,7 @@
   import { makeSaveDialogStore } from "./saveDialog";
   import { deleteSave, generateSave, writeSlotToStorage } from "../save";
   import type { Simulation } from "../../events";
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -65,9 +66,8 @@
       dialog.state === "progress-delete" ||
       dialog.state === "progress-write-save"
     ) {
-      dialog.promise.then(
-        store.act.bind(this, actions.success),
-        store.act.bind(this, actions.fail)
+      dialog.promise.then(store.act.bind(this, actions.success), (error) =>
+        store.act(actions.fail.bind(this, error))
       );
     }
     current = { dialog, actions };
@@ -101,8 +101,8 @@
     {:else if current.dialog.state === "success-delete"}
       <p>Previous save deleted.</p>
     {:else if current.dialog.state === "failure-delete"}
-      <p class="rounded border-2 border-red-700">Deleting previous save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Deleting previous save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "input-savename"}
       <label
         >Save name<input
@@ -123,6 +123,9 @@
         Saving...
         <progress />
       </label>
+    {:else if current.dialog.state === "failure-write-save"}
+      <p class="text-red-700">Writing save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "success-write-save"}
       <p>Saved.</p>
     {/if}

@@ -4,13 +4,12 @@ import { derived, writable } from "svelte/store";
 export type CloneDialog =
   | { action: "clone" } & (
       | {
-          state:
-            | Failure<"read-save">
-            | Failure<"write-save">
-            | Success<"clone">;
+          state: Success<"clone">;
         }
       | { state: Progress<"read-save">; promise: Promise<any> }
+      | { state: Failure<"read-save">; error: Error }
       | { state: Progress<"write-save">; promise: Promise<any> }
+      | { state: Failure<"write-save">; error: Error }
     );
 export const clone_graph = {
   closed: {
@@ -18,13 +17,15 @@ export const clone_graph = {
       ({ action: "clone", state: "progress-read-save", promise } as const),
   },
   "progress-read-save": {
-    fail: () => ({ action: "clone", state: "failure-read-save" } as const),
+    fail: (error: Error) =>
+      ({ action: "clone", state: "failure-read-save", error } as const),
     success: (promise: Promise<any>) =>
       ({ action: "clone", state: "progress-write-save", promise } as const),
   },
   "failure-read-save": { confirm: () => "closed" } as const,
   "progress-write-save": {
-    fail: () => ({ action: "clone", state: "failure-write-save" } as const),
+    fail: (error: Error) =>
+      ({ action: "clone", state: "failure-write-save", error } as const),
     success: () => ({ action: "clone", state: "success-clone" } as const),
   },
   "failure-write-save": { confirm: () => "closed" } as const,

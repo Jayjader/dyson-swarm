@@ -3,14 +3,12 @@ import { derived, writable } from "svelte/store";
 
 export type ExportDialog = { action: "export" } & (
   | {
-      state:
-        | "input-filename"
-        | Failure<"read-save">
-        | Failure<"export-save">
-        | Success<"export-save">;
+      state: "input-filename" | Success<"export-save">;
     }
   | { state: Progress<"read-save">; promise: Promise<any> }
+  | { state: Failure<"read-save">; error: Error }
   | { state: Progress<"export-save">; promise: Promise<any> }
+  | { state: Failure<"export-save">; error: Error }
 );
 export const export_graph = {
   closed: {
@@ -25,7 +23,11 @@ export const export_graph = {
     }),
   },
   "progress-read-save": {
-    fail: () => ({ action: "export", state: "failure-read-save" }),
+    fail: (error: Error) => ({
+      action: "export",
+      state: "failure-read-save",
+      error,
+    }),
     success: (promise: Promise<any>) => ({
       action: "export",
       state: "progress-export-save",
@@ -34,7 +36,11 @@ export const export_graph = {
   },
   "failure-read-save": { confirm: () => "closed" },
   "progress-export-save": {
-    fail: () => ({ action: "export", state: "failure-export-save" }),
+    fail: (error: Error) => ({
+      action: "export",
+      state: "failure-export-save",
+      error,
+    }),
     success: () => ({ action: "export", state: "success-export-save" }),
   },
   "failure-export-save": { confirm: () => "closed" },

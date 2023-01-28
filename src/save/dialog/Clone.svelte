@@ -2,6 +2,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeCloneDialogStore } from "./cloneDialog";
   import { readSave, writeSlotToStorage } from "../save";
+  import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
 
@@ -46,21 +47,24 @@
     }
 
     if (dialog.state === "progress-read-save") {
-      dialog.promise.then((saveState) => {
-        saveState.name = `${clonedSaveName} (cloned)`;
-        store.act(() =>
-          actions.success(
-            new Promise((resolve) => {
-              writeSlotToStorage(saveState, window.localStorage);
-              resolve();
-            })
-          )
-        );
-      }, store.act.bind(this, actions.fail));
-    } else if (dialog.state === "progress-write-save") {
       dialog.promise.then(
-        store.act.bind(this, actions.success),
-        store.act.bind(this, actions.fail)
+        (saveState) => {
+          saveState.name = `${clonedSaveName} (cloned)`;
+          store.act(
+            actions.success.bind(
+              this,
+              new Promise((resolve) => {
+                writeSlotToStorage(saveState, window.localStorage);
+                resolve();
+              })
+            )
+          );
+        },
+        (error) => store.act(actions.fail.bind(this, error))
+      );
+    } else if (dialog.state === "progress-write-save") {
+      dialog.promise.then(store.act.bind(this, actions.success), (error) =>
+        store.act(actions.fail.bind(this, error))
       );
     }
     current = { dialog, actions };
@@ -81,16 +85,16 @@
         <progress />
       </label>
     {:else if current.dialog.state === "failure-read-save"}
-      <p class="rounded border-2 border-red-700">Reading save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Reading save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "progress-write-save"}
       <label>
         Writing save...
         <progress />
       </label>
     {:else if current.dialog.state === "failure-write-save"}
-      <p class="rounded border-2 border-red-700">Writing save failed.</p>
-      <p class="text-red-700">TODO ERROR MESSAGE</p>
+      <p class="text-red-700">Writing save failed.</p>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {:else if current.dialog.state === "success-clone"}
       <p>Save cloned.</p>
     {/if}
