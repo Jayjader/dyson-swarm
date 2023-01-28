@@ -92,8 +92,8 @@
       {#if selected.index === -2}
         <NavButton
           on:click={inSimulation
-            ? appUiStore.closeSaveSlots
-            : appUiStore.closeSaveSlotsInSimulation}
+            ? appUiStore.closeSaveSlotsInSimulation
+            : appUiStore.closeSaveSlots}
           >Back&nbsp;to {#if inSimulation}Simulation{:else}Title{/if}</NavButton
         >
       {:else}
