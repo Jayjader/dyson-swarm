@@ -45,12 +45,10 @@
       </a>
     </div>
   </main>
-{:else if isAtSaveFromTitle(uiStack)}
+{:else if isAtSaveFromTitle(uiStack) | isAtSaveFromSimulation(uiStack)}
   <SaveSlots />
 {:else if isInSimulation(uiStack)}
   <Simulation simulation={uiStack[1]} />
-{:else if isAtSaveFromSimulation(uiStack)}
-  <SaveSlots />
 {/if}
 
 <style>
