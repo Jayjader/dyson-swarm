@@ -99,7 +99,7 @@ export function getEventStream(simulation: Simulation) {
 
 export function getTickEvents(
   stream: EventStream,
-  n: number
+  tick: number
 ): BusEvent[] | undefined {
-  return stream.data.received.get(n);
+  return stream.data.received.get(tick);
 }
