@@ -102,16 +102,57 @@ export function formatProcessors(procs: SaveState): string {
   return JSON.stringify(procs);
 }
 
+function stripNonCommandsInTicksOlderThan(
+  ticksIntoThePast: number,
+  stream: SerializedStream
+): SerializedStream {
+  return {
+    ...stream,
+    data: {
+      ...stream.data,
+      received: stream.data.received
+        .map(
+          ([tick, events]) =>
+            [
+              tick,
+              tick >= stream.data.unfinishedTick - ticksIntoThePast
+                ? events
+                : events.filter((e) => e.tag.startsWith("command")),
+            ] as SerializedStream["data"]["received"][number]
+        )
+        .filter(([_tick, events]) => events.length > 0),
+    },
+  };
+}
 export function writeSlotToStorage(save: Save, storage: Storage) {
+  const longEnoughToRebuildState = 5 * 60; // grab at least the last 5 seconds of all events (if at max clock speed)
   const formattedSave = formatProcessors({
-    stream: save.stream,
+    stream: stripNonCommandsInTicksOlderThan(
+      longEnoughToRebuildState,
+      save.stream
+    ),
     processors: save.processors,
   });
   const saveKey = slotStorageKey(
     save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME
   )(save.name);
-  storage.setItem(saveKey, formattedSave);
+  try {
+    storage.setItem(saveKey, formattedSave);
+  } catch (e) {
+    // presume quota exceeded
+    const hopefullyEnoughToDebugAnyErrors = 10; // 5 seconds (at 60t/s) is too big, so just grab 10 ticks
+    const stream = stripNonCommandsInTicksOlderThan(
+      hopefullyEnoughToDebugAnyErrors,
+      save.stream
+    );
+    const formattedSave = formatProcessors({
+      stream,
+      processors: save.processors,
+    });
+    storage.setItem(saveKey, formattedSave);
+  }
   if (save.name !== "AUTOSAVE") {
+    // update declared save slot names
     const NAMES_KEY = slotStorageKey(Slot.NAMES)("useless-string");
     const names = storage.getItem(NAMES_KEY);
     const namesArray = new Set(names === null ? [] : JSON.parse(names));
