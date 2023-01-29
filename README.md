@@ -1,3 +1,4 @@
+# Attribution of external resources used
 Icons found at [Game-icons.net](https://game-icons.net):
 - Ore [icon](https://game-icons.net/1x1/faithtoken/ore.html) by Faithtoken under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/)
 - Electric [icon](https://game-icons.net/1x1/sbed/electric.html) by sbed under [CC BY 3.0](http://creativecommons.org/licenses/by/3.0/)
