@@ -61,6 +61,14 @@ function intoSimulation(
   stack.pop();
   const store = makeSimulationStore();
   store.loadSave(saveState);
+  const currentTick = getPrimitive(getClock(get(store))).tick;
+  const busEvent = {
+    tag: "command-simulation-clock-indirect-resume",
+    afterTick: currentTick,
+    timeStamp: performance.now(),
+  } as const;
+  console.info(busEvent);
+  store.broadcastEvent(busEvent);
   // @ts-ignore
   stack.push(store);
   // @ts-ignore
@@ -101,6 +109,14 @@ function loadSaveInSimulation(
   saveState: SaveState
 ): InSimulation {
   stack[1].loadSave(saveState);
+  const currentTick = getPrimitive(getClock(get(stack[1]))).tick;
+  const busEvent = {
+    tag: "command-simulation-clock-indirect-resume",
+    afterTick: currentTick,
+    timeStamp: performance.now(),
+  } as const;
+  console.info(busEvent);
+  stack[1].broadcastEvent(busEvent);
   stack.pop();
   // @ts-ignore
   return stack;
