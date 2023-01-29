@@ -2,7 +2,7 @@ import type { Construct } from "./gameRules";
 
 export type BuildChoice = null | Construct;
 
-type Repeat = {
+export type Repeat = {
   count: number;
   repeat: [BuildOrder, ...BuildOrder[]];
 };

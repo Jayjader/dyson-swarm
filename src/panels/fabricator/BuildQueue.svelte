@@ -4,13 +4,14 @@
   import BuildQueueItem from "./BuildQueueItem.svelte";
   import type { BuildOrder } from "../../types";
   import { isRepeat } from "../../types";
-  import { mode, uiState } from "./store";
+  import { BUILD_QUEUE_STORE, makeBuildQueueUiStore } from "./store";
   import { Construct } from "../../gameRules";
-  import { getContext, onDestroy } from "svelte";
+  import { getContext, onDestroy, setContext } from "svelte";
   import { SIMULATION_STORE } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
+  import RepeatOrder from "./RepeatOrder.svelte";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -23,6 +24,7 @@
     savedQueue = getFabricator(sim).queue;
     tick = getPrimitive(getClock(sim)).tick;
   });
+  const [uiState, mode] = makeBuildQueueUiStore();
   const unsubUi = uiState.subscribe(([first, ...tail]) => {
     if (!first) {
       showProcessorQueue = true;
@@ -39,6 +41,7 @@
       }
     }
   });
+  setContext(BUILD_QUEUE_STORE, { uiState, mode } as const);
   $: queue = showProcessorQueue ? savedQueue : uiQueue;
   function enterEdit() {
     const busEvent = {
@@ -85,7 +88,7 @@
 </script>
 
 <section
-  style="grid-template-columns: auto 1fr auto; grid-template-rows: auto 1fr auto"
+  style="grid-template-columns: auto minmax(8rem, 1fr) auto; grid-template-rows: auto 1fr auto"
   class="grid shrink-0 flex-grow gap-1 rounded-sm border-2 p-1"
   class:border-sky-500={$mode === "read-only"}
   class:border-violet-400={$mode === "edit"}
@@ -119,16 +122,13 @@
       </button>
     {/if}
   </div>
-  <ol class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1">
+  <ol
+    class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
+  >
     {#each queue as buildOrder, i (buildOrder)}
-      <BuildQueueItem mode={$mode} isRepeat={isRepeat(buildOrder)}>
-        {#if $mode === "remove-build-order" && !isRepeat(buildOrder)}
-          <button
-            class="hover:bg-rose-800"
-            on:click={uiState.removeBuildOrder.bind(this, i)}
-          >
-            <SingleBuildOrder {buildOrder} />
-          </button>
+      <BuildQueueItem isRepeat={isRepeat(buildOrder)}>
+        {#if isRepeat(buildOrder)}
+          <RepeatOrder {buildOrder} />
         {:else}
           <SingleBuildOrder {buildOrder} />
         {/if}
