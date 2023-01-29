@@ -67,8 +67,11 @@
   function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
     if (swarm >= 2 ** 50) {
       cancelCallback();
-      return alert(
-        "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\nThanks for playing for so long with such tedious controls 😅\nIf you want to play again, please refresh the page.\nThis game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
+      return window.alert(
+        "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\n" +
+          "Thanks for playing for so long.\n" +
+          "If you feel up to the effort, I would greatly appreciate you save your game, export that save to a file, and find a way to share that file with me (I will try to update this message with an email address once I have set that up).\n" +
+          "This game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
       );
     }
     simulation.broadcastEvent({ tag: "outside-clock-tick", timeStamp });
