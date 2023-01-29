@@ -39,9 +39,7 @@
   let swarm = 0;
 
   const unsubscribe = simulation.subscribe((sim) => {
-    // if (clockFrame % (20 * 60) === 0) {
-    //   console.debug({ sim });
-    // }
+    swarm = swarmCount(sim);
     [
       Resource.ELECTRICITY,
       Resource.ORE,
@@ -50,13 +48,11 @@
     ].forEach((resource) =>
       resources.set(resource, readStoredResource(sim, resource))
     );
-    resources = resources;
-    swarm = swarmCount(sim);
+    resources = resources; // trigger svelte reactivity
   });
 
   function scheduleCallback(callback) {
     clockFrame = window.requestAnimationFrame(callback);
-    // console.debug({ command: "schedule-callback", animationFrame: clockFrame });
   }
   function cancelCallback() {
     console.debug({ command: "cancel-callback", animationFrame: clockFrame });
