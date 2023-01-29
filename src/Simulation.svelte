@@ -30,15 +30,12 @@
       ? gridState(simulation).stored
       : readStored(simulation, resource);
 
-  let clockFrame: number = 0;
-
   setContext(SIMULATION_STORE, { simulation });
-  const appUiStore = getContext(APP_UI_CONTEXT).uiStore;
 
   let resources = new Map();
   let swarm = 0;
 
-  const unsubscribe = simulation.subscribe((sim) => {
+  const unsubFromSim = simulation.subscribe((sim) => {
     swarm = swarmCount(sim);
     [
       Resource.ELECTRICITY,
@@ -50,7 +47,9 @@
     );
     resources = resources; // trigger svelte reactivity
   });
+  onDestroy(unsubFromSim);
 
+  let clockFrame: number = 0;
   function scheduleCallback(callback) {
     clockFrame = window.requestAnimationFrame(callback);
   }
@@ -75,9 +74,9 @@
     scheduleCallback(outsideClockLoop);
   }
 
-  onDestroy(unsubscribe);
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
 
+  const appUiStore = getContext(APP_UI_CONTEXT).uiStore;
   let showProgress = true;
 
   scheduleCallback(outsideClockLoop);
