@@ -152,6 +152,10 @@
           !$uiState[0]?.present?.queue?.some((buildOrder) =>
             isRepeat(buildOrder)
           )}
+        title={$uiState === [] ||
+        !$uiState[0]?.present?.queue?.some((buildOrder) => isRepeat(buildOrder))
+          ? "No repeat orders to remove"
+          : undefined}
       />
       <MenuButton
         text="Unwrap Repeat"

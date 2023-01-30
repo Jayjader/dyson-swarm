@@ -33,6 +33,10 @@
   };
 
   $: classes = [
+    "w-full",
+    "flex flex-col gap-1",
+    isRepeat ? "items-start " : "",
+    "rounded-md border-2",
     isButton
       ? hovering
         ? "border-rose-600"
@@ -45,42 +49,28 @@
       : isRepeat && !hovering
       ? "bg-sky-800"
       : "bg-sky-300",
-    isRepeat ? "items-start " : "",
+    "text-slate-800",
   ].join(" ");
 </script>
 
 {#if !isButton}
-  <li class="flex flex-col gap-1 rounded-md border-2 text-slate-800 {classes}">
+  <li class={classes}>
     <slot />
   </li>
 {:else}
-  <li
-    class="flex flex-col gap-1 rounded-md border-2 text-slate-800 {classes} hover:cursor-pointer"
-    class:active:border-rose-600={hovering}
-    tabindex="0"
-    on:mouseover|stopPropagation={mouseover}
-    on:mouseout|stopPropagation={mouseout}
-    on:click|stopPropagation={onClick}
-  >
+  <li style="display: contents">
     <!--todo: focus semantics; might be waiting on https://bugzilla.mozilla.org/show_bug.cgi?id=1494196-->
     <button
-      style="display: contents"
+      class={classes}
+      class:active:border-rose-600={hovering}
       on:mouseover|stopPropagation={mouseover}
       on:mouseout|stopPropagation={mouseout}
       on:click|stopPropagation={onClick}
+      aria-label={`${isRepeat ? "Repeat" : "Single"} at (${position.join(
+        ", "
+      )})`}
     >
       <slot />
     </button>
   </li>
 {/if}
-
-<style>
-  li {
-    width: 100%;
-  }
-  li.remove {
-    /* to preserve the overall page flow, we increase the width target this should compensate the lack of accompanying buttons contributing to the overall queue sub-panel width*/
-    /* todo: is this still needed? 
-    width: clamp(8rem, 36dvw, 20rem);*/
-  }
-</style>
