@@ -3,7 +3,8 @@
   import { BUILD_QUEUE_STORE } from "./store";
 
   export let isRepeat;
-  const mode = getContext(BUILD_QUEUE_STORE).mode;
+  export let position: [number, ...number[]];
+  const { mode, uiState } = getContext(BUILD_QUEUE_STORE);
 </script>
 
 <li
@@ -19,24 +20,31 @@
   class:active:border-rose-600={!isRepeat && $mode === "remove-build-order"}
   class:hover:bg-rose-600={!isRepeat && $mode === "remove-build-order"}
 >
-  <!--
-  {#if $mode === 'remove-repeat' && isRepeat}
-    <button class="TODO" on:click={uiState.removeBuildOrder}>
-    <slot />
-    </button>
-  {:else if $mode === "remove-build-order" && !isRepeat}
+<!--  <div>position: {position}</div>-->
+  {#if isRepeat && $mode === "remove-repeat-order"}
     <button
       class="hover:bg-rose-800"
-      on:click={uiState.removeBuildOrder.bind(this, i)}
+      on:click={uiState.removeRepeatOrder.bind(this, position)}
     >
-    <slot />
+      <slot />
+    </button>
+  {:else if isRepeat && $mode === "unwrap-repeat-order"}
+    <button
+      class="hover:bg-rose-800"
+      on:click={uiState.unwrapRepeatOrder.bind(this, position)}
+    >
+      <slot />
+    </button>
+  {:else if !isRepeat && $mode === "remove-build-order"}
+    <button
+      class="hover:bg-rose-800"
+      on:click={uiState.removeBuildOrder.bind(this, position)}
+    >
+      <slot />
     </button>
   {:else}
-  -->
-  <slot />
-  <!--
+    <slot />
   {/if}
-  -->
 </li>
 
 <style>

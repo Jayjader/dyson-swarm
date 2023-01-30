@@ -1,6 +1,9 @@
 import { derived, writable } from "svelte/store";
-import type { BuildOrder } from "../../types";
+import type { BuildOrder, Repeat } from "../../types";
 import type { Construct } from "../../gameRules";
+import { isRepeat } from "../../types";
+
+type PositionInQueue = [number, ...number[]];
 
 /* UI */
 type EditInTime = { queue: BuildOrder[] };
@@ -11,10 +14,14 @@ type EditState = {
 };
 type AddBuildMode = { mode: "add-build-order"; remain: boolean };
 type RemoveBuildMode = { mode: "remove-build-order"; remain: boolean };
+type RemoveRepeatMode = { mode: "remove-repeat-order"; remain: boolean };
+type UnwrapRepeatMode = { mode: "unwrap-repeat-order"; remain: boolean };
 type UiStateStack =
   | []
   | [EditState]
   | [AddBuildMode, EditState]
+  | [RemoveRepeatMode, EditState]
+  | [UnwrapRepeatMode, EditState]
   | [RemoveBuildMode, EditState];
 export const isEditState = (
   stackItem: UiStateStack[0 | 1]
@@ -28,12 +35,33 @@ const isRemoveBuildMode = (
   stackItem: UiStateStack[0 | 1]
 ): stackItem is RemoveBuildMode =>
   (stackItem as RemoveBuildMode)?.mode === "remove-build-order";
+const isRemoveRepeatMode = (
+  stackItem: UiStateStack[0 | 1]
+): stackItem is RemoveRepeatMode =>
+  (stackItem as RemoveRepeatMode)?.mode === "remove-repeat-order";
+const isUnwrapRepeatMode = (
+  stackItem: UiStateStack[0 | 1]
+): stackItem is UnwrapRepeatMode =>
+  (stackItem as UnwrapRepeatMode)?.mode === "unwrap-repeat-order";
 
+function clone(orders: BuildOrder[]): BuildOrder[] {
+  return orders.map(
+    (order) =>
+      (isRepeat(order)
+        ? { count: order.count, repeat: clone(order.repeat) }
+        : order) as BuildOrder
+  );
+}
 export function makeBuildQueueUiStore() {
   const uiStateStack = writable<UiStateStack>([]);
   const mode = derived<
     typeof uiStateStack,
-    "read-only" | "edit" | "add-build-order" | "remove-build-order"
+    | "read-only"
+    | "edit"
+    | "add-build-order"
+    | "remove-build-order"
+    | "remove-repeat-order"
+    | "unwrap-repeat-order"
   >(uiStateStack, (stack) => {
     const [head] = stack;
     if (!head) return "read-only";
@@ -139,15 +167,118 @@ export function makeBuildQueueUiStore() {
         if (!isRemoveBuildMode(head)) return stack;
         return [stack[1] as EditState];
       }),
-    removeBuildOrder: (index: number) =>
+    removeBuildOrder: (position: PositionInQueue) =>
       uiStateStack.update((stack) => {
         const [head] = stack;
         if (!isRemoveBuildMode(head)) return stack;
         const second = stack[1] as EditState;
         const past = Array.from<EditInTime>(second.past);
-        const queue = Array.from<BuildOrder>(second.present.queue);
         past.push(second.present);
-        queue.splice(index, 1);
+        function deleteBuildOrderAt(
+          p: PositionInQueue,
+          queue: BuildOrder[]
+        ): BuildOrder[] {
+          const [index, next, ...rest] = p;
+          if (next === undefined) {
+            queue.splice(index, 1);
+            return queue;
+          } else {
+            deleteBuildOrderAt(
+              [next, ...rest],
+              (queue[index] as Repeat).repeat
+            );
+            return queue;
+          }
+        }
+        const queue = deleteBuildOrderAt(position, clone(second.present.queue));
+        return [{ future: [], past, present: { queue } }];
+      }),
+    enterRemoveRepeatOrder: () =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        return isEditState(head)
+          ? [{ mode: "remove-repeat-order", remain: false }, head]
+          : stack;
+      }),
+    cancelRemoveRepeatOrder: () =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        if (!isRemoveRepeatMode(head)) return stack;
+        return [stack[1] as EditState];
+      }),
+    removeRepeatOrder: (position: PositionInQueue) =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        if (!isRemoveRepeatMode(head)) return stack;
+        const second = stack[1] as EditState;
+        const past = Array.from<EditInTime>(second.past);
+        past.push(second.present);
+
+        function deleteRepeatOrderAt(
+          p: PositionInQueue,
+          queue: BuildOrder[]
+        ): BuildOrder[] {
+          const [index, next, ...rest] = p;
+          if (next === undefined) {
+            queue.splice(index, 1);
+            return queue;
+          } else {
+            deleteRepeatOrderAt(
+              [next, ...rest],
+              (queue[index] as Repeat).repeat
+            );
+            return queue;
+          }
+        }
+        const queue = deleteRepeatOrderAt(
+          position,
+          clone(second.present.queue)
+        );
+        return [{ future: [], past, present: { queue } }];
+      }),
+    enterUnwrapRepeatOrder: () =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        return isEditState(head)
+          ? [{ mode: "unwrap-repeat-order", remain: false }, head]
+          : stack;
+      }),
+    cancelUnwrapRepeatOrder: () =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        if (!isUnwrapRepeatMode(head)) return stack;
+        return [stack[1] as EditState];
+      }),
+    unwrapRepeatOrder: (position: PositionInQueue) =>
+      uiStateStack.update((stack) => {
+        const [head] = stack;
+        if (!isUnwrapRepeatMode(head)) return stack;
+        const second = stack[1] as EditState;
+        const past = Array.from<EditInTime>(second.past);
+        past.push(second.present);
+
+        function unwrapRepeatOrderAt(
+          p: PositionInQueue,
+          queue: BuildOrder[]
+        ): BuildOrder[] {
+          const [index, next, ...rest] = p;
+          if (next === undefined) {
+              console.debug({beforeSplice: clone(queue)})
+            queue.splice(index, 1, ...(queue[index] as Repeat).repeat);
+            console.debug({afterSplice: queue})
+            return queue;
+          } else {
+            unwrapRepeatOrderAt(
+              [next, ...rest],
+              (queue[index] as Repeat).repeat
+            );
+            return queue;
+          }
+        }
+        const queue = unwrapRepeatOrderAt(
+          position,
+          clone(second.present.queue)
+        );
         return [{ future: [], past, present: { queue } }];
       }),
   };

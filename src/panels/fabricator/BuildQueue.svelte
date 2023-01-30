@@ -101,7 +101,8 @@
       class:text-sky-500={$mode === "read-only"}
       class:text-violet-400={$mode === "edit"}
       class:text-indigo-400={$mode === "add-build-order"}
-      class:text-rose-600={$mode === "remove-build-order"}
+      class:text-rose-600={$mode === "remove-build-order" ||
+        $mode === "remove-repeat-order"}
     >
       {#if $mode === "read-only"}
         Order Queue
@@ -111,6 +112,8 @@
         Add Build Order
       {:else if $mode === "remove-build-order"}
         Remove Build Order
+      {:else if $mode === "remove-repeat-order"}
+        Remove Repeat Order
       {/if}
     </h3>
     {#if $mode === "read-only"}
@@ -126,9 +129,9 @@
     class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
   >
     {#each queue as buildOrder, i (buildOrder)}
-      <BuildQueueItem isRepeat={isRepeat(buildOrder)}>
+      <BuildQueueItem position={[i]} isRepeat={isRepeat(buildOrder)}>
         {#if isRepeat(buildOrder)}
-          <RepeatOrder {buildOrder} />
+          <RepeatOrder position={[i]} {buildOrder} />
         {:else}
           <SingleBuildOrder {buildOrder} />
         {/if}
@@ -142,7 +145,22 @@
         on:click={uiState.enterRemoveBuildOrder}
         disabled={$uiState === [] || $uiState[0]?.present?.queue?.length === 0}
       />
-      <MenuButton text="Remove Repeat" disabled={true} />
+      <MenuButton
+        text="Remove Repeat"
+        on:click={uiState.enterRemoveRepeatOrder}
+        disabled={$uiState === [] ||
+          !$uiState[0]?.present?.queue?.some((buildOrder) =>
+            isRepeat(buildOrder)
+          )}
+      />
+      <MenuButton
+        text="Unwrap Repeat"
+        on:click={uiState.enterUnwrapRepeatOrder}
+        disabled={$uiState === [] ||
+          !$uiState[0]?.present?.queue?.some((buildOrder) =>
+            isRepeat(buildOrder)
+          )}
+      />
       <MenuButton
         text="Clear Queue"
         on:click={uiState.clearQueue}
@@ -216,6 +234,14 @@
   {:else if $mode === "remove-build-order"}
     <div class="col-span-3 col-start-1 flex flex-row gap-0.5">
       <MenuButton text="Cancel" on:click={uiState.cancelRemoveBuildOrder} />
+    </div>
+  {:else if $mode === "remove-repeat-order"}
+    <div class="col-span-3 col-start-1 flex flex-row gap-0.5">
+      <MenuButton text="Cancel" on:click={uiState.cancelRemoveRepeatOrder} />
+    </div>
+  {:else if $mode === "unwrap-repeat-order"}
+    <div class="col-span-3 col-start-1 flex flex-row gap-0.5">
+      <MenuButton text="Cancel" on:click={uiState.cancelUnwrapRepeatOrder} />
     </div>
   {/if}
 </section>

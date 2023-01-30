@@ -5,6 +5,7 @@
   import BuildQueueItem from "./BuildQueueItem.svelte";
 
   export let buildOrder: Repeat;
+  export let position: [number, ...number[]];
 </script>
 
 <span
@@ -18,9 +19,9 @@
 </span>
 <ol class="flex flex-col items-center gap-1 self-stretch px-1 pb-1">
   {#each buildOrder.repeat as bo, i (i)}
-    <BuildQueueItem isRepeat={isRepeat(bo)}>
+    <BuildQueueItem position={[...position, i]} isRepeat={isRepeat(bo)}>
       {#if isRepeat(bo)}
-        <svelte:self buildOrder={bo} />
+        <svelte:self position={[...position, i]} buildOrder={bo} />
       {:else}
         <SingleBuildOrder buildOrder={bo} />
       {/if}
