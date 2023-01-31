@@ -1,9 +1,16 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import { BUILD_QUEUE_STORE, stackMode } from "./store";
+  import {
+    BUILD_QUEUE_STORE,
+    areSamePosition,
+    stackMode,
+    areAtSameDepth,
+    queryAt,
+  } from "./store";
+  import { isInfinite } from "../../types";
 
   export let isRepeat;
-  export let position: [number, ...number[]];
+  export let position: { p: [number, ...number[]] };
   const uiState = getContext(BUILD_QUEUE_STORE).uiState;
   let mode,
     isInitial = false,
@@ -21,18 +28,17 @@
     mode = stackMode(stack);
     isInitial =
       (mode === "add-repeat-select-final" || mode === "add-repeat-confirm") &&
-      stack[0].initial.every((p, index) => position.at(index) === p);
+      areSamePosition(stack[0].initial, position.p);
     isButton =
-      mode === "add-repeat-select-initial" ||
+      (mode === "add-repeat-select-initial" &&
+        !isInfinite(queryAt(position.p, stack[1].present.queue))) ||
       (mode === "add-repeat-select-final" &&
-        stack[0].initial.length === position.length &&
-        stack[0].initial
-          .slice(0, -1)
-          .every((f, index) => position.at(index) === f)) ||
+        areAtSameDepth(stack[0].initial, position.p) &&
+        !isInfinite(queryAt(position.p, stack[1].present.queue))) ||
       (isRepeat &&
         (mode === "remove-repeat-order" || mode === "unwrap-repeat-order")) ||
       (!isRepeat && mode === "remove-build-order");
-    onClick = isButton ? callback[mode]?.bind(this, position) : undefined;
+    onClick = isButton ? callback[mode]?.bind(this, position.p) : undefined;
   });
   onDestroy(uiSub);
 
@@ -65,6 +71,7 @@
       : isRepeat && !hovering
       ? "bg-sky-800"
       : "bg-sky-300",
+    isInitial ? "initial" : "",
     "text-slate-800",
   ]
     .filter((c) => c.length > 0)
@@ -72,7 +79,7 @@
 </script>
 
 {#if !isButton}
-  <li class={classes}>
+  <li class={classes} data-position={JSON.stringify(position.p)}>
     <slot />
   </li>
 {:else}
@@ -80,14 +87,13 @@
     <!--todo: focus semantics; might be waiting on https://bugzilla.mozilla.org/show_bug.cgi?id=1494196-->
     <button
       class={classes}
-      class:initial={isInitial}
       class:active:border-rose-600={hovering}
       on:mouseover|stopPropagation={mouseover}
       on:focus|stopPropagation={mouseover}
       on:mouseout|stopPropagation={mouseout}
       on:blur|stopPropagation={mouseout}
       on:click|stopPropagation={onClick}
-      aria-label={`${isRepeat ? "Repeat" : "Single"} at (${position.join(
+      aria-label={`${isRepeat ? "Repeat" : "Single"} at (${position.p.join(
         ", "
       )})`}
     >
@@ -97,7 +103,8 @@
 {/if}
 
 <style>
+  li.initial,
   button.initial {
-    box-shadow: inset 0 0 0.75rem 0.5rem #db2777 /*pink-600*/;
+    box-shadow: inset 0 0 0.75rem 0.5rem #a21caf /*fuchsia-700*/;
   }
 </style>

@@ -56,16 +56,14 @@
       </div>
       <div class="flex flex-col">
         <h5 class="font-bold">Producing:</h5>
-        {#if buildOrder}
-          <span class="flex flex-row gap-1">
-            <img
-              class="aspect-square h-4 max-w-min self-center"
-              src={ICON[buildOrder]}
-              alt={buildOrder}
-            />
-            <output>1 {buildOrder}</output>
-          </span>
-        {/if}
+        <span class="flex flex-row gap-1">
+          <img
+            class="aspect-square h-4 max-w-min self-center"
+            src={ICON[buildOrder ?? "empty"]}
+            alt={buildOrder ?? "empty"}
+          />
+          <output>{buildOrder == null ? "Nothing" : `1 ${buildOrder}`}</output>
+        </span>
       </div>
     </div>
   </div>

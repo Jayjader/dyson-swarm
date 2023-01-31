@@ -68,6 +68,32 @@ export function stackMode(stack: UiStateStack) {
   if (isEditState(head)) return "edit";
   return head.mode;
 }
+
+export function queryAt(p: PositionInQueue, queue: BuildOrder[]): BuildOrder {
+  const [head, ...tail] = p;
+  if (tail.length === 0) {
+    return queue[head];
+  }
+  return queryAt(tail as PositionInQueue, (queue[head] as Repeat).repeat);
+}
+export function areSamePosition(a: PositionInQueue, b: PositionInQueue) {
+  return (
+    a.length === b.length && a.every((value, index) => b.at(index)! === value)
+  );
+}
+
+export function areAtSameDepth(a: PositionInQueue, b: PositionInQueue) {
+  return (
+    a.length === b.length &&
+    a
+      .slice(0, -1)
+      .every(
+        (indexInQueue, indexInPosition) =>
+          b.at(indexInPosition) === indexInQueue
+      )
+  );
+}
+
 export function clone(orders: BuildOrder[]): BuildOrder[] {
   return orders.map(
     (order) =>
@@ -75,6 +101,39 @@ export function clone(orders: BuildOrder[]): BuildOrder[] {
         ? { count: order.count, repeat: clone(order.repeat) }
         : { ...order }) as BuildOrder
   );
+}
+function unwrapRepeatOrderAt(
+  p: PositionInQueue,
+  queue: BuildOrder[]
+): BuildOrder[] {
+  const [index, next, ...rest] = p;
+  if (next === undefined) {
+    queue.splice(index, 1, ...(queue[index] as Repeat).repeat);
+  } else {
+    unwrapRepeatOrderAt([next, ...rest], (queue[index] as Repeat).repeat);
+  }
+  return queue;
+}
+function wrapRepeatOrderAt(
+  from: PositionInQueue,
+  to: PositionInQueue,
+  queue: BuildOrder[]
+): BuildOrder[] {
+  const [fromIndex, ...fromRest] = from;
+  const [toIndex, ...toRest] = to;
+  if (fromRest.length === 0) {
+    queue.splice(fromIndex, toIndex - fromIndex + 1, {
+      count: 2,
+      repeat: queue.slice(fromIndex, toIndex + 1) as Repeat["repeat"],
+    });
+  } else {
+    wrapRepeatOrderAt(
+      fromRest as PositionInQueue, // length > 0 checked above
+      toRest as PositionInQueue, // is the same length
+      (queue[fromIndex] as Repeat).repeat
+    );
+  }
+  return queue;
 }
 export function makeBuildQueueUiStore() {
   const { subscribe, set, update } = writable<UiStateStack>([]);
@@ -164,15 +223,17 @@ export function makeBuildQueueUiStore() {
       }),
     cancelAddRepeat: () =>
       update((stack) => {
-        const [head] = stack;
-        if (!isAddRepeatMode(head)) return stack;
-        return [stack[1] as EditState];
+        const [repeat, edit] = stack;
+        if (!isAddRepeatMode(repeat)) return stack;
+        if (repeat.mode === "add-repeat-confirm") {
+          edit!.present = edit!.past.pop()!;
+        }
+        return [edit!];
       }),
     selectInitialForNewRepeat: (position: PositionInQueue) =>
       update((stack) => {
         const [repeat, edit] = stack;
         if (!isAddRepeatMode(repeat)) return stack;
-        console.log({ position });
         return [
           {
             mode: "add-repeat-select-final",
@@ -190,6 +251,9 @@ export function makeBuildQueueUiStore() {
           repeat.mode === "add-repeat-select-initial"
         )
           return stack;
+        if (repeat.mode === "add-repeat-confirm") {
+          edit!.present = edit!.past.pop()!;
+        }
         return [
           { mode: "add-repeat-select-initial", remain: repeat.remain },
           edit!,
@@ -203,16 +267,29 @@ export function makeBuildQueueUiStore() {
           repeat.mode === "add-repeat-select-initial"
         )
           return stack;
-        console.log({ position });
+
+        const sorted = repeat.initial.at(-1)! < position.at(-1)!;
+        const initial = sorted ? repeat.initial : position;
+        const final = !sorted ? repeat.initial : position;
+
+        const past = Array.from<EditInTime>(edit!.past);
+        past.push(edit!.present);
+        const queue = wrapRepeatOrderAt(
+          initial,
+          final,
+          clone(edit!.present.queue)
+        );
         return [
-          {
-            mode: "add-repeat-confirm",
-            final: position,
-            initial: repeat.initial,
-            remain: repeat.remain,
-          },
-          edit!,
+          { mode: "add-repeat-confirm", final, initial, remain: repeat.remain },
+          { future: [], present: { queue }, past },
         ];
+      }),
+    confirmAddRepeat: () =>
+      update((stack) => {
+        const [repeat, edit] = stack;
+        if ((repeat as AddRepeatMode)?.mode !== "add-repeat-confirm")
+          return stack;
+        return [edit!];
       }),
     clearQueue: () =>
       update((stack) => {
@@ -327,22 +404,6 @@ export function makeBuildQueueUiStore() {
         const second = stack[1] as EditState;
         const past = Array.from<EditInTime>(second.past);
         past.push(second.present);
-
-        function unwrapRepeatOrderAt(
-          p: PositionInQueue,
-          queue: BuildOrder[]
-        ): BuildOrder[] {
-          const [index, next, ...rest] = p;
-          if (next === undefined) {
-            queue.splice(index, 1, ...(queue[index] as Repeat).repeat);
-          } else {
-            unwrapRepeatOrderAt(
-              [next, ...rest],
-              (queue[index] as Repeat).repeat
-            );
-          }
-          return queue;
-        }
 
         const queue = unwrapRepeatOrderAt(
           position,

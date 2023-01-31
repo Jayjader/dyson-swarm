@@ -131,9 +131,9 @@
     class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
   >
     {#each queue as buildOrder, i (buildOrder)}
-      <BuildQueueItem position={[i]} isRepeat={isRepeat(buildOrder)}>
+      <BuildQueueItem position={{ p: [i] }} isRepeat={isRepeat(buildOrder)}>
         {#if isRepeat(buildOrder)}
-          <RepeatOrder position={[i]} {buildOrder} />
+          <RepeatOrder position={{ p: [i] }} {buildOrder} />
         {:else}
           <SingleBuildOrder {buildOrder} />
         {/if}
@@ -251,6 +251,11 @@
         text="Change Choice"
         on:click={uiState.changeSelection}
         disabled={mode === "add-repeat-select-initial"}
+      />
+      <MenuButton
+        text="Confirm"
+        on:click={uiState?.confirmAddRepeat}
+        disabled={mode !== "add-repeat-confirm"}
       />
     </div>
   {:else if mode === "remove-build-order"}
