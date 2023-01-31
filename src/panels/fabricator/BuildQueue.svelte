@@ -150,14 +150,10 @@
       <MenuButton
         text="Remove Repeat"
         on:click={uiState.enterRemoveRepeatOrder}
-        disabled={$uiState === [] ||
+        disabled={$uiState.length === 0 ||
           !$uiState[0]?.present?.queue?.some((buildOrder) =>
             isRepeat(buildOrder)
           )}
-        title={$uiState === [] ||
-        !$uiState[0]?.present?.queue?.some((buildOrder) => isRepeat(buildOrder))
-          ? "No repeat orders to remove"
-          : undefined}
       />
       <MenuButton
         text="Unwrap Repeat"
