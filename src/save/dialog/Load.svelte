@@ -27,7 +27,7 @@
               ? undefined
               : new Promise((resolve, reject) => {
                   const saveState = readSave(name, window.localStorage);
-                  if (saveState === null) return reject(null);
+                  if (saveState === null) reject(null);
                   resolve(saveState);
                 }),
           })
@@ -98,9 +98,9 @@
       </label>
     {:else if current.dialog.state === "success-read-save"}
       <p>Save read.</p>
-    {:else if current.dialog.state === "fail-read-save"}
+    {:else if current.dialog.state === "failure-read-save"}
       <p class="text-red-700">Reading save failed.</p>
-      <ErrorDisplay>TODO ERROR MESSAGE</ErrorDisplay>
+      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
     {/if}
     <div class="flex flex-row justify-between gap-2">
       {#if confirm}
