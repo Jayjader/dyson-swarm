@@ -40,6 +40,9 @@ export function popNextConstruct([head, ...tail]: BuildOrder[]): [
   if (head.count <= 1) {
     return [repeatHead, [...repeatTail, ...tail]];
   }
+  if (head.count === 2) {
+    return [repeatHead, [...repeatTail, ...head.repeat, ...tail]];
+  }
   return [
     repeatHead,
     [...repeatTail, { repeat: head.repeat, count: head.count - 1 }, ...tail],
