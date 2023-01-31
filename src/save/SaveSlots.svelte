@@ -193,13 +193,13 @@
       name={selected.name}
       {inSimulation}
       on:close={(event) => {
-        uiStore.endAction();
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
           (inSimulation
             ? appUiStore.replaceRunningSimulation
             : appUiStore.startSimulation)(saveState);
         }
+        uiStore.endAction();
       }}
     />
   {:else if dialog === "import"}
