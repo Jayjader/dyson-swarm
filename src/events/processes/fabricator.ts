@@ -3,8 +3,8 @@ import type { BuildChoice, BuildOrder } from "../../types";
 import { popNextConstruct } from "../../types";
 import type { BusEvent, Events } from "../events";
 import type { Resource } from "../../gameRules";
+import { Construct, constructionCosts } from "../../gameRules";
 import type { Simulation } from "../index";
-import {constructionCosts} from "../../gameRules";
 
 export type Fabricator = EventProcessor<
   "fabricator",
@@ -48,9 +48,9 @@ export function fabricatorProcess(
         } as const;
         emitted.push(busEvent);
         break;
-      case 'command-clear-fabricator-job':
+      case "command-clear-fabricator-job":
         fabricator.data.job = null;
-        break
+        break;
       case "supply":
         if (event.toId === fabricator.id) {
           fabricator.data.received.push(event);
