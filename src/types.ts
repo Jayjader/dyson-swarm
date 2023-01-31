@@ -1,4 +1,5 @@
 import type { Construct } from "./gameRules";
+import { clone } from "./panels/fabricator/store";
 
 export type BuildChoice = null | Construct;
 
@@ -36,13 +37,14 @@ export function popNextConstruct([head, ...tail]: BuildOrder[]): [
   if (!head || !isRepeat(head)) {
     return [head?.building ?? null, tail];
   }
-  const [repeatHead, repeatTail] = popNextConstruct(head.repeat);
-  if (head.count <= 1) {
+  if (head.count === 2) {
+    const [repeatHead, repeatTail] = popNextConstruct([
+      ...clone(head.repeat),
+      ...head.repeat,
+    ]);
     return [repeatHead, [...repeatTail, ...tail]];
   }
-  if (head.count === 2) {
-    return [repeatHead, [...repeatTail, ...head.repeat, ...tail]];
-  }
+  const [repeatHead, repeatTail] = popNextConstruct(head.repeat);
   return [
     repeatHead,
     [...repeatTail, { repeat: head.repeat, count: head.count - 1 }, ...tail],
