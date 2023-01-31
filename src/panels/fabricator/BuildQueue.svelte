@@ -145,28 +145,26 @@
       <MenuButton
         text="Remove Build Order"
         on:click={uiState.enterRemoveBuildOrder}
-        disabled={$uiState === [] || $uiState[0]?.present?.queue?.length === 0}
+        disabled={$uiState?.[0]?.present?.queue?.length === 0}
       />
       <MenuButton
         text="Remove Repeat"
         on:click={uiState.enterRemoveRepeatOrder}
-        disabled={$uiState.length === 0 ||
-          !$uiState[0]?.present?.queue?.some((buildOrder) =>
-            isRepeat(buildOrder)
-          )}
+        disabled={!($uiState?.[0]?.present?.queue ?? []).some((buildOrder) =>
+          isRepeat(buildOrder)
+        )}
       />
       <MenuButton
         text="Unwrap Repeat"
         on:click={uiState.enterUnwrapRepeatOrder}
-        disabled={$uiState.length === 0 ||
-          !$uiState[0]?.present?.queue?.some((buildOrder) =>
-            isRepeat(buildOrder)
-          )}
+        disabled={!($uiState?.[0]?.present?.queue ?? []).some((buildOrder) =>
+          isRepeat(buildOrder)
+        )}
       />
       <MenuButton
         text="Clear Queue"
         on:click={uiState.clearQueue}
-        disabled={$uiState?.[0]?.present?.queue?.length === 0}
+        disabled={!$uiState?.[0]?.present?.queue?.length}
       />
     </div>
     <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
