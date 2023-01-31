@@ -17,9 +17,14 @@ import { createRefinerManager } from "../events/processes/refiner";
 import { createFactoryManager } from "../events/processes/satFactory";
 import { createLauncherManager } from "../events/processes/launcher";
 import { createSwarm } from "../events/processes/satelliteSwarm";
-import { createFabricator } from "../events/processes/fabricator";
+import {
+  createFabricator,
+  type Fabricator,
+} from "../events/processes/fabricator";
 import type { Simulation } from "../events";
 import { type Save, type SaveStub, Slot, slotStorageKey } from "./uiStore";
+import type { BuildOrder } from "../types";
+import { isRepeat } from "../types";
 
 export type Others = Exclude<Processor, EventStream>;
 export type SaveState = { stream: SerializedStream; processors: Others[] };
@@ -94,8 +99,58 @@ export function readSave(name: string, storage: Storage): null | SaveState {
   return data === null ? null : parseProcessors(data);
 }
 
+/**
+ * Reverses effects of `JSON.stringify` serializing `Infinity` as `null`.
+ * @param queue
+ */
+function convertNullBuildOrderCountsToInfinity(
+  queue: BuildOrder[]
+): BuildOrder[] {
+  return queue.map((order) =>
+    !isRepeat(order)
+      ? order
+      : {
+          repeat: convertNullBuildOrderCountsToInfinity(order.repeat) as [
+            BuildOrder,
+            ...BuildOrder[]
+          ],
+          count: order.count ?? Infinity,
+        }
+  );
+}
 export function parseProcessors(formatted: string): SaveState {
-  return JSON.parse(formatted) as SaveState;
+  const parsed = JSON.parse(formatted) as SaveState;
+  parsed.stream.incoming = parsed.stream.incoming.map((e) =>
+    e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
+      ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
+      : e
+  );
+  console.log({ parsedStream: parsed.stream });
+  for (const [index, [_tick, events]] of parsed.stream.data.received.map(
+    (value, index) => [index, value] as const
+  )) {
+    parsed.stream.data.received[index][1] = events.map((e) =>
+      e.tag === "command-set-fabricator-queue" ||
+      e.tag === "fabricator-queue-set"
+        ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
+        : e
+    );
+  }
+  const fabricatorIndex = parsed.processors.findIndex(
+    (p) => p.tag === "fabricator"
+  )!;
+  parsed.processors[fabricatorIndex].incoming = parsed.processors[
+    fabricatorIndex
+  ].incoming.map((e) =>
+    e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
+      ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
+      : e
+  );
+  (parsed.processors[fabricatorIndex] as Fabricator).data.queue =
+    convertNullBuildOrderCountsToInfinity(
+      (parsed.processors[fabricatorIndex] as Fabricator).data.queue
+    );
+  return parsed;
 }
 
 export function formatProcessors(procs: SaveState): string {
