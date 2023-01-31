@@ -1,5 +1,6 @@
 import { Construct, Resource } from "./gameRules";
 
+export const empty = "/empty.png";
 export const flux = "/flux.svg";
 export const energy = "/electric.svg";
 export const ore = "/ore.svg";
@@ -17,6 +18,7 @@ export const factory = "/satellite factory.png";
 export const launcher = "/satellite launcher.png";
 
 export const ICON = {
+  empty: empty,
   star: star,
   planet: planet,
   fabricator: fabricator,
