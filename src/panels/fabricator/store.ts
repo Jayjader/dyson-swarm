@@ -1,7 +1,7 @@
-import { derived, writable } from "svelte/store";
+import { writable } from "svelte/store";
 import type { BuildOrder, Repeat } from "../../types";
-import type { Construct } from "../../gameRules";
 import { isRepeat } from "../../types";
+import type { Construct } from "../../gameRules";
 
 type PositionInQueue = [number, ...number[]];
 
@@ -13,6 +13,19 @@ type EditState = {
   future: Array<EditInTime>;
 };
 type AddBuildMode = { mode: "add-build-order"; remain: boolean };
+type AddRepeatMode =
+  | { mode: "add-repeat-select-initial"; remain: boolean }
+  | {
+      mode: "add-repeat-select-final";
+      initial: PositionInQueue;
+      remain: boolean;
+    }
+  | {
+      mode: "add-repeat-confirm";
+      initial: PositionInQueue;
+      final: PositionInQueue;
+      remain: boolean;
+    };
 type RemoveBuildMode = { mode: "remove-build-order"; remain: boolean };
 type RemoveRepeatMode = { mode: "remove-repeat-order"; remain: boolean };
 type UnwrapRepeatMode = { mode: "unwrap-repeat-order"; remain: boolean };
@@ -20,6 +33,7 @@ type UiStateStack =
   | []
   | [EditState]
   | [AddBuildMode, EditState]
+  | [AddRepeatMode, EditState]
   | [RemoveRepeatMode, EditState]
   | [UnwrapRepeatMode, EditState]
   | [RemoveBuildMode, EditState];
@@ -31,6 +45,10 @@ const isAddBuildMode = (
   stackItem: UiStateStack[0 | 1]
 ): stackItem is AddBuildMode =>
   (stackItem as AddBuildMode)?.mode === "add-build-order";
+const isAddRepeatMode = (
+  stackItem: UiStateStack[0 | 1]
+): stackItem is AddRepeatMode =>
+  (stackItem as AddRepeatMode)?.mode?.startsWith("add-repeat");
 const isRemoveBuildMode = (
   stackItem: UiStateStack[0 | 1]
 ): stackItem is RemoveBuildMode =>
@@ -44,39 +62,31 @@ const isUnwrapRepeatMode = (
 ): stackItem is UnwrapRepeatMode =>
   (stackItem as UnwrapRepeatMode)?.mode === "unwrap-repeat-order";
 
-function clone(orders: BuildOrder[]): BuildOrder[] {
+export function stackMode(stack: UiStateStack) {
+  const [head] = stack;
+  if (!head) return "read-only";
+  if (isEditState(head)) return "edit";
+  return head.mode;
+}
+export function clone(orders: BuildOrder[]): BuildOrder[] {
   return orders.map(
     (order) =>
       (isRepeat(order)
         ? { count: order.count, repeat: clone(order.repeat) }
-        : order) as BuildOrder
+        : { ...order }) as BuildOrder
   );
 }
 export function makeBuildQueueUiStore() {
-  const uiStateStack = writable<UiStateStack>([]);
-  const mode = derived<
-    typeof uiStateStack,
-    | "read-only"
-    | "edit"
-    | "add-build-order"
-    | "remove-build-order"
-    | "remove-repeat-order"
-    | "unwrap-repeat-order"
-  >(uiStateStack, (stack) => {
-    const [head] = stack;
-    if (!head) return "read-only";
-    if (isEditState(head)) return "edit";
-    return head.mode;
-  });
-  const uiState = {
-    ...derived(uiStateStack, (stack) => stack),
+  const { subscribe, set, update } = writable<UiStateStack>([]);
+  return {
+    subscribe,
     enterEdit: (queue: BuildOrder[]) => {
-      uiStateStack.set([{ future: [], past: [], present: { queue } }]);
+      set([{ future: [], past: [], present: { queue } }]);
     },
-    cancelEdits: () => uiStateStack.set([]),
+    cancelEdits: () => set([]),
     saveEdits: (): BuildOrder[] => {
       let newQueue: BuildOrder[] = [];
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (isEditState(head)) {
           newQueue = head.present.queue;
@@ -89,7 +99,7 @@ export function makeBuildQueueUiStore() {
       return newQueue;
     },
     undoEdit: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isEditState(head)) return stack;
         const future: EditInTime[] = Array.from(head.future);
@@ -99,7 +109,7 @@ export function makeBuildQueueUiStore() {
         return [{ future, past, present }];
       }),
     redoEdit: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isEditState(head)) return stack;
         if (head.future.length === 0) return stack;
@@ -110,13 +120,13 @@ export function makeBuildQueueUiStore() {
         return [{ future, past, present }];
       }),
     enterAddBuildOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isEditState(head)) return stack;
         return [{ mode: "add-build-order", remain: false }, head];
       }),
     toggleRemain: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isAddBuildMode(head)) return stack;
         return [
@@ -125,13 +135,13 @@ export function makeBuildQueueUiStore() {
         ];
       }),
     cancelAddBuildOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isAddBuildMode(head)) return stack;
         return [stack[1] as EditState];
       }),
     selectNewBuildOrder: (building: Construct) =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [first] = stack;
         if (isAddBuildMode(first)) {
           const [, second] = stack;
@@ -146,8 +156,66 @@ export function makeBuildQueueUiStore() {
           return stack;
         }
       }),
+    enterAddRepeatOrder: () =>
+      update((stack) => {
+        const [head] = stack;
+        if (!isEditState(head)) return stack;
+        return [{ mode: "add-repeat-select-initial", remain: false }, head];
+      }),
+    cancelAddRepeat: () =>
+      update((stack) => {
+        const [head] = stack;
+        if (!isAddRepeatMode(head)) return stack;
+        return [stack[1] as EditState];
+      }),
+    selectInitialForNewRepeat: (position: PositionInQueue) =>
+      update((stack) => {
+        const [repeat, edit] = stack;
+        if (!isAddRepeatMode(repeat)) return stack;
+        console.log({ position });
+        return [
+          {
+            mode: "add-repeat-select-final",
+            initial: position,
+            remain: repeat.remain,
+          },
+          edit!,
+        ];
+      }),
+    changeSelection: () =>
+      update((stack) => {
+        const [repeat, edit] = stack;
+        if (
+          !isAddRepeatMode(repeat) ||
+          repeat.mode === "add-repeat-select-initial"
+        )
+          return stack;
+        return [
+          { mode: "add-repeat-select-initial", remain: repeat.remain },
+          edit!,
+        ];
+      }),
+    selectFinalForNewRepeat: (position: PositionInQueue) =>
+      update((stack) => {
+        const [repeat, edit] = stack;
+        if (
+          !isAddRepeatMode(repeat) ||
+          repeat.mode === "add-repeat-select-initial"
+        )
+          return stack;
+        console.log({ position });
+        return [
+          {
+            mode: "add-repeat-confirm",
+            final: position,
+            initial: repeat.initial,
+            remain: repeat.remain,
+          },
+          edit!,
+        ];
+      }),
     clearQueue: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isEditState(head)) return stack;
         const past = Array.from<EditInTime>(head.past);
@@ -155,25 +223,26 @@ export function makeBuildQueueUiStore() {
         return [{ future: [], present: { queue: [] }, past }];
       }),
     enterRemoveBuildOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         return isEditState(head)
           ? [{ mode: "remove-build-order", remain: false }, head]
           : stack;
       }),
     cancelRemoveBuildOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isRemoveBuildMode(head)) return stack;
         return [stack[1] as EditState];
       }),
     removeBuildOrder: (position: PositionInQueue) =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isRemoveBuildMode(head)) return stack;
         const second = stack[1] as EditState;
         const past = Array.from<EditInTime>(second.past);
         past.push(second.present);
+
         function deleteBuildOrderAt(
           p: PositionInQueue,
           queue: BuildOrder[]
@@ -190,24 +259,25 @@ export function makeBuildQueueUiStore() {
             return queue;
           }
         }
+
         const queue = deleteBuildOrderAt(position, clone(second.present.queue));
         return [{ future: [], past, present: { queue } }];
       }),
     enterRemoveRepeatOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         return isEditState(head)
           ? [{ mode: "remove-repeat-order", remain: false }, head]
           : stack;
       }),
     cancelRemoveRepeatOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isRemoveRepeatMode(head)) return stack;
         return [stack[1] as EditState];
       }),
     removeRepeatOrder: (position: PositionInQueue) =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isRemoveRepeatMode(head)) return stack;
         const second = stack[1] as EditState;
@@ -230,6 +300,7 @@ export function makeBuildQueueUiStore() {
             return queue;
           }
         }
+
         const queue = deleteRepeatOrderAt(
           position,
           clone(second.present.queue)
@@ -237,20 +308,20 @@ export function makeBuildQueueUiStore() {
         return [{ future: [], past, present: { queue } }];
       }),
     enterUnwrapRepeatOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         return isEditState(head)
           ? [{ mode: "unwrap-repeat-order", remain: false }, head]
           : stack;
       }),
     cancelUnwrapRepeatOrder: () =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isUnwrapRepeatMode(head)) return stack;
         return [stack[1] as EditState];
       }),
     unwrapRepeatOrder: (position: PositionInQueue) =>
-      uiStateStack.update((stack) => {
+      update((stack) => {
         const [head] = stack;
         if (!isUnwrapRepeatMode(head)) return stack;
         const second = stack[1] as EditState;
@@ -263,18 +334,16 @@ export function makeBuildQueueUiStore() {
         ): BuildOrder[] {
           const [index, next, ...rest] = p;
           if (next === undefined) {
-              console.debug({beforeSplice: clone(queue)})
             queue.splice(index, 1, ...(queue[index] as Repeat).repeat);
-            console.debug({afterSplice: queue})
-            return queue;
           } else {
             unwrapRepeatOrderAt(
               [next, ...rest],
               (queue[index] as Repeat).repeat
             );
-            return queue;
           }
+          return queue;
         }
+
         const queue = unwrapRepeatOrderAt(
           position,
           clone(second.present.queue)
@@ -282,6 +351,5 @@ export function makeBuildQueueUiStore() {
         return [{ future: [], past, present: { queue } }];
       }),
   };
-  return [uiState, mode] as const;
 }
 export const BUILD_QUEUE_STORE = Symbol("build queue store");
