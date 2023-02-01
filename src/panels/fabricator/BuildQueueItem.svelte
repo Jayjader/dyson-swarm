@@ -81,28 +81,29 @@
     .join(" ");
 </script>
 
+<!-- todo: combine div and button using <svelte:element/>
+ make sure to move the stopPropagation inside the function
+ (i.e. don't leave the |stopPropagation on the div) -->
 {#if !isButton}
-  <li class={classes} data-position={JSON.stringify(position.p)}>
+  <div class={classes} data-position={JSON.stringify(position.p)}>
     <slot />
-  </li>
+  </div>
 {:else}
-  <li style="display: contents">
-    <!--todo: focus semantics; might be waiting on https://bugzilla.mozilla.org/show_bug.cgi?id=1494196-->
-    <button
-      class={classes}
-      class:active:border-rose-600={hovering}
-      on:mouseover|stopPropagation={mouseover}
-      on:focus|stopPropagation={mouseover}
-      on:mouseout|stopPropagation={mouseout}
-      on:blur|stopPropagation={mouseout}
-      on:click|stopPropagation={onClick}
-      aria-label={`${
-        repeat !== undefined ? "Repeat" : "Single"
-      } at (${position.p.join(", ")})`}
-    >
-      <slot />
-    </button>
-  </li>
+  <!--todo: focus semantics; might be waiting on https://bugzilla.mozilla.org/show_bug.cgi?id=1494196-->
+  <button
+    class={classes}
+    class:active:border-rose-600={hovering}
+    on:mouseover|stopPropagation={mouseover}
+    on:focus|stopPropagation={mouseover}
+    on:mouseout|stopPropagation={mouseout}
+    on:blur|stopPropagation={mouseout}
+    on:click|stopPropagation={onClick}
+    aria-label={`${
+      repeat !== undefined ? "Repeat" : "Single"
+    } at (${position.p.join(", ")})`}
+  >
+    <slot />
+  </button>
 {/if}
 
 <style>

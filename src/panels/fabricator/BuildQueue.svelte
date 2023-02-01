@@ -1,9 +1,17 @@
 <script lang="ts">
-  import SingleBuildOrder from "./SingleBuildOrder.svelte";
-  import MenuButton from "./MenuButton.svelte";
-  import BuildQueueItem from "./BuildQueueItem.svelte";
+  import { getContext, onDestroy, setContext } from "svelte";
+  import { flip } from "svelte/animate";
+  import { SIMULATION_STORE } from "../../events";
+  import { getClock } from "../../events/processes/clock";
+  import { getFabricator } from "../../events/processes/fabricator";
+  import { Construct } from "../../gameRules";
+  import { getPrimitive } from "../../hud/types";
   import type { BuildOrder, Repeat } from "../../types";
   import { isRepeat } from "../../types";
+  import BuildQueueItem from "./BuildQueueItem.svelte";
+  import MenuButton from "./MenuButton.svelte";
+  import RepeatOrder from "./RepeatOrder.svelte";
+  import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import {
     BUILD_QUEUE_STORE,
     clone,
@@ -11,13 +19,6 @@
     queryAt,
     stackMode,
   } from "./store";
-  import { Construct } from "../../gameRules";
-  import { getContext, onDestroy, setContext } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
-  import { getFabricator } from "../../events/processes/fabricator";
-  import { getClock } from "../../events/processes/clock";
-  import { getPrimitive } from "../../hud/types";
-  import RepeatOrder from "./RepeatOrder.svelte";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -148,16 +149,22 @@
     class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
   >
     {#each queue as buildOrder, i (buildOrder)}
-      <BuildQueueItem
-        position={{ p: [i] }}
-        repeat={isRepeat(buildOrder) ? buildOrder.count : undefined}
+      <li
+        animate:flip={{ duration: 200 }}
+        style="list-style: none"
+        class="w-full"
       >
-        {#if isRepeat(buildOrder)}
-          <RepeatOrder position={{ p: [i] }} {buildOrder} />
-        {:else}
-          <SingleBuildOrder {buildOrder} />
-        {/if}
-      </BuildQueueItem>
+        <BuildQueueItem
+          position={{ p: [i] }}
+          repeat={isRepeat(buildOrder) ? buildOrder.count : undefined}
+        >
+          {#if isRepeat(buildOrder)}
+            <RepeatOrder position={{ p: [i] }} {buildOrder} />
+          {:else}
+            <SingleBuildOrder {buildOrder} />
+          {/if}
+        </BuildQueueItem>
+      </li>
     {/each}
   </ol>
   {#if mode === "edit"}

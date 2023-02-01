@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { flip } from "svelte/animate";
   import type { Repeat } from "../../types";
   import { isInfinite, isRepeat } from "../../types";
-  import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import BuildQueueItem from "./BuildQueueItem.svelte";
+  import SingleBuildOrder from "./SingleBuildOrder.svelte";
 
   export let buildOrder: Repeat;
   export let position: { p: [number, ...number[]] };
@@ -19,15 +20,21 @@
 </span>
 <ol class="flex flex-col items-center gap-1 self-stretch px-1 pb-1">
   {#each buildOrder.repeat as bo, i (bo)}
-    <BuildQueueItem
-      position={{ p: [...position.p, i] }}
-      repeat={isRepeat(bo) ? bo.count : undefined}
+    <li
+      animate:flip={{ duration: 200 }}
+      style="list-style: none"
+      class="w-full"
     >
-      {#if isRepeat(bo)}
-        <svelte:self position={{ p: [...position.p, i] }} buildOrder={bo} />
-      {:else}
-        <SingleBuildOrder buildOrder={bo} />
-      {/if}
-    </BuildQueueItem>
+      <BuildQueueItem
+        position={{ p: [...position.p, i] }}
+        repeat={isRepeat(bo) ? bo.count : undefined}
+      >
+        {#if isRepeat(bo)}
+          <svelte:self position={{ p: [...position.p, i] }} buildOrder={bo} />
+        {:else}
+          <SingleBuildOrder buildOrder={bo} />
+        {/if}
+      </BuildQueueItem>
+    </li>
   {/each}
 </ol>
