@@ -249,8 +249,9 @@ export function makeBuildQueueUiStore() {
         if (
           !isAddRepeatMode(repeat) ||
           repeat.mode === "add-repeat-select-initial"
-        )
+        ) {
           return stack;
+        }
         if (repeat.mode === "add-repeat-confirm") {
           edit!.present = edit!.past.pop()!;
         }
@@ -284,11 +285,25 @@ export function makeBuildQueueUiStore() {
           { future: [], present: { queue }, past },
         ];
       }),
+    changeRepeatCount: (position: PositionInQueue, count: number) =>
+      update((stack) => {
+        const [head, ...rest] = stack;
+        if (
+          !head ||
+          !isAddRepeatMode(head) ||
+          head.mode !== "add-repeat-confirm"
+        )
+          return stack;
+        const [edit] = rest;
+        (queryAt(position, edit!.present.queue) as Repeat).count = count;
+        return [head, edit!];
+      }),
     confirmAddRepeat: () =>
       update((stack) => {
         const [repeat, edit] = stack;
-        if ((repeat as AddRepeatMode)?.mode !== "add-repeat-confirm")
+        if (!isAddRepeatMode(repeat) || repeat.mode !== "add-repeat-confirm") {
           return stack;
+        }
         return [edit!];
       }),
     clearQueue: () =>

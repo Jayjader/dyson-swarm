@@ -2,12 +2,13 @@
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import MenuButton from "./MenuButton.svelte";
   import BuildQueueItem from "./BuildQueueItem.svelte";
-  import type { BuildOrder } from "../../types";
+  import type { BuildOrder, Repeat } from "../../types";
   import { isRepeat } from "../../types";
   import {
     BUILD_QUEUE_STORE,
     clone,
     makeBuildQueueUiStore,
+    queryAt,
     stackMode,
   } from "./store";
   import { Construct } from "../../gameRules";
@@ -33,11 +34,27 @@
 
   setContext(BUILD_QUEUE_STORE, { uiState });
   let mode;
+  let edited, previousFiniteValue;
   const unsubUi = uiState.subscribe((stack) => {
     mode = stackMode(stack);
     showProcessorQueue = mode === "read-only";
-    uiQueue = clone(stack.at(Boolean(mode !== "edit"))?.present.queue ?? []);
+    uiQueue = clone(stack.at(mode === "edit" ? 0 : 1)?.present.queue ?? []);
+    edited =
+      mode !== "add-repeat-confirm"
+        ? undefined
+        : {
+            position: stack[0].initial,
+            repeatCount: (
+              queryAt(stack[0].initial, stack[1].present.queue) as Repeat
+            ).count,
+          };
   });
+  function setRepeatCount(newCount: number) {
+    if (!Number.isFinite(newCount)) {
+      previousFiniteValue = edited.repeatCount;
+    }
+    uiState.changeRepeatCount(edited.position, newCount);
+  }
   $: queue = showProcessorQueue ? savedQueue : uiQueue;
   function enterEdit() {
     const busEvent = {
@@ -131,7 +148,10 @@
     class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
   >
     {#each queue as buildOrder, i (buildOrder)}
-      <BuildQueueItem position={{ p: [i] }} isRepeat={isRepeat(buildOrder)}>
+      <BuildQueueItem
+        position={{ p: [i] }}
+        repeat={isRepeat(buildOrder) ? buildOrder.count : undefined}
+      >
         {#if isRepeat(buildOrder)}
           <RepeatOrder position={{ p: [i] }} {buildOrder} />
         {:else}
@@ -237,6 +257,47 @@
       <MenuButton text="Cancel" on:click={uiState.cancelAddBuildOrder} />
     </div>
   {:else if mode.startsWith("add-repeat")}
+    {#if mode === "add-repeat-confirm"}
+      <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
+        <div
+          class="flex flex-col gap-1 break-normal rounded-sm border-2 border-indigo-300 px-1 text-indigo-300"
+        >
+          <label class="flex flex-col gap-1"
+            >Count
+            {#if Number.isFinite(edited.repeatCount)}
+              <input
+                style="width: 8ch"
+                class="bg-stone-800 text-right"
+                type="number"
+                min="2"
+                value={edited.repeatCount}
+                on:change={(e) => setRepeatCount(parseInt(e.target.value, 10))}
+              />
+            {:else}
+              <!-- infinity sign in unicode -->
+              <input
+                style="width: 8ch"
+                class="bg-stone-800 text-center"
+                value="&#8734;"
+                disabled
+              />
+            {/if}
+          </label>
+          <label class="flex gap-1"
+            ><input
+              type="checkbox"
+              checked={!Number.isFinite(edited.repeatCount)}
+              on:change={() =>
+                setRepeatCount(
+                  Number.isFinite(edited.repeatCount)
+                    ? Infinity
+                    : previousFiniteValue
+                )}
+            />Forever</label
+          >
+        </div>
+      </div>
+    {/if}
     <div
       class="col-span-3 col-start-1 row-start-3 flex flex-row justify-between gap-0.5"
     >
@@ -248,7 +309,7 @@
       />
       <MenuButton
         text="Confirm"
-        on:click={uiState?.confirmAddRepeat}
+        on:click={() => uiState.confirmAddRepeat(edited.repeatCount)}
         disabled={mode !== "add-repeat-confirm"}
       />
     </div>

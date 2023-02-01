@@ -1,15 +1,13 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
   import {
-    BUILD_QUEUE_STORE,
-    areSamePosition,
-    stackMode,
     areAtSameDepth,
-    queryAt,
+    areSamePosition,
+    BUILD_QUEUE_STORE,
+    stackMode,
   } from "./store";
-  import { isInfinite } from "../../types";
 
-  export let isRepeat;
+  export let repeat: undefined | number;
   export let position: { p: [number, ...number[]] };
   const uiState = getContext(BUILD_QUEUE_STORE).uiState;
   let mode,
@@ -29,15 +27,20 @@
     isInitial =
       (mode === "add-repeat-select-final" || mode === "add-repeat-confirm") &&
       areSamePosition(stack[0].initial, position.p);
-    isButton =
-      (mode === "add-repeat-select-initial" &&
-        !isInfinite(queryAt(position.p, stack[1].present.queue))) ||
-      (mode === "add-repeat-select-final" &&
+    {
+      const canBeInitialBoundary =
+        mode === "add-repeat-select-initial" &&
+        (repeat === undefined || Number.isFinite(repeat));
+      const canBeFinalBoundary =
+        mode === "add-repeat-select-final" &&
         areAtSameDepth(stack[0].initial, position.p) &&
-        !isInfinite(queryAt(position.p, stack[1].present.queue))) ||
-      (isRepeat &&
-        (mode === "remove-repeat-order" || mode === "unwrap-repeat-order")) ||
-      (!isRepeat && mode === "remove-build-order");
+        (repeat === undefined || Number.isFinite(repeat));
+      const canBeRemoved =
+        (repeat !== undefined &&
+          (mode === "remove-repeat-order" || mode === "unwrap-repeat-order")) ||
+        (repeat === undefined && mode === "remove-build-order");
+      isButton = canBeInitialBoundary || canBeFinalBoundary || canBeRemoved;
+    }
     onClick = isButton ? callback[mode]?.bind(this, position.p) : undefined;
   });
   onDestroy(uiSub);
@@ -57,18 +60,18 @@
   $: classes = [
     "w-full",
     "flex flex-col gap-1",
-    isRepeat ? "items-start " : "",
+    repeat !== undefined ? "items-start " : "",
     "rounded-md border-2",
     isButton
       ? hovering
         ? "border-rose-600"
         : "border-rose-500"
-      : isRepeat
+      : repeat !== undefined
       ? "border-violet-200"
       : "border-sky-500",
     isButton && hovering
       ? "bg-rose-800"
-      : isRepeat && !hovering
+      : repeat !== undefined && !hovering
       ? "bg-sky-800"
       : "bg-sky-300",
     isInitial ? "initial" : "",
@@ -93,9 +96,9 @@
       on:mouseout|stopPropagation={mouseout}
       on:blur|stopPropagation={mouseout}
       on:click|stopPropagation={onClick}
-      aria-label={`${isRepeat ? "Repeat" : "Single"} at (${position.p.join(
-        ", "
-      )})`}
+      aria-label={`${
+        repeat !== undefined ? "Repeat" : "Single"
+      } at (${position.p.join(", ")})`}
     >
       <slot />
     </button>

@@ -21,7 +21,7 @@
   {#each buildOrder.repeat as bo, i (bo)}
     <BuildQueueItem
       position={{ p: [...position.p, i] }}
-      isRepeat={isRepeat(bo)}
+      repeat={isRepeat(bo) ? bo.count : undefined}
     >
       {#if isRepeat(bo)}
         <svelte:self position={{ p: [...position.p, i] }} buildOrder={bo} />
