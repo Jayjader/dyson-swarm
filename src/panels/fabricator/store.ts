@@ -222,24 +222,21 @@ export function makeBuildQueueUiStore() {
     ) =>
       update((stack) => {
         const [head, ...tail] = stack;
-        if (isEditState(head)) {
+        if (isEditState(head))
           return [
             { mode: "add-build-select-construct", ...position, remain: false },
             head,
           ];
-        } else if (head?.mode === "add-build-select-position") {
-          const [edit] = tail;
+        if (head?.mode === "add-build-select-position")
           return [
             {
               mode: "add-build-select-construct",
               ...position,
               remain: head.remain,
             },
-            edit!,
+            tail[0]!,
           ];
-        } else {
-          return stack;
-        }
+        return stack;
       }),
     toggleRemain: () =>
       update((stack) => {
