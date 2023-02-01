@@ -5,8 +5,6 @@ export enum Resource {
   PACKAGED_SATELLITE = "satellite",
 }
 
-export type Resources = Record<Resource, number>;
-
 export enum Construct {
   SOLAR_COLLECTOR = "collector",
   MINER = "miner",
@@ -14,46 +12,6 @@ export enum Construct {
   SATELLITE_FACTORY = "factory",
   SATELLITE_LAUNCHER = "launcher",
 }
-
-const __OUTPUTS = ["flux", "power", "ore", "metal", "satellite"] as const;
-export type Output = typeof __OUTPUTS[number];
-
-export type Buildings = Record<Construct, number>;
-
-export type Swarm = {
-  satellites: number;
-};
-
-export type CircuitBreaker = {
-  tripped: boolean;
-};
-
-/* TODO: try introducing fabricator, star, planet?*/
-export const __PRODUCERS = [
-  "satellite",
-  Construct.MINER,
-  Construct.REFINER,
-  Construct.SATELLITE_FACTORY,
-  Construct.SOLAR_COLLECTOR,
-] as const;
-export type Producer = typeof __PRODUCERS[number];
-export const __CONSUMERS = [
-  Construct.MINER,
-  Construct.REFINER,
-  Construct.SATELLITE_FACTORY,
-  Construct.SATELLITE_LAUNCHER,
-] as const;
-export type Consumer = typeof __CONSUMERS[number];
-export type Actor = Consumer | Producer;
-export function isProducer(w: Actor): w is Producer {
-  return __PRODUCERS.includes(w as Producer);
-}
-export function isConsumer(w: Actor): w is Consumer {
-  return __CONSUMERS.includes(w as Consumer);
-}
-
-export type Working = Map<Actor, number>;
-
 
 export const tickConsumption = {
   [Construct.SATELLITE_LAUNCHER]: new Map([
