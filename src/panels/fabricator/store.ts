@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
-import type { BuildOrder, Repeat } from "../../types";
-import { isRepeat } from "../../types";
 import type { Construct } from "../../gameRules";
+import type { BuildOrder, Repeat, SingleBuildOrder } from "../../types";
+import { isRepeat } from "../../types";
 
 type PositionInQueue = [number, ...number[]];
 
@@ -12,7 +12,37 @@ type EditState = {
   present: EditInTime;
   future: Array<EditInTime>;
 };
-type AddBuildMode = { mode: "add-build-order"; remain: boolean };
+function insertNewOrder(
+  order: SingleBuildOrder,
+  position: PositionInQueue,
+  queue: BuildOrder[],
+  top = true
+): [BuildOrder, ...BuildOrder[]] {
+  if (top) console.log({ order, position, queue });
+  const [head, ...tail] = position;
+  if (tail.length === 0) {
+    queue.splice(head, 0, order);
+  } else {
+    const repeat = queue[head] as Repeat;
+    queue.splice(head, 1, {
+      count: repeat.count,
+      repeat: insertNewOrder(
+        order,
+        tail as PositionInQueue,
+        repeat.repeat,
+        false
+      ),
+    });
+  }
+  return queue as [BuildOrder, ...BuildOrder[]];
+}
+type AddBuildMode =
+  | { mode: "add-build-select-position"; remain: boolean }
+  | ({ mode: "add-build-select-construct"; remain: boolean } & (
+      | { after: PositionInQueue }
+      | { before: PositionInQueue }
+      | { repeat: PositionInQueue; boundary: "first" | "last" }
+    ));
 type AddRepeatMode =
   | { mode: "add-repeat-select-initial"; remain: boolean }
   | {
@@ -44,7 +74,7 @@ export const isEditState = (
 const isAddBuildMode = (
   stackItem: UiStateStack[0 | 1]
 ): stackItem is AddBuildMode =>
-  (stackItem as AddBuildMode)?.mode === "add-build-order";
+  (stackItem as AddBuildMode)?.mode.startsWith("add-build");
 const isAddRepeatMode = (
   stackItem: UiStateStack[0 | 1]
 ): stackItem is AddRepeatMode =>
@@ -182,16 +212,41 @@ export function makeBuildQueueUiStore() {
       update((stack) => {
         const [head] = stack;
         if (!isEditState(head)) return stack;
-        return [{ mode: "add-build-order", remain: false }, head];
+        return [{ mode: "add-build-select-position", remain: false }, head];
+      }),
+    enterChooseConstructForNewBuildOrder: (
+      position:
+        | { after: PositionInQueue }
+        | { before: PositionInQueue }
+        | { repeat: PositionInQueue; boundary: "first" | "last" }
+    ) =>
+      update((stack) => {
+        const [head, ...tail] = stack;
+        if (isEditState(head)) {
+          return [
+            { mode: "add-build-select-construct", ...position, remain: false },
+            head,
+          ];
+        } else if (head?.mode === "add-build-select-position") {
+          const [edit] = tail;
+          return [
+            {
+              mode: "add-build-select-construct",
+              ...position,
+              remain: head.remain,
+            },
+            edit!,
+          ];
+        } else {
+          return stack;
+        }
       }),
     toggleRemain: () =>
       update((stack) => {
-        const [head] = stack;
+        const [head, ...rest] = stack;
         if (!isAddBuildMode(head)) return stack;
-        return [
-          { mode: "add-build-order", remain: !head.remain },
-          stack[1] as EditState,
-        ];
+        const [edit] = rest;
+        return [{ ...head, remain: !head.remain }, edit!];
       }),
     cancelAddBuildOrder: () =>
       update((stack) => {
@@ -201,19 +256,25 @@ export function makeBuildQueueUiStore() {
       }),
     selectNewBuildOrder: (building: Construct) =>
       update((stack) => {
-        const [first] = stack;
-        if (isAddBuildMode(first)) {
-          const [, second] = stack;
-          const past: EditInTime[] = Array.from(second?.past ?? []);
-          const queue: BuildOrder[] = Array.from(second?.present.queue ?? []);
-          if (second !== undefined) {
-            past.push(second.present);
-          }
-          queue.push({ building });
-          return [{ future: [], present: { queue }, past }];
-        } else {
+        const [head, ...tail] = stack;
+        if (!isAddBuildMode(head) || head.mode !== "add-build-select-construct")
           return stack;
+        const [edit] = tail;
+        const past: EditInTime[] = Array.from(edit?.past ?? []);
+        const queue: BuildOrder[] = clone(edit?.present.queue ?? []);
+        if (edit !== undefined) {
+          past.push(edit.present);
         }
+        const position =
+          (head as { before: PositionInQueue })?.before ??
+          (head as { after: PositionInQueue })?.after;
+        return [
+          {
+            future: [],
+            present: { queue: insertNewOrder({ building }, position, queue) },
+            past,
+          },
+        ];
       }),
     enterAddRepeatOrder: () =>
       update((stack) => {

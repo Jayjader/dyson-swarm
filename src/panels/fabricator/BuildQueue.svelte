@@ -106,7 +106,7 @@
   class="grid shrink-0 flex-grow gap-1 rounded-sm border-2 p-1"
   class:border-sky-500={mode === "read-only"}
   class:border-violet-400={mode === "edit"}
-  class:border-indigo-400={mode === "add-build-order"}
+  class:border-indigo-400={mode.startsWith("add-build")}
   class:border-rose-600={mode === "remove-build-order"}
 >
   <div class="col-start-2 row-start-1 flex flex-row justify-evenly ">
@@ -114,7 +114,7 @@
       class="max-w-min break-normal font-bold"
       class:text-sky-500={mode === "read-only"}
       class:text-violet-400={mode === "edit"}
-      class:text-indigo-400={mode === "add-build-order"}
+      class:text-indigo-400={mode.startsWith("add-build")}
       class:text-rose-600={mode === "remove-build-order" ||
         mode === "remove-repeat-order"}
     >
@@ -122,8 +122,10 @@
         Order Queue
       {:else if mode === "edit"}
         Edit
-      {:else if mode === "add-build-order"}
-        Add Build Order
+      {:else if mode === "add-build-select-position"}
+        Select Position
+      {:else if mode === "add-build-select-construct"}
+        Select Construct
       {:else if mode === "add-repeat-select-initial"}
         Select Initial Boundary
       {:else if mode === "add-repeat-select-final"}
@@ -154,6 +156,13 @@
         style="list-style: none"
         class="w-full"
       >
+        {#if mode === "add-build-select-position"}
+          <button
+            on:click={() =>
+              uiState.enterChooseConstructForNewBuildOrder({ before: [i] })}
+            >Insert Here</button
+          >
+        {/if}
         <BuildQueueItem
           position={{ p: [i] }}
           repeat={isRepeat(buildOrder) ? buildOrder.count : undefined}
@@ -166,6 +175,19 @@
         </BuildQueueItem>
       </li>
     {/each}
+    {#if mode === "add-build-select-position"}
+      <li
+        style="list-style: none"
+        class="w-full rounded-md border-2 border-slate-100 text-slate-100"
+      >
+        <button
+          on:click={() =>
+            uiState.enterChooseConstructForNewBuildOrder({
+              before: [queue.length],
+            })}>Insert Here</button
+        >
+      </li>
+    {/if}
   </ol>
   {#if mode === "edit"}
     <div class="col-start-1 row-span-2 flex flex-col gap-0.5">
@@ -197,7 +219,10 @@
     <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
       <MenuButton
         text="Add Build Order"
-        on:click={uiState.enterAddBuildOrder}
+        on:click={() =>
+          $uiState[0]?.present.queue.length === 0
+            ? uiState.enterChooseConstructForNewBuildOrder({ before: [0] })
+            : uiState.enterAddBuildOrder()}
       />
       <MenuButton
         text="Add Repeat"
@@ -226,7 +251,7 @@
         disabled={$uiState?.[0]?.past?.length === 0}
       />
     </div>
-  {:else if mode === "add-build-order"}
+  {:else if mode === "add-build-select-construct"}
     <div class="col-start-1 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Solar Collector"
@@ -294,6 +319,7 @@
             ><input
               type="checkbox"
               checked={!Number.isFinite(edited.repeatCount)}
+              disabled={edited.position.length > 1}
               on:change={() =>
                 setRepeatCount(
                   Number.isFinite(edited.repeatCount)

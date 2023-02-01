@@ -1,12 +1,21 @@
 <script lang="ts">
+  import { getContext, onDestroy } from "svelte";
   import { flip } from "svelte/animate";
   import type { Repeat } from "../../types";
   import { isInfinite, isRepeat } from "../../types";
   import BuildQueueItem from "./BuildQueueItem.svelte";
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
+  import { BUILD_QUEUE_STORE, stackMode } from "./store";
 
   export let buildOrder: Repeat;
   export let position: { p: [number, ...number[]] };
+
+  let mode;
+  const uiState = getContext(BUILD_QUEUE_STORE).uiState;
+  const uiSub = uiState.subscribe((stack) => {
+    mode = stackMode(stack);
+  });
+  onDestroy(uiSub);
 </script>
 
 <span
@@ -25,6 +34,14 @@
       style="list-style: none"
       class="w-full"
     >
+      {#if mode === "add-build-select-position"}
+        <button
+          on:click={() =>
+            uiState.enterChooseConstructForNewBuildOrder({
+              before: [...position.p, i],
+            })}>Insert Here</button
+        >
+      {/if}
       <BuildQueueItem
         position={{ p: [...position.p, i] }}
         repeat={isRepeat(bo) ? bo.count : undefined}
@@ -37,4 +54,14 @@
       </BuildQueueItem>
     </li>
   {/each}
+  {#if mode === "add-build-select-position"}
+    <li style="list-style: none" class="w-full">
+      <button
+        on:click={() =>
+          uiState.enterChooseConstructForNewBuildOrder({
+            before: [...position.p, buildOrder.repeat.length],
+          })}>Insert Here</button
+      >
+    </li>
+  {/if}
 </ol>
