@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getContext, onDestroy, setContext } from "svelte";
+  import { scale } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { SIMULATION_STORE } from "../../events";
   import { getClock } from "../../events/processes/clock";
@@ -13,6 +14,7 @@
   import RepeatOrder from "./RepeatOrder.svelte";
   import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import {
+    areSamePosition,
     BUILD_QUEUE_STORE,
     clone,
     makeBuildQueueUiStore,
@@ -35,11 +37,13 @@
 
   setContext(BUILD_QUEUE_STORE, { uiState });
   let mode;
-  let edited, previousFiniteValue;
+  let edited, previousFiniteValue, insertionPoint;
   const unsubUi = uiState.subscribe((stack) => {
     mode = stackMode(stack);
     showProcessorQueue = mode === "read-only";
     uiQueue = clone(stack.at(mode === "edit" ? 0 : 1)?.present.queue ?? []);
+    insertionPoint =
+      mode !== "add-build-select-construct" ? undefined : stack[0].before;
     edited =
       mode !== "add-repeat-confirm"
         ? undefined
@@ -151,17 +155,21 @@
     class="col-start-2 row-start-2 mx-1 flex flex-col items-center gap-1 px-1"
   >
     {#each queue as buildOrder, i (buildOrder)}
-      <li
-        animate:flip={{ duration: 200 }}
-        style="list-style: none"
-        class="w-full"
-      >
+      <li animate:flip={{ duration: 200 }} class="w-full list-none">
         {#if mode === "add-build-select-position"}
           <button
+            class="mb-1 w-full rounded-md border-2 border-slate-100 bg-slate-100 text-center text-slate-800 hover:bg-slate-300"
+            in:scale={{ duration: 100 }}
             on:click={() =>
               uiState.enterChooseConstructForNewBuildOrder({ before: [i] })}
             >Insert Here</button
           >
+        {:else if mode === "add-build-select-construct" && areSamePosition([i], insertionPoint)}
+          <div
+            class="mb-1 w-full rounded-md border-2 border-slate-100 bg-slate-100 text-center text-slate-800"
+          >
+            Will Be Inserted Here
+          </div>
         {/if}
         <BuildQueueItem
           position={{ p: [i] }}
@@ -176,16 +184,21 @@
       </li>
     {/each}
     {#if mode === "add-build-select-position"}
-      <li
-        style="list-style: none"
-        class="w-full rounded-md border-2 border-slate-100 text-slate-100"
-      >
+      <li class="w-full list-none">
         <button
+          class="w-full rounded-md border-2 border-slate-100 bg-slate-100 text-center text-slate-800 hover:bg-slate-300"
+          in:scale={{ duration: 100 }}
           on:click={() =>
             uiState.enterChooseConstructForNewBuildOrder({
               before: [queue.length],
             })}>Insert Here</button
         >
+      </li>
+    {:else if mode === "add-build-select-construct" && areSamePosition([queue.length], insertionPoint)}
+      <li
+        class="w-full rounded-md border-2 border-slate-100 bg-slate-100 text-center text-slate-800"
+      >
+        Will Be Inserted Here
       </li>
     {/if}
   </ol>

@@ -38,11 +38,9 @@ function insertNewOrder(
 }
 type AddBuildMode =
   | { mode: "add-build-select-position"; remain: boolean }
-  | ({ mode: "add-build-select-construct"; remain: boolean } & (
-      | { after: PositionInQueue }
-      | { before: PositionInQueue }
-      | { repeat: PositionInQueue; boundary: "first" | "last" }
-    ));
+  | ({ mode: "add-build-select-construct"; remain: boolean } & {
+      before: PositionInQueue;
+    });
 type AddRepeatMode =
   | { mode: "add-repeat-select-initial"; remain: boolean }
   | {
@@ -214,12 +212,9 @@ export function makeBuildQueueUiStore() {
         if (!isEditState(head)) return stack;
         return [{ mode: "add-build-select-position", remain: false }, head];
       }),
-    enterChooseConstructForNewBuildOrder: (
-      position:
-        | { after: PositionInQueue }
-        | { before: PositionInQueue }
-        | { repeat: PositionInQueue; boundary: "first" | "last" }
-    ) =>
+    enterChooseConstructForNewBuildOrder: (position: {
+      before: PositionInQueue;
+    }) =>
       update((stack) => {
         const [head, ...tail] = stack;
         if (isEditState(head))
@@ -262,13 +257,12 @@ export function makeBuildQueueUiStore() {
         if (edit !== undefined) {
           past.push(edit.present);
         }
-        const position =
-          (head as { before: PositionInQueue })?.before ??
-          (head as { after: PositionInQueue })?.after;
         return [
           {
             future: [],
-            present: { queue: insertNewOrder({ building }, position, queue) },
+            present: {
+              queue: insertNewOrder({ building }, head.before, queue),
+            },
             past,
           },
         ];
