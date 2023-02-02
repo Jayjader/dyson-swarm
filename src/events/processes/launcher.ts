@@ -160,12 +160,11 @@ export function launcherProcess(
           break;
         }
         launcher.data.charge = 0;
-        for (let i = 0; i < launcher.data.working; i++) {
-          emitted.push({
-            tag: "launch-satellite",
-            receivedTick: event.tick + 1,
-          });
-        }
+        emitted.push({
+          tag: "launch-satellite",
+          count: launcher.data.working,
+          receivedTick: event.tick + 1,
+        });
       }
     }
   }

@@ -43,8 +43,8 @@ export function swarmProcess(
         const [launched, flux] = swarm.data.received.reduce(
           ([launched, flux], e) =>
             e.tag === "launch-satellite"
-              ? [launched + 1, flux]
-              : [launched, true],
+              ? [launched + (e?.count ?? 1), flux /* flux||false === flux */]
+              : [launched, true /* flux||true === true */],
           [0, false]
         );
         swarm.data.count += launched;
