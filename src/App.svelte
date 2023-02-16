@@ -8,7 +8,7 @@
     isInSimulation,
     uiStore,
   } from "./appStateStore";
-  import Simulation from "./Simulation.svelte";
+  import Simulation from "./simulation/Simulation.svelte";
   import { setContext } from "svelte";
   import SaveSlots from "./save/SaveSlots.svelte";
 

@@ -17,6 +17,10 @@ body {
   font-family: FantasqueSansMonoRegular, monospace;
 }
 
+body {
+  position: relative;
+}
+
 .panels > section {
   min-height: 50vh;
   overflow-y: scroll;

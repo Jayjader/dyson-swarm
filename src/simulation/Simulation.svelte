@@ -1,25 +1,26 @@
 <script lang="ts">
-  import "./app.css";
-  import ResourceHud from "./hud/ResourceHud.svelte";
-  import SwarmHud from "./hud/SwarmHud.svelte";
-  import Fabricator from "./panels/fabricator/Fabricator.svelte";
   import { getContext, onDestroy, setContext } from "svelte";
-  import { Resource } from "./gameRules";
-  import PanelSelector from "./panel-control/PanelSelector.svelte";
-  import { uiPanelsState } from "./panel-control/store";
-  import TimeControl from "./hud/TimeControl.svelte";
-  import ProgressOverview from "./hud/ProgressOverview.svelte";
-  import ConstructOverview from "./panels/constructs/ConstructOverview.svelte";
-  import StorageOverview from "./panels/storage/StorageOverview.svelte";
+  import "../app.css";
+  import { APP_UI_CONTEXT } from "../appStateStore";
   import {
     makeSimulationStore,
     type Simulation,
     SIMULATION_STORE,
-  } from "./events";
-  import { swarmCount } from "./events/processes/satelliteSwarm";
-  import { readStored } from "./events/processes/storage";
-  import { gridState } from "./events/processes/powerGrid";
-  import { APP_UI_CONTEXT } from "./appStateStore";
+  } from "../events";
+  import { gridState } from "../events/processes/powerGrid";
+  import { swarmCount } from "../events/processes/satelliteSwarm";
+  import { readStored } from "../events/processes/storage";
+  import { Resource } from "../gameRules";
+  import ProgressOverview from "../hud/ProgressOverview.svelte";
+  import ResourceHud from "../hud/ResourceHud.svelte";
+  import SwarmHud from "../hud/SwarmHud.svelte";
+  import TimeControl from "../hud/TimeControl.svelte";
+  import PanelSelector from "../panel-control/PanelSelector.svelte";
+  import { uiPanelsState } from "../panel-control/store";
+  import ConstructOverview from "../panels/constructs/ConstructOverview.svelte";
+  import Fabricator from "../panels/fabricator/Fabricator.svelte";
+  import StorageOverview from "../panels/storage/StorageOverview.svelte";
+  import ThreeDeeView from "./3DSimulationView.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -128,11 +129,17 @@
   </div>
   <PanelSelector />
 </main>
+<ThreeDeeView />
 
 <style>
   main {
     height: calc(100dvh - 2.5em);
     max-height: calc(100dvh - 2.5em);
+    pointer-events: none;
+  }
+  :global(main *) {
+    z-index: 1;
+    pointer-events: auto;
   }
   .grid-auto {
     --gap: initial;
