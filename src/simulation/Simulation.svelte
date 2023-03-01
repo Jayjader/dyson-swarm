@@ -20,7 +20,7 @@
   import ConstructOverview from "../panels/constructs/ConstructOverview.svelte";
   import Fabricator from "../panels/fabricator/Fabricator.svelte";
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
-  import ThreeDeeView from "./3DSimulationView.svelte";
+  import RenderedView from "./3DSimulationView.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -129,7 +129,7 @@
   </div>
   <PanelSelector />
 </main>
-<ThreeDeeView />
+<RenderedView />
 
 <style>
   main {
