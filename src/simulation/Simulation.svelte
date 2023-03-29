@@ -21,6 +21,7 @@
   import Fabricator from "../panels/fabricator/Fabricator.svelte";
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
+  import { SETTINGS_CONTEXT } from "../settings/settings";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -32,6 +33,7 @@
       : readStored(simulation, resource);
 
   setContext(SIMULATION_STORE, { simulation });
+  const { settings } = getContext(SETTINGS_CONTEXT);
 
   let resources = new Map();
   let swarm = 0;
@@ -97,7 +99,7 @@
       <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
-          on:click={appUiStore.viewSaveSlotsInSimulation}>Menu</button
+          on:click={appUiStore.openMenu}>Menu</button
         >
         {#if swarm > 0}
           <button
@@ -129,7 +131,9 @@
   </div>
   <PanelSelector />
 </main>
-<RenderedView />
+{#if settings.show3dRender}
+  <RenderedView />
+{/if}
 
 <style>
   main {
