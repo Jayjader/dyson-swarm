@@ -136,11 +136,11 @@ export function refinerProcess(
           tickConsumption[Construct.REFINER].get(Resource.ORE)!;
         const leftOverOre = received[Resource.ORE] - oreNeeded;
         let oreDrawn = oreNeeded;
-        if (received[Resource.ORE] < oreNeeded) {
+        if (leftOverOre < 0) {
           enoughSupplied = false;
           oreDrawn -= received[Resource.ORE];
-        } else if (received[Resource.ORE] > oreNeeded) {
-          oreDrawn = oreNeeded - leftOverOre;
+        } else if (leftOverOre > 0) {
+          oreDrawn -= leftOverOre;
         }
         emitted.push({
           tag: "draw",
@@ -151,20 +151,18 @@ export function refinerProcess(
         });
 
         if (!enoughSupplied) {
-          ([Resource.ELECTRICITY, Resource.ORE] as const).forEach(
-            (resource) => {
-              const amount = received[resource];
-              if (amount > 0) {
-                refiner.data.received.push({
-                  tag: "supply",
-                  resource,
-                  amount,
-                  toId: refiner.id,
-                  receivedTick: (event as Events<"simulation-clock-tick">).tick,
-                });
-              }
+          for (let resource of [Resource.ELECTRICITY, Resource.ORE] as const) {
+            const amount = received[resource];
+            if (amount > 0) {
+              refiner.data.received.push({
+                tag: "supply",
+                resource,
+                amount,
+                toId: refiner.id,
+                receivedTick: (event as Events<"simulation-clock-tick">).tick,
+              });
             }
-          );
+          }
           break;
         }
         if (leftOverOre > 0) {
