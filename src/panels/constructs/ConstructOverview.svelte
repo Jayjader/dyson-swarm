@@ -24,6 +24,7 @@
   import { getContext, onDestroy } from "svelte";
   import { getPrimitive } from "../../hud/types";
   import { getClock } from "../../events/processes/clock";
+  import WorkingCountToggle from "./WorkingCountToggle.svelte";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -202,10 +203,10 @@
         <span
           class="flex max-w-min flex-shrink flex-grow-0 flex-row flex-wrap justify-end gap-1"
         >
-          <button
-            class="rounded border-2 border-zinc-50 px-1"
+          <WorkingCountToggle
             disabled={working(constructs, Construct.MINER) === 0}
-            on:click={() => setCount(Construct.MINER, 0)}>None</button
+            on:click={() => setCount(Construct.MINER, 0)}
+            >None</WorkingCountToggle
           >
           <span class="flex-no-wrap flex flex-row">
             <input
@@ -219,13 +220,12 @@
             />
             <output>/{count(constructs, Construct.MINER)}</output>
           </span>
-          <button
-            class="rounded border-2 border-zinc-50 px-1"
+          <WorkingCountToggle
             disabled={working(constructs, Construct.MINER) ===
               count(constructs, Construct.MINER)}
             on:click={() =>
               setCount(Construct.MINER, count(constructs, Construct.MINER))}
-            >All</button
+            >All</WorkingCountToggle
           >
         </span>
       </div>
@@ -257,10 +257,10 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.REFINER) === 0}
-          on:click={() => setCount(Construct.REFINER, 0)}>None</button
+          on:click={() => setCount(Construct.REFINER, 0)}
+          >None</WorkingCountToggle
         >
         <input
           type="number"
@@ -272,13 +272,12 @@
           style="max-width: 6ch"
         />
         <output>/{count(constructs, Construct.REFINER)}</output>
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.REFINER) ===
             count(constructs, Construct.REFINER)}
           on:click={() =>
             setCount(Construct.REFINER, count(constructs, Construct.REFINER))}
-          >All</button
+          >All</WorkingCountToggle
         >
       </span>
     </div>
@@ -313,10 +312,10 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_FACTORY) === 0}
-          on:click={() => setCount(Construct.SATELLITE_FACTORY, 0)}>None</button
+          on:click={() => setCount(Construct.SATELLITE_FACTORY, 0)}
+          >None</WorkingCountToggle
         >
         <input
           type="number"
@@ -328,15 +327,14 @@
           style="max-width: 6ch"
         />
         <output>/{count(constructs, Construct.SATELLITE_FACTORY)}</output>
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_FACTORY) ===
             count(constructs, Construct.SATELLITE_FACTORY)}
           on:click={() =>
             setCount(
               Construct.SATELLITE_FACTORY,
               count(constructs, Construct.SATELLITE_FACTORY)
-            )}>All</button
+            )}>All</WorkingCountToggle
         >
       </span>
     </div>
@@ -367,11 +365,10 @@
     <div class="flex flex-col">
       <h5 class="font-bold">Working:</h5>
       <span class="flex flex-row gap-1">
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_LAUNCHER) === 0}
           on:click={() => setCount(Construct.SATELLITE_LAUNCHER, 0)}
-          >None</button
+          >None</WorkingCountToggle
         >
         <input
           type="number"
@@ -386,15 +383,14 @@
           style="max-width: 6ch"
         />
         <output>/{count(constructs, Construct.SATELLITE_LAUNCHER)}</output>
-        <button
-          class="rounded border-2 border-zinc-50 px-1"
+        <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_LAUNCHER) ===
             count(constructs, Construct.SATELLITE_LAUNCHER)}
           on:click={() =>
             setCount(
               Construct.SATELLITE_LAUNCHER,
               count(constructs, Construct.SATELLITE_LAUNCHER)
-            )}>All</button
+            )}>All</WorkingCountToggle
         >
       </span>
     </div>

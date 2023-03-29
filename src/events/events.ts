@@ -66,6 +66,10 @@ export type BusEvent =
       construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
       count: number;
     } & BeforeTick)
+  | ({ tag: "command-turn-on-fabricator" } & TimeStamped & AfterTick)
+  | ({ tag: "fabricator-turned-on" } & BeforeTick)
+  | ({ tag: "command-turn-off-fabricator" } & TimeStamped & AfterTick)
+  | ({ tag: "fabricator-turned-off" } & BeforeTick)
   | ({
       tag: "command-set-fabricator-queue";
       queue: BuildOrder[];

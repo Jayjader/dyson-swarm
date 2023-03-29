@@ -6,12 +6,19 @@
   import { getFabricator } from "../../events/processes/fabricator";
   import type { Construct } from "../../gameRules";
   import { constructionCosts } from "../../gameRules";
+  import { getClock } from "../../events/processes/clock";
+  import { getPrimitive } from "../../hud/types";
+  import WorkingCountToggle from "./WorkingCountToggle.svelte";
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
+  let lastTick = 0;
+  let on = true;
   let buildOrder: Construct | null;
   let consumes = [];
   const unsubscribe = simulation.subscribe((sim) => {
+    lastTick = getPrimitive(getClock(sim)).tick;
+    on = getFabricator(sim).working;
     buildOrder = getFabricator(sim).job;
     if (buildOrder) {
       consumes = [...constructionCosts[buildOrder]].map(
@@ -25,6 +32,23 @@
     }
   });
   onDestroy(unsubscribe);
+
+  function turnOn() {
+    const commandEvent = {
+      tag: "command-turn-on-fabricator",
+      afterTick: lastTick,
+      timeStamp: window.performance.now(),
+    } as const;
+    simulation.broadcastEvent(commandEvent);
+  }
+  function turnOff() {
+    const commandEvent = {
+      tag: "command-turn-off-fabricator",
+      afterTick: lastTick,
+      timeStamp: window.performance.now(),
+    } as const;
+    simulation.broadcastEvent(commandEvent);
+  }
 </script>
 
 <div
@@ -38,6 +62,17 @@
   <div class="flex flex-1 flex-row flex-wrap justify-between gap-1">
     <div class="flex flex-col justify-between gap-1">
       <h3 class="font-bold text-zinc-50">Fabricator</h3>
+      <div class="flex flex-col">
+        <h5 class="font-bold">Working:</h5>
+        <span class="flex flex-shrink-0 flex-grow-0 flex-row flex-wrap gap-2">
+          <WorkingCountToggle on:click={turnOff} disabled={!on}
+            >Off</WorkingCountToggle
+          >
+          <WorkingCountToggle on:click={turnOn} disabled={on}
+            >On</WorkingCountToggle
+          >
+        </span>
+      </div>
     </div>
     <div class="flex flex-col justify-between gap-1">
       <div class="flex flex-col">

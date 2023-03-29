@@ -74,6 +74,8 @@ export const SUBSCRIPTIONS = {
     "supply",
     "command-set-fabricator-queue",
     "command-clear-fabricator-job",
+    "command-turn-on-fabricator",
+    "command-turn-off-fabricator",
   ] as const),
   stream: new Set([
     "simulation-clock-tick",

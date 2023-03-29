@@ -39,6 +39,20 @@ export function fabricatorProcess(
     emitted = [] as BusEvent[];
   while ((event = fabricator.incoming.shift())) {
     switch (event.tag) {
+      case "command-turn-on-fabricator":
+        fabricator.data.working = true;
+        emitted.push({
+          tag: "fabricator-turned-on",
+          beforeTick: event.afterTick + 1,
+        });
+        break;
+      case "command-turn-off-fabricator":
+        fabricator.data.working = false;
+        emitted.push({
+          tag: "fabricator-turned-off",
+          beforeTick: event.afterTick + 1,
+        });
+        break;
       case "command-set-fabricator-queue":
         fabricator.data.queue = event.queue;
         const busEvent = {
