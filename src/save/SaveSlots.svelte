@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext, onDestroy, onMount } from "svelte";
   import { APP_UI_CONTEXT, simulationIsLoaded } from "../appStateStore";
-  import NavButton from "../NavButton.svelte";
+  import NavButton from "./NavButton.svelte";
   import type { SaveStubs } from "./uiStore";
   import { uiStore } from "./uiStore";
   import Delete from "./dialog/Delete.svelte";
