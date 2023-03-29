@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext } from "svelte";
-  import { SETTINGS_CONTEXT } from "./settings";
+  import { SETTINGS_CONTEXT } from "./store";
   import { APP_UI_CONTEXT } from "../appStateStore";
 
   const { uiStore } = getContext(APP_UI_CONTEXT);

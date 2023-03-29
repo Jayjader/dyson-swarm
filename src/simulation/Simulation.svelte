@@ -21,7 +21,7 @@
   import Fabricator from "../panels/fabricator/Fabricator.svelte";
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
-  import { SETTINGS_CONTEXT } from "../settings/settings";
+  import { SETTINGS_CONTEXT } from "../settings/store";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (

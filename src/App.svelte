@@ -15,7 +15,7 @@
   import TitleAccent from "./TitleAccent.svelte";
   import MainMenu from "./main-menu/MainMenu.svelte";
   import Settings from "./settings/Settings.svelte";
-  import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/settings";
+  import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/store";
 
   let uiStack: AppUiState;
   uiStore.subscribe((stack: AppUiState) => {
