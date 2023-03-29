@@ -48,7 +48,7 @@ export type BusEvent =
       amount: number;
       toId: Id;
     } & ReceivedTick)
-  | ({ tag: "launch-satellite", count?: number } & ReceivedTick)
+  | ({ tag: "launch-satellite"; count?: number } & ReceivedTick)
   | ({ tag: "satellite-flux-reflection"; flux: number } & ReceivedTick)
   | ({ tag: "construct-fabricated"; construct: Construct } & ReceivedTick)
   | { tag: "circuit-breaker-tripped"; onTick: number }
