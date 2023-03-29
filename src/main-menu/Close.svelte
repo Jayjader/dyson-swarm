@@ -1,12 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  import {createEventDispatcher} from "svelte";
 
   const dispatch = createEventDispatcher();
 
-  let element: HTMLDialogElement;
-  onMount(() => {
-    element.showModal();
-  });
+  export let element: HTMLDialogElement;
 </script>
 
 <dialog

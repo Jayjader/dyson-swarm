@@ -95,7 +95,7 @@ function closeMenu(stack: MenuFromSimulation): InSimulation {
   return stack;
 }
 
-export function toNewSimulation(s: AtTitle): InSimulation {
+function toNewSimulation(s: AtTitle): InSimulation {
   const store = makeSimulationStore();
   store.loadNew(window.performance.now());
   // @ts-ignore
@@ -138,16 +138,6 @@ function intoSimulation(
 }
 
 function toSaveFromSimulation(stack: InSimulation): SaveSlotsFromSimulation {
-  /*
-  const currentTick = getPrimitive(getClock(get(stack[1]))).tick;
-  const busEvent = {
-    tag: "command-simulation-clock-indirect-pause",
-    afterTick: currentTick,
-    timeStamp: performance.now(),
-  } as const;
-  console.info(busEvent);
-  stack[1].broadcastEvent(busEvent);
-*/
   // @ts-ignore
   stack.push("load");
   // @ts-ignore
@@ -155,16 +145,6 @@ function toSaveFromSimulation(stack: InSimulation): SaveSlotsFromSimulation {
 }
 
 function backToSimulation(stack: SaveSlotsFromSimulation): InSimulation {
-  /*
-  const currentTick = getPrimitive(getClock(get(stack[1]))).tick;
-  const busEvent = {
-    tag: "command-simulation-clock-indirect-resume",
-    afterTick: currentTick,
-    timeStamp: performance.now(),
-  } as const;
-  console.info(busEvent);
-  stack[1].broadcastEvent(busEvent);
-*/
   stack.pop();
   // @ts-ignore
   return stack;
@@ -187,7 +167,7 @@ function loadSaveInSimulation(
   // @ts-ignore
   return stack;
 }
-export function exitToTitle(stack: SaveSlotsFromSimulation): AtTitle {
+function exitToTitle(stack: MenuFromSimulation): AtTitle {
   stack.pop();
   stack.pop();
   // @ts-ignore
@@ -228,7 +208,7 @@ export const uiStore = {
       loadSaveInSimulation(<SaveSlotsFromSimulation>stack, saveState)
     ),
   closeSimulation: () =>
-    stackStore.update((stack) => exitToTitle(<SaveSlotsFromSimulation>stack)),
+    stackStore.update((stack) => exitToTitle(<MenuFromSimulation>stack)),
   openMenu: () => stackStore.update((stack) => openMenu(<InSimulation>stack)),
   closeMenu: () =>
     stackStore.update((stack) => closeMenu(<MenuFromSimulation>stack)),

@@ -10,7 +10,6 @@
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
-  import Close from "./dialog/Close.svelte";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -24,11 +23,6 @@
 
   const uiSub = uiStore.subscribe((stack) => {
     saveStubs = stack[0];
-    if (stack?.[1] === "warn-discard-on-close") {
-      selected = { index: -2 };
-      dialog = stack[1];
-      return;
-    }
     const index = stack?.[1] ?? -2;
     const name = index === -1 ? "AUTOSAVE" : saveStubs.slots[index]?.name;
     selected = { index, name };
@@ -85,7 +79,7 @@
 
 <main
   style="max-width: 23rem"
-  class="m-auto flex flex-col justify-between gap-2 bg-slate-200"
+  class="m-auto flex flex-col justify-between gap-2 bg-slate-200 p-2"
 >
   <header class="m-2 flex flex-row justify-between gap-2">
     <nav class="flex flex-col gap-2">
@@ -94,16 +88,11 @@
           on:click={inSimulation
             ? appUiStore.closeSaveSlotsInSimulation
             : appUiStore.closeSaveSlots}
-          >Back&nbsp;to {#if inSimulation}Simulation{:else}Title{/if}</NavButton
+          >Back&nbsp;to {#if inSimulation}Menu{:else}Title{/if}</NavButton
         >
       {:else}
         <NavButton on:click={uiStore.unselectChosenSlot}
           >Cancel Choice</NavButton
-        >
-      {/if}
-      {#if inSimulation && selected.index === -2}
-        <NavButton on:click={uiStore.startCloseAction}
-          >Close Simulation</NavButton
         >
       {/if}
     </nav>
@@ -208,15 +197,6 @@
     <Export saveName={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "clone"}
     <Clone clonedSaveName={selected.name} on:close={uiStore.endAction} />
-  {:else if dialog === "warn-discard-on-close"}
-    <Close
-      on:close={(event) => {
-        uiStore.endCloseAction();
-        if (event.detail === "confirm") {
-          appUiStore.closeSimulation();
-        }
-      }}
-    />
   {/if}
 </main>
 

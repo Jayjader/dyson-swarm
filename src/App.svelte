@@ -13,6 +13,7 @@
   import { setContext } from "svelte";
   import SaveSlots from "./save/SaveSlots.svelte";
   import TitleAccent from "./TitleAccent.svelte";
+  import MainMenu from "./main-menu/MainMenu.svelte";
   import Settings from "./settings/Settings.svelte";
   import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/settings";
 
@@ -59,35 +60,7 @@
     </div>
   </main>
 {:else if uiStack.at(-1) === "menu"}
-  <main class="m-2 flex flex-col justify-between gap-2 bg-slate-200 p-2">
-    <h1>Menu</h1>
-    <div class="flex flex-col gap-2">
-      <button
-        class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={uiStore.viewSaveSlotsInSimulation}
-      >
-        Save
-      </button>
-      <button
-        class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={uiStore.viewSettings}
-      >
-        Settings
-      </button>
-      <button
-        class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={null}
-      >
-        Close Simulation
-      </button>
-    </div>
-    <button
-      class="self-stretch rounded border-2 border-slate-900 px-2"
-      on:click={uiStore.closeMenu}
-    >
-      Back
-    </button>
-  </main>
+  <MainMenu/>
 {:else if settingsIsOpened(uiStack)}
   <Settings />
 {:else if isAtSaveFromTitle(uiStack) | isAtSaveFromSimulation(uiStack)}
