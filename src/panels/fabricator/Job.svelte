@@ -13,6 +13,7 @@
   import { getFabricator } from "../../events/processes/fabricator";
   import { getPrimitive } from "../../hud/types";
   import { getClock } from "../../events/processes/clock";
+  import { ICON } from "../../icons";
 
   type Job = [Construct, Input] | null;
 
@@ -103,7 +104,15 @@
     <h3>Current Job</h3>
   </div>
   <span class="inline-block" style="width: 8rem">
-    <SingleBuildOrder buildOrder={!job ? undefined : { building: job[0] }} />
+    <figure class="flex flex-row flex-wrap items-center justify-between gap-1">
+      <img
+        src={job === undefined ? "./empty.png" : ICON[job?.at(0)]}
+        alt={job?.at(0) ?? "Empty slot"}
+        title={job?.at(0) ?? "None"}
+        class="m-auto rounded border-2 border-slate-900"
+      />
+      <figcaption class="m-auto p-1">{job?.at(0) ?? "None"}</figcaption>
+    </figure>
   </span>
   <h4 class="mt-3">Power</h4>
   <progress
