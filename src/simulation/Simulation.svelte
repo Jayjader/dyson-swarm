@@ -22,6 +22,7 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
+  import Tutorial from "./Tutorial.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -117,6 +118,8 @@
       {/if}
     </div>
   </div>
+
+  <Tutorial />
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("construct-overview")}
