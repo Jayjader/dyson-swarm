@@ -9,7 +9,7 @@
 </script>
 
 <dialog
-  class="flex-col justify-between gap-1 rounded border-2 border-slate-900"
+  class="max-w-3xl flex-col justify-between gap-2 rounded border-2 border-slate-900 transition-all"
   bind:this={tutorialDialogue}
   on:close={() => (showTutorial = false)}
 >
@@ -18,7 +18,6 @@
     Operator Training Simulator.
   </p>
   {#if step > 0}
-    <br />
     <aside>
       <p in:fly={{ x: 200, delay: 500 }}>
         <em>aside:</em> disregard incorrect acronym.
@@ -36,7 +35,6 @@
     </aside>
   {/if}
   {#if step > 1}
-    <br />
     <aside in:fly={{ x: 200 }}>
       <p in:fly={{ x: 200, delay: 500 }}>
         <em>aside:</em> disregard inelegance in name structure.
@@ -54,7 +52,6 @@
     </aside>
   {/if}
   {#if step > 2}
-    <br />
     <p in:fly={{ x: -200 }}>
       <em>resume narration:</em> The purpose of this program is to help you practice
       bootstrapping the fabrication chain for a Dyson Swarm in a risk-free environment.
@@ -65,7 +62,6 @@
     </p>
   {/if}
   {#if step > 3}
-    <br />
     <aside in:fly={{ x: 200 }}>
       <p in:fly={{ x: 200, delay: 500 }}>
         <em>aside:</em> disregard innate irresponsibility of creating such a state
@@ -86,13 +82,13 @@
 
   <form method="dialog" class="flex flex-row flex-nowrap justify-center">
     {#if step === 4}
-      <button type="submit" class="rounded border-2 border-slate-500 px-2"
+      <button type="submit" class="rounded border-2 border-slate-500 p-2"
         >Begin!</button
       >
     {:else}
       <button
         type="button"
-        class="rounded border-2 border-slate-500 px-2"
+        class="rounded border-2 border-slate-500 p-2"
         on:click={() => step++}>Next</button
       >
     {/if}
@@ -103,9 +99,11 @@
   dialog {
     min-height: 8rem;
   }
-  dialog:has([open]) {
+  /* the attribute selector is needed to prevent the browser from overriding
+  the default behavior [to hide a closed <dialog>] */
+  dialog[open] {
     display: flex;
-    }
+  }
   em {
     text-transform: uppercase;
   }
