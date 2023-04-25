@@ -9,7 +9,7 @@
 </script>
 
 <dialog
-  class="flex flex-col justify-between gap-1 rounded border-2 border-slate-900"
+  class="flex-col justify-between gap-1 rounded border-2 border-slate-900"
   bind:this={tutorialDialogue}
   on:close={() => (showTutorial = false)}
 >
@@ -103,6 +103,9 @@
   dialog {
     min-height: 8rem;
   }
+  dialog:has([open]) {
+    display: flex;
+    }
   em {
     text-transform: uppercase;
   }
