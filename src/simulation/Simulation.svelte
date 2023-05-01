@@ -1,7 +1,7 @@
 <script lang="ts">
   import { getContext, onDestroy, setContext } from "svelte";
   import "../app.css";
-  import { APP_UI_CONTEXT } from "../appStateStore";
+  import { APP_UI_CONTEXT, SimMenu } from "../appStateStore";
   import {
     makeSimulationStore,
     type Simulation,
@@ -22,7 +22,6 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
-  import Tutorial from "./Tutorial.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -80,7 +79,7 @@
 
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
 
-  const appUiStore = getContext(APP_UI_CONTEXT).uiStore;
+  const { appStateStack } = getContext(APP_UI_CONTEXT);
   let showProgress = true;
 
   scheduleCallback(outsideClockLoop);
@@ -100,7 +99,7 @@
       <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
-          on:click={appUiStore.openMenu}>Menu</button
+          on:click={() => appStateStack.push(SimMenu)}>Menu</button
         >
         {#if swarm > 0}
           <button
@@ -118,8 +117,6 @@
       {/if}
     </div>
   </div>
-
-  <Tutorial />
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("construct-overview")}

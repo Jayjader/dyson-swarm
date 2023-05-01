@@ -3,7 +3,7 @@
   import { SETTINGS_CONTEXT } from "./store";
   import { APP_UI_CONTEXT } from "../appStateStore";
 
-  const { uiStore } = getContext(APP_UI_CONTEXT);
+  const { appStateStack } = getContext(APP_UI_CONTEXT);
   const { settings } = getContext(SETTINGS_CONTEXT);
 </script>
 
@@ -18,6 +18,6 @@
   </label>
   <button
     class="rounded border-2 border-slate-900 px-2"
-    on:click={uiStore.closeSettings}>Close Settings</button
+    on:click={() => appStateStack.pop()}>Close Settings</button
   >
 </main>

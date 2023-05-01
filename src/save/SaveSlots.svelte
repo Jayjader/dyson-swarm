@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext, onDestroy, onMount } from "svelte";
-  import { APP_UI_CONTEXT, simulationIsLoaded } from "../appStateStore";
+  import { APP_UI_CONTEXT } from "../appStateStore";
   import NavButton from "./NavButton.svelte";
   import type { SaveStubs } from "./uiStore";
   import { uiStore } from "./uiStore";
@@ -10,6 +10,11 @@
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
+  import { makeSimulationStore } from "../events";
+  import { makeTutorialStore } from "../simulation/tutorialStore";
+  import { getPrimitive } from "../hud/types";
+  import { getClock } from "../events/processes/clock";
+  import { get } from "svelte/store";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -39,13 +44,13 @@
     dialog = dialogState;
   });
 
-  let inSimulation = false;
+  let simulationLoaded = false;
   let simulation = null;
-  const appUiStore = getContext(APP_UI_CONTEXT).uiStore;
+  const { appStateStack } = getContext(APP_UI_CONTEXT);
   let simSub = null;
-  const appUiSub = appUiStore.subscribe((stack) => {
-    inSimulation = simulationIsLoaded(stack);
-    if (inSimulation) {
+  const appUiSub = appStateStack.subscribe((stack) => {
+    simulationLoaded = typeof stack[1] === "object";
+    if (simulationLoaded) {
       simSub = stack[1].subscribe((sim) => {
         simulation = sim;
       });
@@ -84,11 +89,8 @@
   <header class="m-2 flex flex-row justify-between gap-2">
     <nav class="flex flex-col gap-2">
       {#if selected.index === -2}
-        <NavButton
-          on:click={inSimulation
-            ? appUiStore.closeSaveSlotsInSimulation
-            : appUiStore.closeSaveSlots}
-          >Back&nbsp;to {#if inSimulation}Menu{:else}Title{/if}</NavButton
+        <NavButton on:click={() => appStateStack.pop()}
+          >Back&nbsp;to {#if simulationLoaded}Simulation{:else}Main{/if} Menu</NavButton
         >
       {:else}
         <NavButton on:click={uiStore.unselectChosenSlot}
@@ -127,7 +129,7 @@
     >
   </div>
   <div class="m-2 grid grid-cols-3 grid-rows-2 gap-2">
-    {#if inSimulation}
+    {#if simulationLoaded}
       <button
         class="rounded border-2 border-slate-900 disabled:border-dashed"
         disabled={allDisabled || overWriteDisabled}
@@ -180,13 +182,30 @@
   {:else if dialog === "load"}
     <Load
       name={selected.name}
-      {inSimulation}
+      {simulationLoaded}
       on:close={(event) => {
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
-          (inSimulation
-            ? appUiStore.replaceRunningSimulation
-            : appUiStore.startSimulation)(saveState);
+          appStateStack.pop(2); // close menus
+
+          let simStore;
+          if (simulationLoaded) {
+            const [currentSimStore] = appStateStack.pop(2);
+            simStore = currentSimStore;
+          } else {
+            simStore = makeSimulationStore();
+          }
+          simStore.loadSave(saveState);
+
+          const currentTick = getPrimitive(getClock(get(simStore))).tick;
+          const busEvent = {
+            tag: "command-simulation-clock-indirect-resume",
+            afterTick: currentTick,
+            timeStamp: performance.now(),
+          };
+          simStore.broadcastEvent(busEvent);
+
+          appStateStack.push(simStore, makeTutorialStore());
         }
         uiStore.endAction();
       }}

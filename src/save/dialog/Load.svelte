@@ -12,7 +12,7 @@
   });
 
   export let name: string;
-  export let inSimulation: boolean;
+  export let simulationLoaded: boolean;
   const store = makeLoadDialogStore();
   let current;
   let confirm, cancel;
@@ -22,8 +22,8 @@
       if (current === undefined) {
         store.act(
           actions.startLoad.bind(this, {
-            inSimulation,
-            promise: inSimulation
+            inSimulation: simulationLoaded,
+            promise: simulationLoaded
               ? undefined
               : new Promise((resolve, reject) => {
                   const saveState = readSave(name, window.localStorage);

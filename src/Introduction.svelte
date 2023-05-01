@@ -1,12 +1,14 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
-  import { onMount } from "svelte";
+  import { getContext, onMount } from "svelte";
+  import { APP_UI_CONTEXT } from "./appStateStore";
+  import { makeSimulationStore } from "./events";
+  import { makeTutorialStore } from "./simulation/tutorialStore";
 
-  let showTutorial = true;
-  let tutorialDialogue: HTMLDialogElement;
+  let introDialog: HTMLDialogElement;
   let step = 0;
 
-  onMount(() => showTutorial && tutorialDialogue.showModal());
+  onMount(() => introDialog.showModal());
 
   const dialogFragments = [
     {
@@ -62,8 +64,8 @@
     {
       body:
         "<ul>" +
-        '<li class="list-disc list-inside">You have access to a more flexible control of the flow of time using the <strong>Time Control Panel</strong>.</li>' +
-        '<li class="list-disc list-inside">You can back up, restore, and/or duplicate your progress in the <strong>Save Data Menu</strong>.</li>' +
+        '<li class="list-disc list-inside">You have more flexible control over the flow of time.</li>' +
+        '<li class="list-disc list-inside">You can back up, restore, and/or duplicate your progress.</li>' +
         "</ul>",
     },
     {
@@ -79,12 +81,19 @@
   function resolveAsKey(data: string | string[]): string {
     return typeof data === "string" ? data : data[1];
   }
+
+  const { appStateStack } = getContext(APP_UI_CONTEXT);
 </script>
 
 <dialog
   class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
-  bind:this={tutorialDialogue}
-  on:close={() => (showTutorial = false)}
+  bind:this={introDialog}
+  on:close={() =>
+    appStateStack.pop() &&
+    appStateStack.push(
+      makeSimulationStore().loadNew(window.performance.now()),
+      makeTutorialStore()
+    )}
 >
   {#each dialogFragments as fragment, index (fragment.body + index)}
     {#if step >= index}

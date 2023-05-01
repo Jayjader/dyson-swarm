@@ -114,19 +114,22 @@ export const SIMULATION_STORE = Symbol();
 export function makeSimulationStore(): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
-  loadSave: (s: SaveState) => void;
-  loadNew: (outsideTick: DOMHighResTimeStamp) => void;
+  loadSave: (s: SaveState) => SimulationStore;
+  loadNew: (outsideTick: DOMHighResTimeStamp) => SimulationStore;
 } {
   const { subscribe, update, set } = writable<Simulation>({
     bus: { subscriptions: new Map() },
     processors: new Map(),
   });
-  return {
+  const store = {
     subscribe,
     processUntilSettled: () => update((sim) => processUntilSettled(sim)),
-    broadcastEvent: (e) => update((sim) => broadcastEvent(sim, e)),
-    loadSave: (s) => set(loadSave(s)),
-    loadNew: (outsideTick) => {
+    broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
+    loadSave: (s: SaveState) => {
+      set(loadSave(s));
+      return store;
+    },
+    loadNew: (outsideTick: DOMHighResTimeStamp) => {
       const simulation = {
         bus: { subscriptions: new Map() },
         processors: new Map(),
@@ -140,6 +143,10 @@ export function makeSimulationStore(): Readable<Simulation> & {
       );
       insertProcessor(simulation, createMemoryStream());
       set(simulation);
+      return store;
     },
   };
+  return store;
 }
+
+export type SimulationStore = ReturnType<typeof makeSimulationStore>;

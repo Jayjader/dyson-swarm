@@ -1,32 +1,31 @@
 <script lang="ts">
   import {
     APP_UI_CONTEXT,
-    type AppUiState,
-    isAtSaveFromSimulation,
-    isAtSaveFromTitle,
-    isAtTitle,
-    isInSimulation,
-    settingsIsOpened,
-    uiStore,
+    Introduction,
+    MainMenu,
+    makeAppStateStore,
+    SaveMenu,
+    SettingsMenu,
+    SimMenu,
   } from "./appStateStore";
   import Simulation from "./simulation/Simulation.svelte";
   import { setContext } from "svelte";
   import SaveSlots from "./save/SaveSlots.svelte";
   import TitleAccent from "./TitleAccent.svelte";
-  import MainMenu from "./main-menu/MainMenu.svelte";
+  import SimulationMenu from "./main-menu/SimulationMenu.svelte";
   import Settings from "./settings/Settings.svelte";
   import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/store";
+  import IntroductionDialog from "./Introduction.svelte";
 
-  let uiStack: AppUiState;
-  uiStore.subscribe((stack: AppUiState) => {
-    uiStack = stack;
-  });
-  setContext(APP_UI_CONTEXT, { uiStore });
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
+  const appStateStack = makeAppStateStore(settings);
+  setContext(APP_UI_CONTEXT, { appStateStack });
+
+  // $: console.log($appStateStack);
 </script>
 
-{#if isAtTitle(uiStack)}
+{#if $appStateStack.at(-1) === MainMenu}
   <main
     class="m-2 flex flex-col justify-between overflow-y-scroll rounded border-2 bg-slate-200 px-2"
   >
@@ -39,15 +38,17 @@
     <div class="flex flex-col gap-2 self-center">
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={uiStore.startNewSimulation}>Start New Simulation</button
+        on:click={() => appStateStack.pop() && appStateStack.push(Introduction)}
+        >Start New Simulation</button
       >
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={uiStore.viewSaveSlots}>Use Existing Simulation</button
+        on:click={() => appStateStack.push(SaveMenu)}
+        >Use Existing Simulation</button
       >
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={uiStore.viewSettings}>Settings</button
+        on:click={() => appStateStack.push(SettingsMenu)}>Settings</button
       >
       <a
         class="text-slate-700 hover:underline hover:visited:text-slate-500"
@@ -59,14 +60,16 @@
       </a>
     </div>
   </main>
-{:else if uiStack.at(-1) === "menu"}
-  <MainMenu/>
-{:else if settingsIsOpened(uiStack)}
+{:else if $appStateStack.at(-1) === SimMenu}
+  <SimulationMenu />
+{:else if $appStateStack.at(-1) === SettingsMenu}
   <Settings />
-{:else if isAtSaveFromTitle(uiStack) | isAtSaveFromSimulation(uiStack)}
+{:else if $appStateStack.at(-1) === SaveMenu}
   <SaveSlots />
-{:else if isInSimulation(uiStack)}
-  <Simulation simulation={uiStack[1]} />
+{:else if $appStateStack.at(-1) === Introduction}
+  <IntroductionDialog />
+{:else}
+  <Simulation simulation={$appStateStack[1]} />
 {/if}
 
 <style>
