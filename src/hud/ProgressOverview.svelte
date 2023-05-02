@@ -7,34 +7,37 @@
   import { SIMULATION_STORE } from "../events";
   import ProgressData from "./ProgressData.svelte";
 
+  const swarmSizeGoal = 2 ** 50;
   export let count = 0;
-  let estimatedRatePerTick = 0,
-    lastTick = 0;
-  const slidingWindow = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  let lastTick = 0;
+  let slidingWindow = Array(100).fill(undefined);
+
   const simulation = getContext(SIMULATION_STORE).simulation;
+
   simulation.subscribe((sim) => {
     const tick = getPrimitive(getClock(sim)).tick;
     if (tick === lastTick) {
       return;
     }
     lastTick = tick;
+
     slidingWindow.shift();
     slidingWindow.push(count);
-    const [averageRate] = slidingWindow
+    slidingWindow = slidingWindow;
+  });
+
+  $: definedValues = slidingWindow.slice(
+    slidingWindow.findIndex((val) => val !== undefined)
+  );
+  $: estimatedRatePerTick =
+    definedValues
       .slice(1)
       .reduce(
-        ([sum, prev], next) => [sum + next - prev, next],
-        [0, slidingWindow[0]]
-      );
-    estimatedRatePerTick = averageRate / 9;
-    // console.debug({
-    //   command: "calculate-new-rate-per-tick",
-    //   slidingWindow,
-    //   averageRate,
-    //   estimatedRatePerTick,
-    // });
-  });
-  const swarmSizeGoal = 2 ** 50;
+        ([sum, prev], next) =>
+          next === undefined ? [sum, next] : [sum + next - (prev ?? 0), next],
+        [0, definedValues[0]]
+      )[0] /
+    (definedValues.length - 1);
 </script>
 
 <table
@@ -53,14 +56,14 @@
   </tr>
   <tr
     in:fade={{ delay: 1500, duration: 1500 }}
-    title="Estimated over the past 10 ticks"
+    title="Estimated over the past {definedValues.length} ticks"
   >
     <ProgressHeader>Estimated rate of deployment</ProgressHeader>
     <ProgressData>{estimatedRatePerTick.toPrecision(8)} /tick</ProgressData>
   </tr>
   <tr
     in:fade={{ delay: 2000, duration: 1500 }}
-    title="Estimated over the past 10 ticks"
+    title="Estimated over the past {definedValues.length} ticks"
   >
     <ProgressHeader
       >Estimated time to reach 100% at current rate:</ProgressHeader
