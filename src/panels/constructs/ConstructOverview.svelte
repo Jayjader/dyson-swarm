@@ -115,10 +115,10 @@
       <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
           <h3 class="basis-full font-bold">Satellite Swarm</h3>
-          <div class="flex flex-col">
-            <h5 class="font-bold">Count:</h5>
+          <fieldset class="flex flex-col">
+            <legend class="font-bold">Count:</legend>
             <output>{constructs.get("swarm")}</output>
-          </div>
+          </fieldset>
         </div>
         <div class="flex flex-col-reverse">
           <div class="flex flex-col">
@@ -154,10 +154,10 @@
       icon: energy,
     }}
   >
-    <div class="flex flex-row">
-      <h5 class="font-bold">Count:</h5>
+    <fieldset class="flex flex-row">
+      <legend class="font-bold">Count:</legend>
       <output>{constructs.get(Construct.SOLAR_COLLECTOR)}</output>
-    </div>
+    </fieldset>
   </ConstructOverview>
   <GridBreaker />
   <Fabricator />
@@ -173,10 +173,10 @@
       <div class="flex basis-full flex-row flex-wrap justify-between">
         <div class="flex flex-col justify-between">
           <h3 class="basis-full font-bold">Planet</h3>
-          <div class="flex flex-col">
-            <h5 class="font-bold">Mass:</h5>
+          <fieldset class="flex flex-col">
+            <legend class="font-bold">Mass:</legend>
             <output>{constructs.get("planet")} {kilogram}</output>
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>
@@ -198,8 +198,8 @@
         icon: ore,
       }}
     >
-      <div class="flex flex-col">
-        <h5 class="font-bold">Working:</h5>
+      <fieldset class="flex flex-col">
+        <legend class="font-bold">Working:</legend>
         <span
           class="flex max-w-min flex-shrink flex-grow-0 flex-row flex-wrap justify-end gap-1"
         >
@@ -228,7 +228,7 @@
             >All</WorkingCountToggle
           >
         </span>
-      </div>
+      </fieldset>
     </ConstructOverview>
   </div>
   <ConstructOverview
@@ -254,8 +254,8 @@
       icon: metal,
     }}
   >
-    <div class="flex flex-col">
-      <h5 class="font-bold">Working:</h5>
+    <fieldset class="flex flex-col">
+      <legend class="font-bold">Working:</legend>
       <span class="flex flex-row gap-1">
         <WorkingCountToggle
           disabled={working(constructs, Construct.REFINER) === 0}
@@ -280,7 +280,7 @@
           >All</WorkingCountToggle
         >
       </span>
-    </div>
+    </fieldset>
   </ConstructOverview>
   <ConstructOverview
     name="satellite factory"
@@ -309,8 +309,8 @@
       icon: satellite,
     }}
   >
-    <div class="flex flex-col">
-      <h5 class="font-bold">Working:</h5>
+    <fieldset class="flex flex-col">
+      <legend class="font-bold">Working:</legend>
       <span class="flex flex-row gap-1">
         <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_FACTORY) === 0}
@@ -337,7 +337,7 @@
             )}>All</WorkingCountToggle
         >
       </span>
-    </div>
+    </fieldset>
   </ConstructOverview>
   <ConstructOverview
     name="satellite launcher"
@@ -362,8 +362,8 @@
       icon: satellite,
     }}
   >
-    <div class="flex flex-col">
-      <h5 class="font-bold">Working:</h5>
+    <fieldset class="flex flex-col">
+      <legend class="font-bold">Working:</legend>
       <span class="flex flex-row gap-1">
         <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_LAUNCHER) === 0}
@@ -393,7 +393,7 @@
             )}>All</WorkingCountToggle
         >
       </span>
-    </div>
+    </fieldset>
   </ConstructOverview>
 </section>
 

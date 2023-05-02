@@ -31,7 +31,8 @@ h2,
 h3,
 h4,
 h5,
-caption {
+caption,
+legend {
   font-family: datalegreya, sans-serif;
 }
 h1,

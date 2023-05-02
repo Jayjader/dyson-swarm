@@ -140,7 +140,7 @@
   />
 <!--  uncomment following line to debug clock state-->
 <!--  <div class="bg-slate-50 text-stone-900">{JSON.stringify(clock)}</div>-->
-  <div class="flex flex-row justify-evenly gap-1">
+  <fieldset class="flex flex-row justify-evenly gap-1">
     <label
       class="flex cursor-pointer flex-row justify-between gap-1"
       class:cursor-not-allowed={disabled}
@@ -169,7 +169,7 @@
         {disabled}
       />
     </label>
-  </div>
+  </fieldset>
   <!-- TODO: handle touch events 
         see https://web.dev/mobile-touch/ and https://web.dev/mobile-touchandmouse/
   -->

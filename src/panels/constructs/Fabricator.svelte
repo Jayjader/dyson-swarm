@@ -62,8 +62,8 @@
   <div class="flex flex-1 flex-row flex-wrap justify-between gap-1">
     <div class="flex flex-col justify-between gap-1">
       <h3 class="font-bold text-zinc-50">Fabricator</h3>
-      <div class="flex flex-col">
-        <h5 class="font-bold">Working:</h5>
+      <fieldset class="flex flex-col">
+        <legend class="font-bold">Working:</legend>
         <span class="flex flex-shrink-0 flex-grow-0 flex-row flex-wrap gap-2">
           <WorkingCountToggle on:click={turnOff} disabled={!on}
             >Off</WorkingCountToggle
@@ -72,7 +72,7 @@
             >On</WorkingCountToggle
           >
         </span>
-      </div>
+      </fieldset>
     </div>
     <div class="flex flex-col justify-between gap-1">
       <div class="flex flex-col">
