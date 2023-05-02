@@ -88,12 +88,13 @@
 <dialog
   class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
   bind:this={introDialog}
-  on:close={() =>
-    appStateStack.pop() &&
+  on:close={() => {
+    appStateStack.pop();
     appStateStack.push(
       makeSimulationStore().loadNew(window.performance.now()),
       makeTutorialStore()
-    )}
+    );
+  }}
 >
   {#each dialogFragments as fragment, index (fragment.body + index)}
     {#if step >= index}

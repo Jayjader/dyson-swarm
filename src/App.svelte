@@ -38,7 +38,7 @@
     <div class="flex flex-col gap-2 self-center">
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={() => appStateStack.pop() && appStateStack.push(Introduction)}
+        on:click={() => (appStateStack.pop(), appStateStack.push(Introduction))}
         >Start New Simulation</button
       >
       <button
