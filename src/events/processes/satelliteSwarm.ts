@@ -51,7 +51,7 @@ export function swarmProcess(
         if (flux) {
           emitted.push({
             tag: "satellite-flux-reflection",
-            flux: swarm.data.count,
+            flux: BigInt(swarm.data.count),
             receivedTick: event.tick + 1,
           });
         }

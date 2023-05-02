@@ -88,19 +88,19 @@ export function fabricatorProcess(
         const supply = fabricator.data.received.reduce((supply, event) => {
           supply.set(
             event.resource,
-            event.amount + (supply.get(event.resource) ?? 0)
+            event.amount + (supply.get(event.resource) ?? 0n)
           );
           return supply;
-        }, new Map<Resource, number>());
+        }, new Map<Resource, bigint>());
         let enoughSupplied = true;
         for (let [resource, needed] of constructionCosts[currentJob]) {
-          const supplied = supply.get(resource) ?? 0;
+          const supplied = supply.get(resource) ?? 0n;
           if (supplied < needed) {
             enoughSupplied = false;
             emitted.push({
               tag: "draw",
               resource,
-              amount: needed - supplied,
+              amount: BigInt(needed) - supplied,
               forId: fabricator.id,
               receivedTick: event.tick + 1,
             });

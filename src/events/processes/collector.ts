@@ -55,11 +55,11 @@ export function collectorProcess(
             }
             return sum;
           },
-          { flux: 0, fabricated: 0 }
+          { flux: 0n, fabricated: 0 }
         );
         c.data.count += received.fabricated;
         c.data.received = [];
-        const produced = c.data.count * received.flux;
+        const produced = BigInt(c.data.count) * received.flux;
         if (produced > 0) {
           emitted.push({
             tag: "produce",

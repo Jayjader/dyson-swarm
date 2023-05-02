@@ -76,8 +76,8 @@ export function factoryProcess(
             return sum;
           },
           {
-            [Resource.ELECTRICITY]: 0,
-            [Resource.METAL]: 0,
+            [Resource.ELECTRICITY]: 0n,
+            [Resource.METAL]: 0n,
             fabricated: 0,
             working: null as null | number,
           }
@@ -113,8 +113,8 @@ export function factoryProcess(
         let enoughSupplied = true;
 
         const powerNeeded =
-          factory.data.working *
-          tickConsumption.factory.get(Resource.ELECTRICITY)!;
+          BigInt(factory.data.working) *
+          BigInt(tickConsumption.factory.get(Resource.ELECTRICITY)!);
         if (received[Resource.ELECTRICITY] < powerNeeded) {
           enoughSupplied = false;
           emitted.push({
@@ -126,7 +126,8 @@ export function factoryProcess(
           });
         }
         const metalNeeded =
-          factory.data.working * tickConsumption.factory.get(Resource.METAL)!;
+          BigInt(factory.data.working) *
+          BigInt(tickConsumption.factory.get(Resource.METAL)!);
         if (received[Resource.METAL] < metalNeeded) {
           enoughSupplied = false;
           emitted.push({
@@ -170,8 +171,8 @@ export function factoryProcess(
           tag: "produce",
           resource: Resource.PACKAGED_SATELLITE,
           amount:
-            factory.data.working *
-            tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!,
+            BigInt(factory.data.working) *
+            BigInt(tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!),
           receivedTick: event.tick + 1,
         });
       }

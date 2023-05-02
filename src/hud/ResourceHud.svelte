@@ -2,7 +2,7 @@
 <script lang="ts">
   import { Resource } from "../gameRules";
 
-  export let resources = new Map();
+  export let resources: Map<Resource, bigint> = new Map();
 
   type URL = string;
   type Name = string;
@@ -26,7 +26,7 @@
         title={resourceInfo.get(resource)[0]}
         alt={resourceInfo.get(resource)[0]}
       />
-      <output>{amount > 9999 ? amount.toExponential(1) : amount}</output>
+      <output>{amount > 9999 ? Number(amount).toExponential(1) : amount}</output>
     </div>
   {/each}
 </div>

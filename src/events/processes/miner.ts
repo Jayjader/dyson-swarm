@@ -70,7 +70,7 @@ export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
             return sum;
           },
           {
-            [Resource.ELECTRICITY]: 0,
+            [Resource.ELECTRICITY]: 0n,
             fabricated: 0,
             working: null as null | number,
           }
@@ -83,8 +83,8 @@ export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
         if (miner.data.working > 0) {
           miner.data.received = [];
           const powerNeeded =
-            miner.data.working *
-            tickConsumption.miner.get(Resource.ELECTRICITY)!;
+            BigInt(miner.data.working) *
+            BigInt(tickConsumption.miner.get(Resource.ELECTRICITY)!);
           if (received[Resource.ELECTRICITY] < powerNeeded) {
             emitted.push({
               tag: "draw",

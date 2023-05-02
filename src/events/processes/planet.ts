@@ -7,7 +7,7 @@ import type { EventProcessor } from "./index";
 export type Planet = EventProcessor<
   "planet",
   {
-    mass: number;
+    mass: bigint;
     received: Events<
       Exclude<SubscriptionsFor<"planet">, "simulation-clock-tick">
     >[];
@@ -15,11 +15,11 @@ export type Planet = EventProcessor<
 >;
 
 export function createPlanet(
-  options: Partial<{ id: Planet["id"]; mass: number }> = {}
+  options: Partial<{ id: Planet["id"]; mass: bigint }> = {}
 ): Planet {
   const values = {
     id: "planet-0" as Planet["id"],
-    mass: 3.301e23,
+    mass: BigInt(3.301e23),
     ...options,
   };
   return {
@@ -39,11 +39,15 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
         planet.data.received.push(event);
         break;
       case "simulation-clock-tick":
-        const totalOreMined = Math.min(
-          planet.data.mass, // we don't want to mine more ore than the planet has mass!
-          planet.data.received.reduce((accu, e) => accu + e.minerCount, 0) *
-            tickProduction.miner.get(Resource.ORE)!
-        );
+        const totalOreMiningPotential =
+          planet.data.received.reduce(
+            (accu, e) => accu + BigInt(e.minerCount),
+            0n
+          ) * BigInt(tickProduction.miner.get(Resource.ORE)!);
+        const totalOreMined =
+          planet.data.mass < totalOreMiningPotential
+            ? planet.data.mass
+            : totalOreMiningPotential; // we don't want to mine **more** ore than the planet has mass!
         planet.data.received = [];
         if (totalOreMined > 0) {
           planet.data.mass -= totalOreMined;
@@ -60,9 +64,9 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
   return [planet, emitted];
 }
 
-export function getPlanetMass(simulation: Simulation) {
+export function getPlanetMass(simulation: Simulation): bigint {
   return (
     (simulation.processors.get("planet-0") as Planet | undefined)?.data.mass ??
-    0
+    0n
   );
 }

@@ -21,10 +21,10 @@
   let last = {
     tick: 0,
     resources: new Map([
-      [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
-      [Resource.ORE, { produce: 0, supply: 0 }],
-      [Resource.METAL, { produce: 0, supply: 0 }],
-      [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
+      [Resource.ELECTRICITY, { produce: 0n, supply: 0n }],
+      [Resource.ORE, { produce: 0n, supply: 0n }],
+      [Resource.METAL, { produce: 0n, supply: 0n }],
+      [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
     ]),
   };
   const unsubSim = simulation.subscribe((sim) => {
@@ -42,10 +42,10 @@
             return accu;
           },
           new Map([
-            [Resource.ELECTRICITY, { produce: 0, supply: 0 }],
-            [Resource.ORE, { produce: 0, supply: 0 }],
-            [Resource.METAL, { produce: 0, supply: 0 }],
-            [Resource.PACKAGED_SATELLITE, { produce: 0, supply: 0 }],
+            [Resource.ELECTRICITY, { produce: 0n, supply: 0n }],
+            [Resource.ORE, { produce: 0n, supply: 0n }],
+            [Resource.METAL, { produce: 0n, supply: 0n }],
+            [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
           ])
         );
         last.tick = currentTick;

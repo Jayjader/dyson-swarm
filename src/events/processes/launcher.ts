@@ -9,7 +9,7 @@ export type LauncherManager = EventProcessor<
   {
     working: number;
     count: number;
-    charge: number;
+    charge: bigint;
     received: Events<
       Exclude<SubscriptionsFor<"factory">, "simulation-clock-tick">
     >[];
@@ -30,7 +30,7 @@ export function createLauncherManager(
     data: {
       working: values.count,
       count: values.count,
-      charge: 0,
+      charge: 0n,
       received: [],
     },
   };
@@ -78,8 +78,8 @@ export function launcherProcess(
             return sum;
           },
           {
-            [Resource.ELECTRICITY]: 0,
-            [Resource.PACKAGED_SATELLITE]: 0,
+            [Resource.ELECTRICITY]: 0n,
+            [Resource.PACKAGED_SATELLITE]: 0n,
             fabricated: 0,
             working: null as null | number,
           }
@@ -117,8 +117,8 @@ export function launcherProcess(
 
         let enoughSupplied = true;
         const powerNeeded =
-          launcher.data.working *
-          tickConsumption.launcher.get(Resource.ELECTRICITY)!;
+          BigInt(launcher.data.working) *
+          BigInt(tickConsumption.launcher.get(Resource.ELECTRICITY)!);
         if (launcher.data.charge < powerNeeded) {
           enoughSupplied = false;
           emitted.push({
@@ -130,8 +130,8 @@ export function launcherProcess(
           });
         }
         const satellitesNeeded =
-          launcher.data.working *
-          tickConsumption.launcher.get(Resource.PACKAGED_SATELLITE)!;
+          BigInt(launcher.data.working) *
+          BigInt(tickConsumption.launcher.get(Resource.PACKAGED_SATELLITE)!);
         if (received[Resource.PACKAGED_SATELLITE] < satellitesNeeded) {
           enoughSupplied = false;
           emitted.push({
@@ -159,7 +159,7 @@ export function launcherProcess(
           });
           break;
         }
-        launcher.data.charge = 0;
+        launcher.data.charge = 0n;
         emitted.push({
           tag: "launch-satellite",
           count: launcher.data.working,
@@ -174,6 +174,6 @@ export function launcherProcess(
 export function getLaunchers(simulation: Simulation) {
   const { count, working, charge } = (
     simulation.processors.get("launcher-0") as LauncherManager | undefined
-  )?.data ?? { count: 0, working: 0, charge: 0 };
+  )?.data ?? { count: 0, working: 0, charge: 0n };
   return { count, working, charge };
 }

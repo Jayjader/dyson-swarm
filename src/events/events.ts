@@ -29,27 +29,27 @@ export type BusEvent =
     } & AfterTick &
       TimeStamped)
   | ({ tag: "simulation-clock-new-speed"; speed: number } & BeforeTick)
-  | ({ tag: "star-flux-emission"; flux: number } & ReceivedTick)
+  | ({ tag: "star-flux-emission"; flux: bigint } & ReceivedTick)
   | ({ tag: "mine-planet-surface"; minerCount: number } & ReceivedTick)
   | ({
       tag: "produce";
       resource: Resource;
-      amount: number;
+      amount: bigint;
     } & ReceivedTick)
   | ({
       tag: "draw";
       resource: Resource;
-      amount: number;
+      amount: bigint;
       forId: Id;
     } & ReceivedTick)
   | ({
       tag: "supply";
       resource: Resource;
-      amount: number;
+      amount: bigint;
       toId: Id;
     } & ReceivedTick)
   | ({ tag: "launch-satellite"; count?: number } & ReceivedTick)
-  | ({ tag: "satellite-flux-reflection"; flux: number } & ReceivedTick)
+  | ({ tag: "satellite-flux-reflection"; flux: bigint } & ReceivedTick)
   | ({ tag: "construct-fabricated"; construct: Construct } & ReceivedTick)
   | { tag: "circuit-breaker-tripped"; onTick: number }
   | ({ tag: "command-reset-circuit-breaker" } & TimeStamped & AfterTick)

@@ -44,16 +44,16 @@
       fab.received as {
         tag: "supply";
         resource: Resource.METAL | Resource.ELECTRICITY;
-        amount: number;
+        amount: bigint;
       }[]
-    ).reduce<Map<Resource.METAL | Resource.ELECTRICITY, number>>(
+    ).reduce<Map<Resource.METAL | Resource.ELECTRICITY, bigint>>(
       (accu, e) => {
         const resource = e.resource;
-        return accu.set(resource, e.amount + accu.get(resource) ?? 0);
+        return accu.set(resource, e.amount + accu.get(resource) ?? 0n);
       },
       new Map([
-        [Resource.ELECTRICITY, 0],
-        [Resource.METAL, 0],
+        [Resource.ELECTRICITY, 0n],
+        [Resource.METAL, 0n],
       ])
     );
 
@@ -69,12 +69,12 @@
       }
     }
 
-    const elecCurrent = current.get(Resource.ELECTRICITY) ?? 0;
+    const elecCurrent = Number(current.get(Resource.ELECTRICITY) ?? 0n);
     if (elecCurrent !== elecPast) {
       elecPast = elecCurrent;
       elecProgress.update(() => elecCurrent);
     }
-    const matsCurrent = current.get(Resource.METAL) ?? 0;
+    const matsCurrent = Number(current.get(Resource.METAL) ?? 0n);
     if (matsCurrent !== matsPast) {
       matsPast = matsCurrent;
       matsProgress.update(() => matsCurrent);

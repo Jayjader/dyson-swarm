@@ -7,7 +7,7 @@ import type { EventProcessor, Id } from "./index";
 export type Storage<R extends string> = EventProcessor<
   `storage-${R}`,
   {
-    stored: number;
+    stored: bigint;
     received: Events<
       Exclude<SubscriptionsFor<`storage-${R}`>, "simulation-clock-tick">
     >[];
@@ -18,10 +18,10 @@ export function createStorage<
   R extends Exclude<Resource, Resource.ELECTRICITY>
 >(
   resource: R,
-  options: Partial<{ id: Storage<R>["id"]; stored: number }> = {}
+  options: Partial<{ id: Storage<R>["id"]; stored: bigint }> = {}
 ): Storage<R> {
   const tag = `storage-${resource}`;
-  const values = { id: `${tag}-0`, stored: 0, ...options };
+  const values = { id: `${tag}-0`, stored: 0n, ...options };
   return {
     id: values.id,
     tag,
@@ -48,9 +48,9 @@ export function storageProcess(
         }
         break;
       case "simulation-clock-tick":
-        let totalResourceReceived = 0,
+        let totalResourceReceived = 0n,
           toSupply = new Set<Events<"draw">>(),
-          totalDrawn = 0;
+          totalDrawn = 0n;
         let e;
         while (
           (e = storage.data.received.shift() as Events<"draw" | "produce">) !==
@@ -81,12 +81,12 @@ export function storageProcess(
   }
   return [storage, emitted];
 }
-export function readStored(simulation: Simulation, resource: Resource): number {
+export function readStored(simulation: Simulation, resource: Resource): bigint {
   return (
     (
       simulation.processors.get(
         `storage-${resource}-0` as unknown as Id
       ) as Storage<Resource>
-    )?.data.stored ?? 0
+    )?.data.stored ?? 0n
   );
 }

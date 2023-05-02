@@ -82,8 +82,8 @@ export function refinerProcess(
             return sum;
           },
           {
-            [Resource.ELECTRICITY]: 0,
-            [Resource.ORE]: 0,
+            [Resource.ELECTRICITY]: 0n,
+            [Resource.ORE]: 0n,
             fabricated: 0,
           }
         );
@@ -116,8 +116,8 @@ export function refinerProcess(
         let enoughSupplied = true;
 
         const powerNeeded =
-          refiner.data.working *
-          tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!;
+          BigInt(refiner.data.working) *
+          BigInt(tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY)!);
         let powerDrawn = powerNeeded;
         if (received[Resource.ELECTRICITY] < powerNeeded) {
           enoughSupplied = false;
@@ -132,8 +132,8 @@ export function refinerProcess(
         });
 
         const oreNeeded =
-          refiner.data.working *
-          tickConsumption[Construct.REFINER].get(Resource.ORE)!;
+          BigInt(refiner.data.working) *
+          BigInt(tickConsumption[Construct.REFINER].get(Resource.ORE)!);
         const leftOverOre = received[Resource.ORE] - oreNeeded;
         let oreDrawn = oreNeeded;
         if (leftOverOre < 0) {
@@ -180,8 +180,8 @@ export function refinerProcess(
           tag: "produce",
           resource: Resource.METAL,
           amount:
-            refiner.data.working *
-            tickProduction[Construct.REFINER].get(Resource.METAL)!,
+            BigInt(refiner.data.working) *
+            BigInt(tickProduction[Construct.REFINER].get(Resource.METAL)!),
           receivedTick: event.tick + 1,
         });
       }

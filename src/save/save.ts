@@ -78,9 +78,9 @@ export function generateSave(sim: Simulation): SaveState {
 
 export function newGame(): Processor[] {
   return [
-    createPowerGrid({ stored: 22 ** 2 }),
+    createPowerGrid({ stored: 22n ** 2n }),
     createStorage(Resource.ORE),
-    createStorage(Resource.METAL, { stored: 200 }),
+    createStorage(Resource.METAL, { stored: 200n }),
     createStorage(Resource.PACKAGED_SATELLITE),
     createStar(),
     createPlanet(),
@@ -118,8 +118,11 @@ function convertNullBuildOrderCountsToInfinity(
         }
   );
 }
+const BIG_INT_PROPERTY_KEYS = ["charge", "flux", "amount", "stored", "mass"];
 export function parseProcessors(formatted: string): SaveState {
-  const parsed = JSON.parse(formatted) as SaveState;
+  const parsed = JSON.parse(formatted, (key, value) =>
+    BIG_INT_PROPERTY_KEYS.includes(key) ? BigInt(value) : value
+  ) as SaveState;
   parsed.stream.incoming = parsed.stream.incoming.map((e) =>
     e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
       ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
@@ -154,7 +157,9 @@ export function parseProcessors(formatted: string): SaveState {
 }
 
 export function formatProcessors(procs: SaveState): string {
-  return JSON.stringify(procs);
+  return JSON.stringify(procs, (_key, value) =>
+    typeof value === "bigint" ? value.toString() : value
+  );
 }
 
 function stripNonCommandsInTicksOlderThan(

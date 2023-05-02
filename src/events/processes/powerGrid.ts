@@ -7,7 +7,7 @@ import type { EventProcessor } from "./index";
 export type PowerGrid = EventProcessor<
   "power grid",
   {
-    stored: number;
+    stored: bigint;
     breakerTripped: boolean;
     received: Events<
       Exclude<
@@ -19,11 +19,11 @@ export type PowerGrid = EventProcessor<
 >;
 
 export function createPowerGrid(
-  options: Partial<{ id: PowerGrid["id"]; stored: number }> = {}
+  options: Partial<{ id: PowerGrid["id"]; stored: bigint }> = {}
 ): PowerGrid {
   const values = {
     id: "power grid-0" as PowerGrid["id"],
-    stored: 0,
+    stored: 0n,
     ...options,
   };
   return {
@@ -70,13 +70,13 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, BusEvent[]] {
             next.tag === "produce"
               ? [accu[0] + next.amount, accu[1]]
               : [accu[0], accu[1].add(next)],
-          [0, new Set<Events<"draw">>()]
+          [0n, new Set<Events<"draw">>()]
         );
         grid.data.stored += produced;
         grid.data.received = [];
         const totalRequestedSupply = Array.from(toSupply).reduce(
           (accu, next) => accu + next.amount,
-          0
+          0n
         );
         if (grid.data.breakerTripped) {
           break;
@@ -104,6 +104,6 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, BusEvent[]] {
 export function gridState(simulation: Simulation): PowerGrid["data"] {
   return (
     (simulation.processors.get("power grid-0") as PowerGrid | undefined)
-      ?.data ?? { stored: 0, breakerTripped: false, received: [] }
+      ?.data ?? { stored: 0n, breakerTripped: false, received: [] }
   );
 }
