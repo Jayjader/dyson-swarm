@@ -81,7 +81,7 @@ export function fabricatorProcess(
             job: nextJob,
             queue: newQueue,
             working: true,
-            received: [],
+            received: fabricator.data.received,
           };
           break;
         }
