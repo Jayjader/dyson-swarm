@@ -71,6 +71,7 @@ export function fabricatorProcess(
         }
         break;
       case "simulation-clock-tick":
+        const { tick } = event;
         const currentJob = fabricator.data.job;
         if (!fabricator.data.working) {
           break;
@@ -102,7 +103,7 @@ export function fabricatorProcess(
               resource,
               amount: BigInt(needed) - supplied,
               forId: fabricator.id,
-              receivedTick: event.tick + 1,
+              receivedTick: tick + 1,
             });
           }
         }
@@ -110,7 +111,7 @@ export function fabricatorProcess(
           emitted.push({
             tag: "construct-fabricated",
             construct: currentJob,
-            receivedTick: event.tick + 1,
+            receivedTick: tick + 1,
           });
           fabricator.data = {
             working: true,
