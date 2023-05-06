@@ -200,16 +200,26 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
     storage.setItem(saveKey, formattedSave);
   } catch (e) {
     // presume quota exceeded
-    const hopefullyEnoughToDebugAnyErrors = 10; // 5 seconds (at 60t/s) is too big, so just grab 10 ticks
-    const stream = stripNonCommandsInTicksOlderThan(
-      hopefullyEnoughToDebugAnyErrors,
-      save.stream
-    );
-    const formattedSave = formatProcessors({
-      stream,
-      processors: save.processors,
-    });
-    storage.setItem(saveKey, formattedSave);
+    try {
+      const hopefullyEnoughToDebugAnyErrors = 10; // 5 seconds (at 60t/s) is too big, so just grab 10 ticks
+      const stream = stripNonCommandsInTicksOlderThan(
+        hopefullyEnoughToDebugAnyErrors,
+        save.stream
+      );
+      const formattedSave = formatProcessors({
+        stream,
+        processors: save.processors,
+      });
+      storage.setItem(saveKey, formattedSave);
+    } catch (e) {
+      // still too big for non-commands, but maybe we can still fit in *just* the commands
+      const stream = stripNonCommandsInTicksOlderThan(0, save.stream);
+      const formattedSave = formatProcessors({
+        stream,
+        processors: save.processors,
+      });
+      storage.setItem(saveKey, formattedSave);
+    }
   }
   if (save.name !== "AUTOSAVE") {
     // update declared save slot names
