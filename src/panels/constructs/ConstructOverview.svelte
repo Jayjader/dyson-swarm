@@ -63,6 +63,17 @@
     simulation.broadcastEvent(busEvent);
   };
   onDestroy(unsubscribe);
+
+  function widthForNumberInput(value: number): number {
+    // log base 10 gets us the number of characters, floor rounds down a whole number
+    return (
+      Math.floor(
+        Math.log(value) / Math.log(10) // log(x) / log(10) = log[base=10](x)
+      ) + 4 // room for the browser/user agent's input[type="number"] controls
+    );
+  }
+
+  const formatter = Intl.NumberFormat([], { useGrouping: true });
 </script>
 
 <section
@@ -84,7 +95,9 @@
           <h3 class="basis-full font-bold">Star</h3>
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
-            <output>{constructs.get("star")} {kilogram}</output>
+            <output style="overflow-wrap: anywhere"
+              >{formatter.format(constructs.get("star"))} {kilogram}</output
+            >
           </div>
         </div>
         <div class="flex flex-col-reverse">
@@ -117,7 +130,9 @@
           <h3 class="basis-full font-bold">Satellite Swarm</h3>
           <fieldset class="flex flex-col">
             <legend class="font-bold">Count:</legend>
-            <output>{constructs.get("swarm")}</output>
+            <output style="overflow-wrap: anywhere"
+              >{formatter.format(constructs.get("swarm"))}</output
+            >
           </fieldset>
         </div>
         <div class="flex flex-col-reverse">
@@ -156,7 +171,9 @@
   >
     <fieldset class="flex flex-row">
       <legend class="font-bold">Count:</legend>
-      <output>{constructs.get(Construct.SOLAR_COLLECTOR)}</output>
+      <output
+        >{formatter.format(constructs.get(Construct.SOLAR_COLLECTOR))}</output
+      >
     </fieldset>
   </ConstructOverview>
   <GridBreaker />
@@ -175,7 +192,9 @@
           <h3 class="basis-full font-bold">Planet</h3>
           <fieldset class="flex flex-col">
             <legend class="font-bold">Mass:</legend>
-            <output>{constructs.get("planet")} {kilogram}</output>
+            <output style="overflow-wrap: anywhere"
+              >{formatter.format(constructs.get("planet"))} {kilogram}</output
+            >
           </fieldset>
         </div>
       </div>
@@ -210,15 +229,21 @@
           >
           <span class="flex-no-wrap flex flex-row">
             <input
+              name="amount"
               type="number"
               max={count(constructs, Construct.MINER)}
               min={0}
               value={working(constructs, Construct.MINER)}
               on:change={(e) =>
                 setCount(Construct.MINER, parseInt(e.target.value, 10))}
-              style="max-width: 6ch"
+              style="max-width: {widthForNumberInput(
+                working(constructs, Construct.MINER)
+              )}ch"
             />
-            <output>/{count(constructs, Construct.MINER)}</output>
+            /
+            <output name="total"
+              >{formatter.format(count(constructs, Construct.MINER))}</output
+            >
           </span>
           <WorkingCountToggle
             disabled={working(constructs, Construct.MINER) ===
@@ -269,9 +294,13 @@
           value={working(constructs, Construct.REFINER)}
           on:change={(e) =>
             setCount(Construct.REFINER, parseInt(e.target.value, 10))}
-          style="max-width: 6ch"
+          style="max-width: {widthForNumberInput(
+            working(constructs, Construct.REFINER)
+          )}ch"
         />
-        <output>/{count(constructs, Construct.REFINER)}</output>
+        /
+        <output>{formatter.format(count(constructs, Construct.REFINER))}</output
+        >
         <WorkingCountToggle
           disabled={working(constructs, Construct.REFINER) ===
             count(constructs, Construct.REFINER)}
@@ -324,9 +353,16 @@
           value={working(constructs, Construct.SATELLITE_FACTORY)}
           on:change={(e) =>
             setCount(Construct.SATELLITE_FACTORY, parseInt(e.target.value, 10))}
-          style="max-width: 6ch"
+          style="max-width: {widthForNumberInput(
+            working(constructs, Construct.SATELLITE_FACTORY)
+          )}ch"
         />
-        <output>/{count(constructs, Construct.SATELLITE_FACTORY)}</output>
+        /
+        <output
+          >{formatter.format(
+            count(constructs, Construct.SATELLITE_FACTORY)
+          )}</output
+        >
         <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_FACTORY) ===
             count(constructs, Construct.SATELLITE_FACTORY)}
@@ -380,9 +416,16 @@
               Construct.SATELLITE_LAUNCHER,
               parseInt(e.target.value, 10)
             )}
-          style="max-width: 6ch"
+          style="max-width: {widthForNumberInput(
+            working(constructs, Construct.SATELLITE_LAUNCHER)
+          )}ch"
         />
-        <output>/{count(constructs, Construct.SATELLITE_LAUNCHER)}</output>
+        /
+        <output
+          >{formatter.format(
+            count(constructs, Construct.SATELLITE_LAUNCHER)
+          )}</output
+        >
         <WorkingCountToggle
           disabled={working(constructs, Construct.SATELLITE_LAUNCHER) ===
             count(constructs, Construct.SATELLITE_LAUNCHER)}

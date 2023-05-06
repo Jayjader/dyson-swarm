@@ -6,6 +6,8 @@
   export let produced: number = 0;
   export let consumed: number = 0;
   $: total = produced - consumed;
+
+  const formatter = Intl.NumberFormat([], { useGrouping: true });
 </script>
 
 <div
@@ -25,21 +27,25 @@
         {name}
       </h3>
       <h5 class="font-bold">Stored</h5>
-      <output>{stored}{unit}</output>
+      <output>{formatter.format(stored)}{unit}</output>
     </div>
     <div class="flex flex-grow flex-col">
       <h5 class="text-center font-bold" style="line-height: 1;">Last Tick</h5>
       <div class="flex flex-row gap-1">
         <div class="flex basis-1/2 flex-col items-end">
           <h5 class="font-bold">Total</h5>
-          <output>{total > 0 ? "+" : ""}{total}{unit}</output>
+          <output>{total > 0 ? "+" : ""}{formatter.format(total)}{unit}</output>
         </div>
         <div class="flex basis-1/2 flex-col">
           <span class="flex flex-row gap-1">
-            <output>{produced}{unit}</output><span>Produced</span>
+            <output>{formatter.format(produced)}{unit}</output><span
+              >Produced</span
+            >
           </span>
           <span class="flex flex-row gap-1">
-            <output>{consumed}{unit}</output><span>Consumed</span>
+            <output>{formatter.format(consumed)}{unit}</output><span
+              >Consumed</span
+            >
           </span>
         </div>
       </div>
