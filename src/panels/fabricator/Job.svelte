@@ -1,7 +1,6 @@
 <script lang="ts">
   import { tweened } from "svelte/motion";
   import { cubicOut } from "svelte/easing";
-  import SingleBuildOrder from "./SingleBuildOrder.svelte";
   import {
     type Construct,
     constructionCosts,
