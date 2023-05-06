@@ -32,6 +32,10 @@ export function createFabricator(
   };
 }
 
+/** this is just a simple optimization hack, to prevent needlessly allocating a new empty array that is immediately concat'ed
+ * this should help pushing the sim clock tick rate up while refraining from thrashing the browser's garbage collector */
+const EMPTY_ARRAY = [] as const;
+
 export function fabricatorProcess(
   fabricator: Fabricator
 ): [Fabricator, BusEvent[]] {
@@ -86,13 +90,29 @@ export function fabricatorProcess(
           };
           break;
         }
-        const supply = fabricator.data.received.reduce((supply, event) => {
-          supply.set(
-            event.resource,
-            event.amount + (supply.get(event.resource) ?? 0n)
-          );
-          return supply;
-        }, new Map<Resource, bigint>());
+
+        fabricator.data.received.sort(
+          (a, b) => a.receivedTick - b.receivedTick
+        );
+
+        // now that the array is sorted, we can scan from the front to find the edge of the (contiguous) present|past events
+        const firstFutureEventIndex = ((index: number) =>
+          index >= 0 ? index : undefined)(
+          fabricator.data.received.findIndex(
+            ({ receivedTick }) => receivedTick > tick
+          )
+        );
+
+        const suppliedAtThisTick = fabricator.data.received
+          .slice(0, firstFutureEventIndex)
+          .reduce((supply, event) => {
+            supply.set(
+              event.resource,
+              event.amount + (supply.get(event.resource) ?? 0n)
+            );
+            return supply;
+          }, new Map<Resource, bigint>());
+
         let enoughSupplied = true;
         for (let [resource, needed] of constructionCosts[currentJob]) {
           const supplied = supply.get(resource) ?? 0n;
@@ -107,19 +127,40 @@ export function fabricatorProcess(
             });
           }
         }
-        if (enoughSupplied) {
-          emitted.push({
-            tag: "construct-fabricated",
-            construct: currentJob,
-            receivedTick: tick + 1,
-          });
-          fabricator.data = {
-            working: true,
-            job: null,
-            received: [],
-            queue: fabricator.data.queue,
-          };
+        if (!enoughSupplied) {
+          break;
         }
+
+        emitted.push({
+          tag: "construct-fabricated",
+          construct: currentJob,
+          receivedTick: tick + 1,
+        });
+
+        const received = [...suppliedAtThisTick]
+          .map(
+            ([resource, supply]) =>
+              ({
+                tag: "supply",
+                resource,
+                amount:
+                  supply -
+                  BigInt(constructionCosts[currentJob].get(resource) ?? 0),
+                toId: fabricator.id,
+                receivedTick: tick,
+              } as Fabricator["data"]["received"][number])
+          )
+          .concat(
+            firstFutureEventIndex === undefined
+              ? EMPTY_ARRAY
+              : fabricator.data.received.slice(firstFutureEventIndex)
+          );
+        fabricator.data = {
+          working: true,
+          job: null,
+          received,
+          queue: fabricator.data.queue,
+        };
         break;
     }
   }
