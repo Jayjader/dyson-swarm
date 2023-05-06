@@ -19,6 +19,8 @@ export function starProcess(star: Star): [Star, BusEvent[]] {
       case "simulation-clock-tick":
         emitted.push({
           tag: "star-flux-emission",
+          // todo: adjust to values found in https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+          // as well as implement mass consumption for energy emission
           flux: 1n,
           receivedTick: event.tick + 1,
         });
