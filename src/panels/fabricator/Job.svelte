@@ -110,7 +110,7 @@
     >
     <h3>Current Job</h3>
   </div>
-  <span class="inline-block" style="width: 8rem">
+  <div class="inline-block" style="width: 8rem">
     <figure class="flex flex-row flex-wrap items-center justify-between gap-1">
       <img
         src={job === undefined ? "./empty.png" : ICON[job?.at(0)]}
@@ -120,7 +120,7 @@
       />
       <figcaption class="m-auto p-1">{job?.at(0) ?? "None"}</figcaption>
     </figure>
-  </span>
+  </div>
   <h4 class="mt-3">Power</h4>
   <progress
     class="elec"
