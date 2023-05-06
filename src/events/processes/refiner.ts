@@ -67,6 +67,13 @@ export function refinerProcess(
         break;
       case "supply":
         if (event.toId === refiner.id) {
+          if (event.amount <= 0n) {
+            console.warn({
+              warning: "supply event with amount <= 0 detected",
+              event,
+            });
+            break;
+          }
           refiner.data.received.push(event);
         }
         break;
@@ -134,21 +141,23 @@ export function refinerProcess(
         const oreNeeded =
           BigInt(refiner.data.working) *
           BigInt(tickConsumption[Construct.REFINER].get(Resource.ORE)!);
-        const leftOverOre = received[Resource.ORE] - oreNeeded;
-        let oreDrawn = oreNeeded;
-        if (leftOverOre < 0) {
+        const projectedOrePostProduction = received[Resource.ORE] - oreNeeded;
+        let oreToDrawFromStorageForNextTick = oreNeeded;
+        if (projectedOrePostProduction < 0n) {
           enoughSupplied = false;
-          oreDrawn -= received[Resource.ORE];
-        } else if (leftOverOre > 0) {
-          oreDrawn -= leftOverOre;
+          oreToDrawFromStorageForNextTick -= received[Resource.ORE];
+        } else if (projectedOrePostProduction > 0n) {
+          oreToDrawFromStorageForNextTick -= projectedOrePostProduction;
         }
-        emitted.push({
-          tag: "draw",
-          resource: Resource.ORE,
-          amount: oreDrawn,
-          forId: refiner.id,
-          receivedTick: event.tick + 1,
-        });
+        if (oreToDrawFromStorageForNextTick > 0n) {
+          emitted.push({
+            tag: "draw",
+            resource: Resource.ORE,
+            amount: oreToDrawFromStorageForNextTick,
+            forId: refiner.id,
+            receivedTick: event.tick + 1,
+          });
+        }
 
         if (!enoughSupplied) {
           for (let resource of [Resource.ELECTRICITY, Resource.ORE] as const) {
@@ -165,12 +174,12 @@ export function refinerProcess(
           }
           break;
         }
-        if (leftOverOre > 0) {
+        if (projectedOrePostProduction > 0n) {
           refiner.data.received = [
             {
               tag: "supply",
               resource: Resource.ORE,
-              amount: leftOverOre,
+              amount: projectedOrePostProduction,
               toId: refiner.id,
               receivedTick: event.tick,
             },

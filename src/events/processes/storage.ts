@@ -41,6 +41,13 @@ export function storageProcess(
       case "draw":
       case "produce":
         if (event.resource === resource) {
+          if (event.amount <= 0n) {
+            console.warn({
+              warning: "draw|produce event with amount <= 0 detected",
+              event,
+            });
+            break;
+          }
           storage.data.received.push(event);
           (storage.data.received as Events<"draw" | "supply">[]).sort(
             (a, b) => a.receivedTick - b.receivedTick
