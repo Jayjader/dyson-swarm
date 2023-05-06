@@ -30,7 +30,10 @@
 
   let job = null as Job,
     pastJob = null as Job;
-  let current;
+  let snapshotOfFabricatorReceived = new Map([
+    [Resource.ELECTRICITY, 0n],
+    [Resource.METAL, 0n],
+  ]);
   let elecPast = 0,
     elecTotal = 0;
   let matsPast = 0,
@@ -38,43 +41,48 @@
   let lastTick = 0;
 
   const unsubSim = simulation.subscribe((sim) => {
-    lastTick = getPrimitive(getClock(sim)).tick;
+    const simClockTick = getPrimitive(getClock(sim)).tick;
+    if (lastTick === simClockTick) {
+      return;
+    }
+    lastTick = simClockTick;
     const fab = getFabricator(sim);
-    current = (
+    snapshotOfFabricatorReceived.clear();
+    snapshotOfFabricatorReceived = (
       fab.received as {
         tag: "supply";
         resource: Resource.METAL | Resource.ELECTRICITY;
         amount: bigint;
+        receivedTick: number;
       }[]
-    ).reduce<Map<Resource.METAL | Resource.ELECTRICITY, bigint>>(
-      (accu, e) => {
-        const resource = e.resource;
-        return accu.set(resource, e.amount + accu.get(resource) ?? 0n);
-      },
-      new Map([
-        [Resource.ELECTRICITY, 0n],
-        [Resource.METAL, 0n],
-      ])
-    );
+    ).reduce<Map<Resource.METAL | Resource.ELECTRICITY, bigint>>((accu, e) => {
+      const { resource, receivedTick } = e;
+      return receivedTick > lastTick
+        ? accu
+        : accu.set(resource, e.amount + (accu.get(resource) ?? 0n));
+    }, snapshotOfFabricatorReceived);
 
     const nextOrder = fab.job;
-    job = !nextOrder ? null : [nextOrder, constructionCosts[nextOrder]];
+    job =
+      nextOrder === null
+        ? nextOrder
+        : [nextOrder, constructionCosts[nextOrder]];
     if (job !== pastJob) {
       elecTotal = job?.[1].get(Resource.ELECTRICITY) ?? 0;
       matsTotal = job?.[1].get(Resource.METAL) ?? 0;
       pastJob = job;
-      if (job === null) {
-        elecProgress.set(0);
-        matsProgress.set(0);
-      }
     }
 
-    const elecCurrent = Number(current.get(Resource.ELECTRICITY) ?? 0n);
+    const elecCurrent = Number(
+      snapshotOfFabricatorReceived.get(Resource.ELECTRICITY) ?? 0n
+    );
     if (elecCurrent !== elecPast) {
       elecPast = elecCurrent;
       elecProgress.update(() => elecCurrent);
     }
-    const matsCurrent = Number(current.get(Resource.METAL) ?? 0n);
+    const matsCurrent = Number(
+      snapshotOfFabricatorReceived.get(Resource.METAL) ?? 0n
+    );
     if (matsCurrent !== matsPast) {
       matsPast = matsCurrent;
       matsProgress.update(() => matsCurrent);
@@ -99,7 +107,7 @@
         console.info(busEvent);
         simulation.broadcastEvent(busEvent);
       }}
-      disabled={!job}>Clear Job</button
+      disabled={job !== null}>Clear Job</button
     >
     <h3>Current Job</h3>
   </div>
@@ -121,9 +129,10 @@
     max={elecTotal}
     value={$elecProgress}
   >
-    Power Need Satisfied: {Math.floor($elecProgress * 100)}%
+    Power Need Satisfied: {(Math.floor($elecProgress) * 100) /
+      (elecTotal > 0 ? elecTotal : 1)}%
   </progress>
-  {current.get(Resource.ELECTRICITY)} / {elecTotal}
+  {snapshotOfFabricatorReceived.get(Resource.ELECTRICITY) ?? 0} / {elecTotal}
   <h4 class="mt-3">Metal</h4>
   <progress
     class="mats"
@@ -131,7 +140,11 @@
     max={matsTotal}
     value={$matsProgress}
   >
-    Materials Need Satisfied: {Math.floor($matsProgress * 100)}%
+    {#if job}
+      Materials Need Satisfied: {Math.floor(($matsProgress * 100) / matsTotal)}%
+    {:else}
+      No job
+    {/if}
   </progress>
-  {current.get(Resource.METAL)} / {matsTotal}
+  {snapshotOfFabricatorReceived.get(Resource.METAL) ?? 0} / {matsTotal}
 </section>
