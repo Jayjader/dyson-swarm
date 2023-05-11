@@ -92,11 +92,10 @@
 
 <section
   class="mx-auto flex shrink-0 flex-grow flex-col items-center gap-2 rounded border-2 border-slate-700 bg-slate-500 text-slate-100"
-  style="max-width: 45vw; min-width: 10rem"
 >
-  <div class="flex flex-row justify-around gap-2 self-stretch">
+  <div class="flex flex-row justify-evenly gap-2 self-stretch">
     <button
-      class="my-1 ml-1 rounded border-2 border-stone-400 disabled:text-stone-600"
+      class="my-1 ml-1 rounded border-2 border-stone-400 p-2 disabled:text-stone-600"
       on:click={() => {
         const busEvent = {
           tag: "command-clear-fabricator-job",
@@ -116,7 +115,7 @@
         src={job === undefined ? "./empty.png" : ICON[job?.at(0)]}
         alt={job?.at(0) ?? "Empty slot"}
         title={job?.at(0) ?? "None"}
-        class="m-auto rounded border-2 border-slate-900"
+        class="m-auto h-16 w-16 rounded border-2 border-slate-900 text-center"
       />
       <figcaption class="m-auto p-1">{job?.at(0) ?? "None"}</figcaption>
     </figure>
