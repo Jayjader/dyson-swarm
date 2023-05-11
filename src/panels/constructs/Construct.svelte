@@ -1,5 +1,6 @@
 <script lang="ts">
   export let name: string = "unknown";
+  export let consumesVerb = "consumes";
   export let consumes = [
     {
       name: "unknown",
@@ -33,7 +34,7 @@
     </div>
     <div class="flex flex-col justify-between gap-1">
       <div class="flex flex-col">
-        <h5 class="font-bold">Consumes:</h5>
+        <h5 class="font-bold">{consumesVerb}</h5>
         <span class="flex flex-row gap-1">
           {#each consumes as c (c.name)}
             <img

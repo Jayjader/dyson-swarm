@@ -2,8 +2,9 @@
   import ConstructOverview from "./Construct.svelte";
   import {
     Construct,
-    launchCost,
+    MERCURY_SEMIMAJOR_AXIS_M,
     Resource,
+    SOL_LUMINOSITY_W,
     tickConsumption,
     tickProduction,
   } from "../../gameRules";
@@ -12,14 +13,21 @@
   import { kilogram, watt, wattsPerSquareMeter } from "../../units";
   import { energy, ICON, metal, ore, satellite } from "../../icons";
   import GridBreaker from "./GridBreaker.svelte";
-  import { getCollectorCount } from "../../events/processes/collector";
+  import {
+    fluxReceived,
+    getCollectorCount,
+    SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY,
+  } from "../../events/processes/collector";
   import { getMiners } from "../../events/processes/miner";
   import { getRefiners } from "../../events/processes/refiner";
   import { getFactories } from "../../events/processes/satFactory";
   import { getLaunchers } from "../../events/processes/launcher";
   import { getStarMass } from "../../events/processes/star";
   import { getPlanetMass } from "../../events/processes/planet";
-  import { swarmCount } from "../../events/processes/satelliteSwarm";
+  import {
+    fluxReflected,
+    swarmCount,
+  } from "../../events/processes/satelliteSwarm";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
   import { getPrimitive } from "../../hud/types";
@@ -110,7 +118,10 @@
                 alt="Energy Flux"
                 title="energy flux"
               />
-              <output>6.300e7 {@html wattsPerSquareMeter}</output>
+              <output class="break-all"
+                >{formatter.format(SOL_LUMINOSITY_W)}
+                {@html watt}</output
+              >
             </span>
           </div>
         </div>
@@ -145,7 +156,12 @@
                 alt="Energy Flux"
                 title="energy flux"
               />
-              <output>10 {@html wattsPerSquareMeter}</output>
+              <output
+                >{formatter.format(
+                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+                )}
+                {@html wattsPerSquareMeter}</output
+              >
             </span>
           </div>
         </div>
@@ -154,18 +170,28 @@
   </div>
   <ConstructOverview
     name="solar collector"
+    consumesVerb="receives"
     consumes={[
       {
         name: "energy-flux",
-        value: "1+",
-        unit: wattsPerSquareMeter,
+        value: `${formatter.format(
+          fluxReceived(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+        )}`,
+        unit: `${wattsPerSquareMeter}${
+          constructs.get("swarm") === 0
+            ? ""
+            : ` (+ ${formatter.format(
+                BigInt(constructs.get("swarm")) *
+                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+              )} ${watt} reflected from satellites)`
+        }`,
         icon: ICON["flux"],
       },
     ]}
     produces={{
       name: "energy",
-      value: "0.75",
-      unit: `${watt} [/${wattsPerSquareMeter} consumed]`,
+      value: `[RECEIVED] * [COUNT] * (${SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY.numerator}/${SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY.denominator})`,
+      unit: `${watt}`,
       icon: energy,
     }}
   >
@@ -380,13 +406,19 @@
     consumes={[
       {
         name: "energy",
-        value: launchCost.get(Resource.ELECTRICITY) ?? 0,
+        value:
+          tickConsumption[Construct.SATELLITE_LAUNCHER].get(
+            Resource.ELECTRICITY
+          ) ?? 0,
         unit: watt,
         icon: energy,
       },
       {
         name: "packaged satellite",
-        value: launchCost.get(Resource.PACKAGED_SATELLITE) ?? 0,
+        value:
+          tickConsumption[Construct.SATELLITE_LAUNCHER].get(
+            Resource.PACKAGED_SATELLITE
+          ) ?? 0,
         unit: "(packaged)",
         icon: satellite,
       },

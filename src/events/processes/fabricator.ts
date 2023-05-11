@@ -3,6 +3,7 @@ import { constructionCosts } from "../../gameRules";
 import type { BuildChoice, BuildOrder } from "../../types";
 import { popNextConstruct } from "../../types";
 import type { BusEvent, Events } from "../events";
+import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
 import type { Simulation } from "../index";
 import type { EventProcessor } from "./index";
 
@@ -91,16 +92,12 @@ export function fabricatorProcess(
           break;
         }
 
-        fabricator.data.received.sort(
-          (a, b) => a.receivedTick - b.receivedTick
-        );
+        fabricator.data.received.sort(compareReceivedTicks);
 
         // now that the array is sorted, we can scan from the front to find the edge of the (contiguous) present|past events
-        const firstFutureEventIndex = ((index: number) =>
-          index >= 0 ? index : undefined)(
-          fabricator.data.received.findIndex(
-            ({ receivedTick }) => receivedTick > tick
-          )
+        const firstFutureEventIndex = indexOfFirstFutureEvent(
+          fabricator.data.received,
+          tick
         );
 
         const suppliedAtThisTick = fabricator.data.received

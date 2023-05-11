@@ -1,8 +1,9 @@
-import { Resource, tickProduction } from "../../gameRules";
+import { MERCURY_MASS_KG, Resource, tickProduction } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
 import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
 
 export type Planet = EventProcessor<
   "planet",
@@ -19,7 +20,7 @@ export function createPlanet(
 ): Planet {
   const values = {
     id: "planet-0" as Planet["id"],
-    mass: BigInt(3.301e23),
+    mass: MERCURY_MASS_KG,
     ...options,
   };
   return {
@@ -39,16 +40,20 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
         planet.data.received.push(event);
         break;
       case "simulation-clock-tick":
+        planet.data.received.sort(compareReceivedTicks);
+
+        const { tick } = event;
+        const futureIndex = indexOfFirstFutureEvent(planet.data.received, tick);
+
         const totalOreMiningPotential =
-          planet.data.received.reduce(
-            (accu, e) => accu + BigInt(e.minerCount),
-            0n
-          ) * BigInt(tickProduction.miner.get(Resource.ORE)!);
+          BigInt(tickProduction.miner.get(Resource.ORE)!) *
+          planet.data.received
+            .slice(0, futureIndex)
+            .reduce((accu, e) => accu + BigInt(e.minerCount), 0n);
         const totalOreMined =
           planet.data.mass < totalOreMiningPotential
             ? planet.data.mass
             : totalOreMiningPotential; // we don't want to mine **more** ore than the planet has mass!
-        planet.data.received = [];
         if (totalOreMined > 0) {
           planet.data.mass -= totalOreMined;
           emitted.push({
@@ -58,6 +63,11 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
             receivedTick: event.tick + 1,
           });
         }
+
+        planet.data.received =
+          futureIndex === undefined
+            ? []
+            : planet.data.received.slice(futureIndex);
         break;
     }
   }
