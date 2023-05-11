@@ -105,7 +105,7 @@
         console.info(busEvent);
         simulation.broadcastEvent(busEvent);
       }}
-      disabled={job !== null}>Clear Job</button
+      disabled={job === null}>Clear Job</button
     >
     <h3>Current Job</h3>
   </div>
