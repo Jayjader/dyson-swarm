@@ -1,0 +1,132 @@
+<script lang="ts">
+  import type { Objective, ObjectiveTracker } from "./objectiveTracker";
+  import { onDestroy } from "svelte";
+  import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
+
+  let dialogElement: HTMLDialogElement;
+
+  type Position = [number, ...number[]];
+  const trackerState = {
+    objectives: [],
+    tracking: {
+      open: false,
+      progress: new Set(),
+      active: [],
+    },
+    viewing: undefined as
+      | { objective: Objective; position: Position }
+      | undefined,
+  };
+
+  export let store: ObjectiveTracker;
+  trackerState.objectives = store.objectives;
+  const storeSub = store.subscribe(({ open, active, progress }) => {
+    if (open && !trackerState.tracking.open) {
+      dialogElement.show();
+    }
+    trackerState.tracking = { open, active, progress };
+
+    if (trackerState.objectives.length === 0) {
+      trackerState.viewing = undefined;
+    } else {
+      let position;
+      if (trackerState.tracking.active.length === 0) {
+        position = getPositionOfFirstItem(trackerState.objectives);
+      } else {
+        position = trackerState.tracking.active;
+      }
+      trackerState.viewing = {
+        objective: getNestedItem(trackerState.objectives, position),
+        position,
+      };
+    }
+  });
+  onDestroy(storeSub);
+
+  function getPositionOfFirstItem(
+    list: Objective[],
+    position: Position = [0]
+  ): Position {
+    const element = getNestedItem(list, position);
+    if (element.details !== undefined) {
+      return position;
+    }
+    return [...position, ...getPositionOfFirstItem(element.subObjectives)];
+  }
+  function getNestedItem(list: Objective[], position: Position): Objective {
+    if (position.length < 2) {
+      return list[position[0]];
+    } else {
+      const [currentIndex, ...next] = position;
+      return getNestedItem(list[currentIndex].subObjectives, next);
+    }
+  }
+</script>
+
+<dialog
+  bind:this={dialogElement}
+  on:close
+  class="gap-1 border-4 border-slate-900 bg-slate-900 p-0"
+>
+  <div class="row-span-2 flex flex-col flex-nowrap gap-4 bg-slate-300 p-4">
+    <h2>
+      Objective: {#if trackerState.viewing}
+        {trackerState.viewing.objective.title}
+      {/if}
+    </h2>
+    <div class="flex flex-row flex-wrap gap-4">
+      <h3>Details:</h3>
+      {#if trackerState.viewing}
+        <div class="flex flex-shrink flex-col flex-nowrap">
+          {#each trackerState.viewing.objective.details as detail}
+            <p class="max-w-lg">
+              {@html detail}
+            </p>
+          {/each}
+        </div>
+      {/if}
+    </div>
+    <div class="flex flex-row flex-wrap gap-4">
+      <h3>Steps:</h3>
+      <ol class="flex flex-col flex-nowrap">
+        {#if trackerState.viewing}{#each trackerState.viewing.objective.steps as step, index}<li
+              class="flex flex-row flex-nowrap gap-1"
+            >
+              <input
+                type="checkbox"
+                disabled
+                id="guide-objective-step-progress-{index}"
+                checked={trackerState.tracking.progress.has(
+                  JSON.stringify([...trackerState.viewing.position, index])
+                )}
+              />
+              <label for="guide-objective-step-progress-{index}">
+                {@html step}
+              </label>
+            </li>{/each}{/if}
+      </ol>
+    </div>
+  </div>
+  <nav aria-labelledby="Objectives-title" class="bg-slate-300 p-2 pb-4">
+    <h2 id="Objectives-title" class="scroll-m-0">Objectives</h2>
+    <ol class="flex flex-col flex-nowrap gap-2.5 overflow-y-scroll ">
+      {#each trackerState.objectives as objective, index}<li>
+          <ObjectiveNavItem
+            data={{ objective, position: [index] }}
+            progress={trackerState.tracking.progress}
+          />
+        </li>{/each}
+    </ol>
+  </nav>
+  <button
+    type="button"
+    on:click={() => dialogElement.close()}
+    class="bg-slate-300 p-4">Close</button
+  >
+</dialog>
+
+<style>
+  dialog[open] {
+    display: grid;
+  }
+</style>

@@ -22,12 +22,14 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
+  import type { ObjectiveTracker } from "./objectiveTracker";
+  import Guide from "./Guide.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
     simulation: Simulation,
     resource: Resource
-  ): number =>
+  ): bigint =>
     resource === Resource.ELECTRICITY
       ? gridState(simulation).stored
       : readStored(simulation, resource);
@@ -80,7 +82,15 @@
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
 
   const { appStateStack } = getContext(APP_UI_CONTEXT);
-  let showProgress = true;
+
+  export let objectives: ObjectiveTracker;
+  let tracked = [],
+    guideOpen = false;
+  const objectiveSub = objectives.subscribe(({ open, active }) => {
+    tracked = active;
+    guideOpen = open;
+  });
+  onDestroy(objectiveSub);
 
   scheduleCallback(outsideClockLoop);
 </script>
@@ -101,18 +111,27 @@
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
           on:click={() => appStateStack.push(SimMenu)}>Menu</button
         >
-        {#if swarm > 0}
-          <button
-            on:click={() => {
-              showProgress = !showProgress;
-            }}
-            class={"max-w-min flex-grow break-normal rounded border-2 border-slate-100 px-2 " +
-              (showProgress ? "bg-slate-100 text-slate-900" : "text-slate-100")}
-            >Progress</button
-          >
-        {/if}
+        <!-- todo: dispatch an event here instead, and extract the stack manipulation into the parent component, to avoid needing the entire store in this component-->
+
+        <button
+          disabled={guideOpen}
+          on:click={() => {
+            objectives.open();
+          }}
+          class={"max-w-min flex-grow break-normal rounded border-2 border-slate-100 px-2 " +
+            (guideOpen ? "bg-slate-100 text-slate-900" : "text-slate-100")}
+        >
+          {#if !guideOpen}
+            Open
+          {/if}
+          Guide
+          {#if guideOpen}
+            Open
+          {/if}
+        </button>
       </div>
-      {#if swarm > 0 && showProgress}
+      {#if tracked}
+        <!-- todo: turn the swarm count into an objective (the last?), and turn this into a display of the next step of the current active (sub)-objective -->
         <ProgressOverview count={swarm} />
       {/if}
     </div>
@@ -130,6 +149,7 @@
     {/if}
   </div>
   <PanelSelector />
+  <Guide store={objectives} on:close={objectives.close} />
 </main>
 {#if settings.show3dRender}
   <RenderedView />

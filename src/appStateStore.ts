@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
 import type { SimulationStore } from "./events";
 import type { SettingsStore } from "./settings/store";
-import type { TutorialStore } from "./simulation/tutorialStore";
+import type { ObjectiveTracker } from "./simulation/objectiveTracker";
 
 export const MainMenu = Symbol("main menu");
 export const SettingsMenu = Symbol("settings menu");
@@ -14,19 +14,19 @@ type Stack =
   | [SettingsStore, typeof MainMenu, typeof SettingsMenu]
   | [SettingsStore, typeof MainMenu, typeof SaveMenu]
   | [SettingsStore, typeof Introduction]
-  | [SettingsStore, SimulationStore, TutorialStore]
-  | [SettingsStore, SimulationStore, TutorialStore, typeof SimMenu]
+  | [SettingsStore, SimulationStore, ObjectiveTracker]
+  | [SettingsStore, SimulationStore, ObjectiveTracker, typeof SimMenu]
   | [
       SettingsStore,
       SimulationStore,
-      TutorialStore,
+      ObjectiveTracker,
       typeof SimMenu,
       typeof SettingsMenu
     ]
   | [
       SettingsStore,
       SimulationStore,
-      TutorialStore,
+      ObjectiveTracker,
       typeof SimMenu,
       typeof SaveMenu
     ];

@@ -1,12 +1,12 @@
 import { writable } from "svelte/store";
 
-type Objective = { title: string } & (
+export type Objective = { title: string } & (
   | { subObjectives: Objective[] }
   | { details: string[]; steps: string[] }
 );
 type Position = number[];
 
-const TUTORIAL_STEPS: Objective[] = [
+export const ALL_OBJECTIVES: Objective[] = [
   {
     title: "Building the Swarm",
     subObjectives: [
@@ -48,7 +48,7 @@ const TUTORIAL_STEPS: Objective[] = [
         subObjectives: [
           {
             title: "Fabricate 10 Solar Collectors",
-            details: [],
+            details: ["###TODO###"],
             steps: [
               "Open the <a>Fabricator Panel</a>",
               "Start editing the <a>Build Queue</a>",
@@ -59,7 +59,16 @@ const TUTORIAL_STEPS: Objective[] = [
           },
         ],
       },
-      { title: "Satellite Production", subObjectives: [] },
+      {
+        title: "Satellite Production",
+        subObjectives: [
+          {
+            title: "###TODO###",
+            details: ["$##TODO##$"],
+            steps: ["$$#TODO#$$"],
+          },
+        ],
+      },
     ],
   },
   {
@@ -115,22 +124,22 @@ const TUTORIAL_STEPS: Objective[] = [
   },
 ];
 
-export type TutorialState = {
+type SerializedPosition = ReturnType<typeof JSON.stringify>;
+export type TrackedObjectives = {
   open: boolean;
-  progress: Set<Position>;
+  progress: Set<SerializedPosition>;
   active: Position;
 };
-export function makeTutorialStore(
-  // steps: unknown[],
-  { open, progress, active }: TutorialState = {
+export function makeObjectiveTracker(
+  tracking: TrackedObjectives = {
     open: false,
     progress: new Set(),
     active: [],
   }
 ) {
-  const { update, subscribe } = writable({ open, progress, active });
+  const { update, subscribe } = writable(tracking);
   return {
-    objectives: TUTORIAL_STEPS,
+    objectives: ALL_OBJECTIVES,
     subscribe,
     open: () =>
       update((state) => {
@@ -149,9 +158,14 @@ export function makeTutorialStore(
       }),
     completeStep: (p: Position) =>
       update((state) => {
-        state.progress.add(p);
+        state.progress.add(JSON.stringify(p));
+        return state;
+      }),
+    clearProgress: () =>
+      update((state) => {
+        state.progress.clear();
         return state;
       }),
   };
 }
-export type TutorialStore = ReturnType<typeof makeTutorialStore>;
+export type ObjectiveTracker = ReturnType<typeof makeObjectiveTracker>;

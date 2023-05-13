@@ -69,7 +69,7 @@
 {:else if $appStateStack.at(-1) === Introduction}
   <IntroductionDialog />
 {:else}
-  <Simulation simulation={$appStateStack[1]} />
+  <Simulation simulation={$appStateStack[1]} objectives={$appStateStack[2]} />
 {/if}
 
 <style>
