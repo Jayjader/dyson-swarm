@@ -48,9 +48,11 @@
 <dialog
   bind:this={dialogElement}
   on:close
-  class="gap-1 border-4 border-slate-900 bg-slate-900 p-0"
+  class="flex-row flex-wrap items-stretch gap-1 border-4 border-slate-900 bg-slate-900 p-0"
 >
-  <div class="row-span-2 flex flex-col flex-nowrap gap-4 bg-slate-300 p-4">
+  <div
+    class="row-span-2 flex flex-grow flex-col flex-nowrap gap-4 bg-slate-300 p-4"
+  >
     <h2>
       Objective: {#if trackerState.viewing}
         {trackerState.viewing.objective.title}
@@ -89,26 +91,31 @@
       </ol>
     </div>
   </div>
-  <nav aria-labelledby="Objectives-title" class="bg-slate-300 p-2 pb-4">
-    <h2 id="Objectives-title" class="scroll-m-0">Objectives</h2>
-    <ol class="flex flex-col flex-nowrap gap-2.5 overflow-y-scroll ">
-      {#each trackerState.objectives as objective, index}<li>
-          <ObjectiveNavItem
-            data={{ objective, position: [index] }}
-            progress={trackerState.tracking.progress}
-          />
-        </li>{/each}
-    </ol>
-  </nav>
-  <button
-    type="button"
-    on:click={() => dialogElement.close()}
-    class="bg-slate-300 p-4">Close</button
-  >
+  <div class="flex flex-grow flex-col flex-nowrap items-stretch gap-1">
+    <nav
+      aria-labelledby="Objectives-title"
+      class="max-w-full flex-grow bg-slate-300 p-2 pb-4"
+    >
+      <h2 id="Objectives-title" class="scroll-m-0">Objectives</h2>
+      <ol class="flex flex-col flex-nowrap gap-2.5 overflow-y-scroll ">
+        {#each trackerState.objectives as objective, index}<li>
+            <ObjectiveNavItem
+              data={{ objective, position: [index] }}
+              progress={trackerState.tracking.progress}
+            />
+          </li>{/each}
+      </ol>
+    </nav>
+    <button
+      type="button"
+      on:click={() => dialogElement.close()}
+      class="bg-slate-300 p-4">Close</button
+    >
+  </div>
 </dialog>
 
 <style>
   dialog[open] {
-    display: grid;
+    display: flex;
   }
 </style>
