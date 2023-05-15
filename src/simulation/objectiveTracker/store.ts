@@ -59,7 +59,7 @@ export const ALL_OBJECTIVES: Objective[] = [
               ],
               ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
-                "<a>Wait</a> for the fabricator to <a>Work</a>",
+                "<a>Wait</a> for the fabricator to <a>Work</a> and complete that build order",
                 ["construct-fabricated", Construct.MINER],
               ],
             ],
@@ -303,12 +303,32 @@ export function makeObjectiveTracker(
         state.progress.clear();
         return state;
       }),
-    handleTriggers: (triggers: Trigger[]): ObjectivePosition[] => {
+    handleTriggers: (triggers: Trigger[]) => {
       const triggered = findTriggeredSteps(store.objectives, triggers);
-      console.info({ triggered });
       if (triggered.length > 0) {
         update((state) => {
           for (let position of triggered) {
+            // only count as triggered if previous sibling steps are complete
+            const currentStepIndex = position.at(-1)!;
+            if (currentStepIndex > 0) {
+              let previousComplete = true;
+              for (let i = currentStepIndex - 1; i >= 0; i--) {
+                if (
+                  !state.progress.has(
+                    JSON.stringify([
+                      ...position.slice(0, position.length - 1),
+                      i,
+                    ])
+                  )
+                ) {
+                  previousComplete = false;
+                  break;
+                }
+              }
+              if (!previousComplete) {
+                continue;
+              }
+            }
             state.progress.add(JSON.stringify(position));
             // if we are the last child of our parent, add it to progress as well
             const parentPosition = position.slice(0, position.length - 1);
@@ -325,9 +345,12 @@ export function makeObjectiveTracker(
           return state;
         });
       }
-      return triggered;
     },
   };
   return store;
 }
 export type ObjectiveTracker = ReturnType<typeof makeObjectiveTracker>;
+
+export const OBJECTIVE_TRACKER_CONTEXT = Symbol(
+  "svelte context key for objective tracker store"
+);

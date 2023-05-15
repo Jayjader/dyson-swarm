@@ -172,7 +172,7 @@ export function factoryProcess(
           resource: Resource.PACKAGED_SATELLITE,
           amount:
             BigInt(factory.data.working) *
-            BigInt(tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!),
+            tickProduction.factory.get(Resource.PACKAGED_SATELLITE)!,
           receivedTick: event.tick + 1,
         });
       }

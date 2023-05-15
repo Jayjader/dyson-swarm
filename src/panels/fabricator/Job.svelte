@@ -34,9 +34,9 @@
     [Resource.METAL, 0n],
   ]);
   let elecPast = 0,
-    elecTotal = 0;
+    elecTotal = 0n;
   let matsPast = 0,
-    matsTotal = 0;
+    matsTotal = 0n;
   let lastTick = 0;
 
   const unsubSim = simulation.subscribe((sim) => {
@@ -67,8 +67,8 @@
         ? nextOrder
         : [nextOrder, constructionCosts[nextOrder]];
     if (job !== pastJob) {
-      elecTotal = job?.[1].get(Resource.ELECTRICITY) ?? 0;
-      matsTotal = job?.[1].get(Resource.METAL) ?? 0;
+      elecTotal = job?.[1].get(Resource.ELECTRICITY) ?? 0n;
+      matsTotal = job?.[1].get(Resource.METAL) ?? 0n;
       pastJob = job;
     }
 
@@ -128,7 +128,7 @@
     value={$elecProgress}
   >
     Power Need Satisfied: {(Math.floor($elecProgress) * 100) /
-      (elecTotal > 0 ? elecTotal : 1)}%
+      (elecTotal > 0 ? Number(elecTotal) : 1)}%
   </progress>
   {snapshotOfFabricatorReceived.get(Resource.ELECTRICITY) ?? 0} / {elecTotal}
   <h4 class="mt-3">Metal</h4>
@@ -139,7 +139,9 @@
     value={$matsProgress}
   >
     {#if job}
-      Materials Need Satisfied: {Math.floor(($matsProgress * 100) / matsTotal)}%
+      Materials Need Satisfied: {Math.floor(
+        ($matsProgress * 100) / Number(matsTotal)
+      )}%
     {:else}
       No job
     {/if}

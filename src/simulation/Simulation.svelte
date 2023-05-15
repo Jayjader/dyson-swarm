@@ -24,6 +24,7 @@
   import { SETTINGS_CONTEXT } from "../settings/store";
   import type { ObjectiveTracker } from "./objectiveTracker/store";
   import Guide from "./objectiveTracker/Guide.svelte";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -90,6 +91,7 @@
     tracked = active;
     guideOpen = open;
   });
+  setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });
   onDestroy(objectiveSub);
 
   scheduleCallback(outsideClockLoop);
@@ -145,11 +147,11 @@
       <StorageOverview {resources} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
-      <Fabricator {objectives} />
+      <Fabricator />
     {/if}
   </div>
-  <PanelSelector {objectives} />
-  <Guide store={objectives} on:close={objectives.close} />
+  <PanelSelector />
+  <Guide />
 </main>
 {#if settings.show3dRender}
   <RenderedView />

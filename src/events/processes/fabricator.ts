@@ -112,8 +112,7 @@ export function fabricatorProcess(
 
         let enoughSupplied = true;
         for (let [resource, needed] of constructionCosts[currentJob]) {
-          const lacking =
-            BigInt(needed) - (suppliedAtThisTick.get(resource) ?? 0n);
+          const lacking = needed - (suppliedAtThisTick.get(resource) ?? 0n);
           if (lacking > 0) {
             enoughSupplied = false;
             emitted.push({
@@ -142,8 +141,7 @@ export function fabricatorProcess(
                 tag: "supply",
                 resource,
                 amount:
-                  supply -
-                  BigInt(constructionCosts[currentJob].get(resource) ?? 0),
+                  supply - (constructionCosts[currentJob].get(resource) ?? 0n),
                 toId: fabricator.id,
                 receivedTick: tick,
               } as Fabricator["data"]["received"][number])

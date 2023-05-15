@@ -190,7 +190,7 @@ export function refinerProcess(
           resource: Resource.METAL,
           amount:
             BigInt(refiner.data.working) *
-            BigInt(tickProduction[Construct.REFINER].get(Resource.METAL)!),
+            tickProduction[Construct.REFINER].get(Resource.METAL)!,
           receivedTick: event.tick + 1,
         });
       }

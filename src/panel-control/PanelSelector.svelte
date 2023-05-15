@@ -1,10 +1,13 @@
 <script lang="ts">
   import { uiPanelsState } from "./store";
   import PanelControl from "./PanelControl.svelte";
-  import type { ObjectiveTracker } from "../simulation/objectiveTracker/store";
-  import { FabricatorOpened } from "../simulation/objectiveTracker/store";
+  import {
+    FabricatorOpened,
+    OBJECTIVE_TRACKER_CONTEXT,
+  } from "../simulation/objectiveTracker/store";
+  import { getContext } from "svelte";
 
-  export let objectives: ObjectiveTracker;
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 </script>
 
 <div class="flex flex-grow-0 flex-row justify-center gap-1 break-normal">

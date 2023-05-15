@@ -14,54 +14,54 @@ export enum Construct {
 }
 
 export const tickConsumption = {
-  [Construct.MINER]: new Map([[Resource.ELECTRICITY, 3] as const] as const),
+  [Construct.MINER]: new Map([[Resource.ELECTRICITY, 3n] as const] as const),
   [Construct.REFINER]: new Map([
-    [Resource.ELECTRICITY, 5] as const,
-    [Resource.ORE, 5] as const,
+    [Resource.ELECTRICITY, 5n] as const,
+    [Resource.ORE, 5n] as const,
   ] as const),
   [Construct.SATELLITE_FACTORY]: new Map([
-    [Resource.ELECTRICITY, 25] as const,
-    [Resource.METAL, 7] as const,
+    [Resource.ELECTRICITY, 25n] as const,
+    [Resource.METAL, 7n] as const,
   ] as const),
   [Construct.SATELLITE_LAUNCHER]: new Map([
-    [Resource.ELECTRICITY, 1.4 * 10 ** 3] as const,
-    [Resource.PACKAGED_SATELLITE, 1] as const,
+    [Resource.ELECTRICITY, 1_400n] as const,
+    [Resource.PACKAGED_SATELLITE, 1n] as const,
   ] as const),
 } as const;
 
 export const tickProduction = {
   [Construct.SOLAR_COLLECTOR]: new Map([
-    [Resource.ELECTRICITY, 1] as const,
+    [Resource.ELECTRICITY, 1n] as const,
   ] as const),
-  [Construct.MINER]: new Map([[Resource.ORE, 1] as const] as const),
-  [Construct.REFINER]: new Map([[Resource.METAL, 3] as const] as const),
+  [Construct.MINER]: new Map([[Resource.ORE, 1n] as const] as const),
+  [Construct.REFINER]: new Map([[Resource.METAL, 3n] as const] as const),
   [Construct.SATELLITE_FACTORY]: new Map([
-    [Resource.PACKAGED_SATELLITE, 1] as const,
+    [Resource.PACKAGED_SATELLITE, 1n] as const,
   ] as const),
-  satellite: new Map([["flux", 1] as const] as const),
+  satellite: new Map([["flux", 1n] as const] as const),
 } as const;
 
-export type Input = Map<Resource, number>;
+export type Input = Map<Resource, bigint>;
 export const constructionCosts: Record<Construct, Input> = {
   [Construct.SOLAR_COLLECTOR]: new Map([
-    [Resource.ELECTRICITY, 100],
-    [Resource.METAL, 10],
+    [Resource.ELECTRICITY, 100n],
+    [Resource.METAL, 10n],
   ]),
   [Construct.MINER]: new Map([
-    [Resource.ELECTRICITY, 150],
-    [Resource.METAL, 30],
+    [Resource.ELECTRICITY, 150n],
+    [Resource.METAL, 30n],
   ]),
   [Construct.REFINER]: new Map([
-    [Resource.ELECTRICITY, 500],
-    [Resource.METAL, 45],
+    [Resource.ELECTRICITY, 500n],
+    [Resource.METAL, 45n],
   ]),
   [Construct.SATELLITE_LAUNCHER]: new Map([
-    [Resource.ELECTRICITY, 2 * 10 ** 3],
-    [Resource.METAL, 170],
+    [Resource.ELECTRICITY, 2_000n],
+    [Resource.METAL, 170n],
   ]),
   [Construct.SATELLITE_FACTORY]: new Map([
-    [Resource.ELECTRICITY, 10 ** 4],
-    [Resource.METAL, 13 * 10 ** 2],
+    [Resource.ELECTRICITY, 10_000n],
+    [Resource.METAL, 1_300n],
   ]),
 };
 

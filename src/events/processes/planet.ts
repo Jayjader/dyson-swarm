@@ -46,7 +46,7 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
         const futureIndex = indexOfFirstFutureEvent(planet.data.received, tick);
 
         const totalOreMiningPotential =
-          BigInt(tickProduction.miner.get(Resource.ORE)!) *
+          tickProduction.miner.get(Resource.ORE)! *
           planet.data.received
             .slice(0, futureIndex)
             .reduce((accu, e) => accu + BigInt(e.minerCount), 0n);

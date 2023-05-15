@@ -18,7 +18,6 @@ function insertNewOrder(
   queue: BuildOrder[],
   top = true
 ): [BuildOrder, ...BuildOrder[]] {
-  if (top) console.log({ order, position, queue });
   const [head, ...tail] = position;
   if (tail.length === 0) {
     queue.splice(head, 0, order);

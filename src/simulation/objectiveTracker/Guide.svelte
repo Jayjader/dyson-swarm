@@ -1,8 +1,12 @@
 <script lang="ts">
   import type { Objective, ObjectiveTracker } from "./store";
-  import { onDestroy } from "svelte";
+  import { getContext, onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
-  import { getNestedItem, getPositionOfFirstItem } from "./store";
+  import {
+    getNestedItem,
+    getPositionOfFirstItem,
+    OBJECTIVE_TRACKER_CONTEXT,
+  } from "./store";
 
   let dialogElement: HTMLDialogElement;
 
@@ -19,7 +23,7 @@
       | undefined,
   };
 
-  export let store: ObjectiveTracker;
+  const store = getContext(OBJECTIVE_TRACKER_CONTEXT).objectives;
   trackerState.objectives = store.objectives;
   const storeSub = store.subscribe(({ open, active, progress }) => {
     if (open && !trackerState.tracking.open) {
@@ -47,7 +51,7 @@
 
 <dialog
   bind:this={dialogElement}
-  on:close
+  on:close={store.close}
   class="flex-row flex-wrap items-stretch gap-1 border-4 border-slate-900 bg-slate-900 p-0"
 >
   <div

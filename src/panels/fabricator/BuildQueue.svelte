@@ -21,13 +21,13 @@
     queryAt,
     stackMode,
   } from "./store";
-  import type { ObjectiveTracker } from "../../simulation/objectiveTracker/store";
   import {
     AddBuildOrder,
     EditingQueue,
+    OBJECTIVE_TRACKER_CONTEXT,
   } from "../../simulation/objectiveTracker/store";
 
-  export let objectives: ObjectiveTracker;
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
