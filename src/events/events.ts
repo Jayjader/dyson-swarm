@@ -7,27 +7,26 @@ export type AfterTick = { afterTick: number };
 export type BeforeTick = { beforeTick: number };
 export type ReceivedTick = { receivedTick: number };
 
+export type Command<Tag extends string, Data = {}> = {
+  tag: `command-${Tag}`;
+} & TimeStamped &
+  AfterTick &
+  Data;
+
 export type BusEvent =
   | ({ tag: "outside-clock-tick" } & TimeStamped)
   | { tag: "simulation-clock-tick"; tick: number }
-  | ({ tag: "command-simulation-clock-play" } & AfterTick & TimeStamped)
+  | Command<"simulation-clock-play">
   | ({ tag: "simulation-clock-play" } & BeforeTick)
-  | ({ tag: "command-simulation-clock-pause" } & AfterTick & TimeStamped)
+  | Command<"simulation-clock-pause">
   | ({ tag: "simulation-clock-pause" } & BeforeTick)
-  | ({ tag: "command-simulation-clock-indirect-pause" } & AfterTick &
-      TimeStamped)
+  | Command<"simulation-clock-indirect-pause">
   | ({ tag: "simulation-clock-indirect-pause" } & BeforeTick)
-  | ({ tag: "command-simulation-clock-indirect-resume" } & AfterTick &
-      TimeStamped)
+  | Command<"simulation-clock-indirect-resume">
   | ({ tag: "simulation-clock-indirect-resume" } & BeforeTick)
-  | ({ tag: "command-simulation-clock-start-editing-speed" } & AfterTick &
-      TimeStamped)
+  | Command<"simulation-clock-start-editing-speed">
   | ({ tag: "simulation-clock-editing-speed" } & BeforeTick)
-  | ({
-      tag: "command-simulation-clock-set-speed";
-      speed: number;
-    } & AfterTick &
-      TimeStamped)
+  | Command<"simulation-clock-set-speed", { speed: number }>
   | ({ tag: "simulation-clock-new-speed"; speed: number } & BeforeTick)
   | ({ tag: "star-flux-emission"; flux: bigint } & ReceivedTick)
   | ({ tag: "mine-planet-surface"; minerCount: number } & ReceivedTick)
@@ -52,31 +51,33 @@ export type BusEvent =
   | ({ tag: "satellite-flux-reflection"; flux: bigint } & ReceivedTick)
   | ({ tag: "construct-fabricated"; construct: Construct } & ReceivedTick)
   | { tag: "circuit-breaker-tripped"; onTick: number }
-  | ({ tag: "command-reset-circuit-breaker" } & TimeStamped & AfterTick)
+  | Command<"reset-circuit-breaker">
   | { tag: "circuit-breaker-reset"; onTick: number }
-  | ({ tag: "command-trip-circuit-breaker" } & TimeStamped & AfterTick)
-  | ({
-      tag: "command-set-working-count";
-      construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
-      count: number;
-    } & TimeStamped &
-      AfterTick)
+  | Command<"trip-circuit-breaker">
+  | Command<
+      "set-working-count",
+      {
+        construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
+        count: number;
+      }
+    >
   | ({
       tag: "working-count-set";
       construct: Exclude<Construct, Construct.SOLAR_COLLECTOR>;
       count: number;
     } & BeforeTick)
-  | ({ tag: "command-turn-on-fabricator" } & TimeStamped & AfterTick)
+  | Command<"turn-on-fabricator">
   | ({ tag: "fabricator-turned-on" } & BeforeTick)
-  | ({ tag: "command-turn-off-fabricator" } & TimeStamped & AfterTick)
+  | Command<"turn-off-fabricator">
   | ({ tag: "fabricator-turned-off" } & BeforeTick)
-  | ({
-      tag: "command-set-fabricator-queue";
-      queue: BuildOrder[];
-    } & TimeStamped &
-      AfterTick)
+  | Command<
+      "set-fabricator-queue",
+      {
+        queue: BuildOrder[];
+      }
+    >
   | ({ tag: "fabricator-queue-set"; queue: BuildOrder[] } & BeforeTick)
-  | ({ tag: "command-clear-fabricator-job" } & AfterTick & TimeStamped);
+  | Command<"clear-fabricator-job">;
 export type EventTag = BusEvent["tag"];
 
 // helper type to extract a subset of possible events based on just their tags
@@ -86,9 +87,8 @@ export function indexOfFirstFutureEvent(
   events: (BusEvent & ReceivedTick)[],
   lastTick: number
 ): number | undefined {
-  return ((index: number) => (index >= 0 ? index : undefined))(
-    events.findIndex(({ receivedTick }) => receivedTick > lastTick)
-  );
+  const index = events.findIndex(({ receivedTick }) => receivedTick > lastTick);
+  return index >= 0 ? index : undefined; // convert -1 ("not found") result to undefined, encoding it in the type
 }
 
 export function compareReceivedTicks<E extends BusEvent & ReceivedTick>(
