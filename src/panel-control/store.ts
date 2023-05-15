@@ -42,15 +42,4 @@ export const uiPanelsState = {
       return state;
     });
   },
-  openQueue: () => {
-    console.info({ command: "open-queue" });
-    uiState.update((state) => state.add("order-queue"));
-  },
-  closeQueue: () => {
-    console.info({ command: "close-queue" });
-    uiState.update((state) => {
-      state.delete("order-queue");
-      return state;
-    });
-  },
 };
