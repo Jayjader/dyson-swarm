@@ -20,6 +20,11 @@ import { starProcess } from "./processes/star";
 import { storageProcess } from "./processes/storage";
 import { SUBSCRIPTIONS } from "./subscriptions";
 import { loadSave, newGame, type SaveState } from "../save/save";
+import {
+  createObjectiveTrackerProbe,
+  objectiveTrackerProcess,
+} from "./processes/objectiveTracker";
+import type { ObjectiveTracker } from "../simulation/objectiveTracker/store";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -85,6 +90,8 @@ function process(p: Processor): [Processor, BusEvent[]] {
       return swarmProcess(p);
     case "fabricator":
       return fabricatorProcess(p);
+    case "probe":
+      return objectiveTrackerProcess(p);
   }
   console.error({
     command: "process",
@@ -111,7 +118,9 @@ export function processUntilSettled(sim: Simulation): Simulation {
 
 export const SIMULATION_STORE = Symbol();
 
-export function makeSimulationStore(): Readable<Simulation> & {
+export function makeSimulationStore(
+  objectives: ObjectiveTracker
+): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
   loadSave: (s: SaveState) => SimulationStore;
@@ -142,6 +151,10 @@ export function makeSimulationStore(): Readable<Simulation> & {
         createClock(outsideTick, "clock-0", { mode: "pause" })
       );
       insertProcessor(simulation, createMemoryStream());
+      insertProcessor(
+        simulation,
+        createObjectiveTrackerProbe(objectives.handleTriggers)
+      );
       set(simulation);
       return store;
     },

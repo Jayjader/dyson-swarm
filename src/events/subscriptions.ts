@@ -109,6 +109,10 @@ export const SUBSCRIPTIONS = {
     "fabricator-queue-set",
     "command-clear-fabricator-job",
   ] as const),
+  probe: new Set([
+    "command-set-fabricator-queue",
+    "construct-fabricated",
+  ] as const),
 } as const;
 export type SubscriptionsFor<ProcessorTag> =
   ProcessorTag extends keyof typeof SUBSCRIPTIONS

@@ -22,8 +22,8 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
-  import type { ObjectiveTracker } from "./objectiveTracker";
-  import Guide from "./Guide.svelte";
+  import type { ObjectiveTracker } from "./objectiveTracker/store";
+  import Guide from "./objectiveTracker/Guide.svelte";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -145,10 +145,10 @@
       <StorageOverview {resources} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
-      <Fabricator />
+      <Fabricator {objectives} />
     {/if}
   </div>
-  <PanelSelector />
+  <PanelSelector {objectives} />
   <Guide store={objectives} on:close={objectives.close} />
 </main>
 {#if settings.show3dRender}

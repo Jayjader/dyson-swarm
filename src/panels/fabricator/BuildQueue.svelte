@@ -21,6 +21,13 @@
     queryAt,
     stackMode,
   } from "./store";
+  import type { ObjectiveTracker } from "../../simulation/objectiveTracker/store";
+  import {
+    AddBuildOrder,
+    EditingQueue,
+  } from "../../simulation/objectiveTracker/store";
+
+  export let objectives: ObjectiveTracker;
 
   const simulation = getContext(SIMULATION_STORE).simulation;
 
@@ -70,6 +77,7 @@
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
     uiState.enterEdit(queue);
+    objectives.handleTriggers([EditingQueue]);
   }
   function saveEdits() {
     const newQueue: BuildOrder[] = uiState.saveEdits();
@@ -275,7 +283,10 @@
       />
       <MenuButton
         text="Miner"
-        on:click={uiState.selectNewBuildOrder.bind(this, Construct.MINER)}
+        on:click={() => (
+          uiState.selectNewBuildOrder(Construct.MINER),
+          objectives.handleTriggers([[AddBuildOrder, Construct.MINER]])
+        )}
       />
       <MenuButton
         text="Refiner"

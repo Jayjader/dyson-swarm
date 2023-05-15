@@ -1,6 +1,10 @@
 <script lang="ts">
   import { uiPanelsState } from "./store";
   import PanelControl from "./PanelControl.svelte";
+  import type { ObjectiveTracker } from "../simulation/objectiveTracker/store";
+  import { FabricatorOpened } from "../simulation/objectiveTracker/store";
+
+  export let objectives: ObjectiveTracker;
 </script>
 
 <div class="flex flex-grow-0 flex-row justify-center gap-1 break-normal">
@@ -32,7 +36,10 @@
       on={$uiPanelsState.has("fabricator")}
       on:click={$uiPanelsState.has("fabricator")
         ? uiPanelsState.closeFabricator
-        : uiPanelsState.openFabricator}
+        : () => (
+            uiPanelsState.openFabricator(),
+            objectives.handleTriggers([FabricatorOpened])
+          )}
     >
       Fabricator
     </PanelControl>

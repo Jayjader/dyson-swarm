@@ -11,10 +11,15 @@
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
   import { makeSimulationStore } from "../events";
-  import { makeObjectiveTracker } from "../simulation/objectiveTracker";
+  import {
+    makeObjectiveTracker,
+    type ObjectiveTracker,
+  } from "../simulation/objectiveTracker/store";
   import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
   import { get } from "svelte/store";
+
+  export let objectives: ObjectiveTracker;
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -188,12 +193,14 @@
         if (saveState !== undefined) {
           appStateStack.pop(2); // close menus
 
-          let simStore;
+          let simStore, objTrackerStore;
           if (simulationLoaded) {
-            const [currentSimStore] = appStateStack.pop(2);
+            const [currentSimStore, currentTrackerStore] = appStateStack.pop(2);
             simStore = currentSimStore;
+            objTrackerStore = currentTrackerStore;
           } else {
-            simStore = makeSimulationStore();
+            objTrackerStore = makeObjectiveTracker();
+            simStore = makeSimulationStore(objTrackerStore);
           }
           simStore.loadSave(saveState);
 
@@ -205,7 +212,7 @@
           };
           simStore.broadcastEvent(busEvent);
 
-          appStateStack.push(simStore, makeObjectiveTracker());
+          appStateStack.push(simStore, objTrackerStore);
         }
         uiStore.endAction();
       }}

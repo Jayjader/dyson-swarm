@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Objective } from "./objectiveTracker";
+  import type { Objective } from "./store";
 
   type Position = [number, ...number[]];
   export let data: { objective: Objective; position: Position };

@@ -14,6 +14,7 @@ import type { SatelliteSwarm } from "./satelliteSwarm";
 import type { SatelliteFactoryManager } from "./satFactory";
 import type { Star } from "./star";
 import type { Storage } from "./storage";
+import type { ObjectiveTrackerProbe } from "./objectiveTracker";
 
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
@@ -42,5 +43,6 @@ export type Processor =
   | SatelliteFactoryManager
   | LauncherManager
   | SatelliteSwarm
-  | Fabricator;
+  | Fabricator
+  | ObjectiveTrackerProbe;
 export type Id = Processor["id"];

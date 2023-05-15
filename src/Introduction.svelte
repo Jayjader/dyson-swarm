@@ -3,7 +3,7 @@
   import { getContext, onMount } from "svelte";
   import { APP_UI_CONTEXT } from "./appStateStore";
   import { makeSimulationStore } from "./events";
-  import { makeObjectiveTracker } from "./simulation/objectiveTracker";
+  import { makeObjectiveTracker } from "./simulation/objectiveTracker/store";
 
   let introDialog: HTMLDialogElement;
   let step = 0;
@@ -90,9 +90,10 @@
   bind:this={introDialog}
   on:close={() => {
     appStateStack.pop();
+    const tracker = makeObjectiveTracker();
     appStateStack.push(
-      makeSimulationStore().loadNew(window.performance.now()),
-      makeObjectiveTracker()
+      makeSimulationStore(tracker).loadNew(window.performance.now()),
+      tracker
     );
   }}
 >

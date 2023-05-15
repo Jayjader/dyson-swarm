@@ -1,8 +1,10 @@
 <script lang="ts">
   import Job from "./Job.svelte";
   import BuildQueue from "./BuildQueue.svelte";
+  import type { ObjectiveTracker } from "../../simulation/objectiveTracker/store";
 
   export let visible = true;
+  export let objectives: ObjectiveTracker;
 </script>
 
 <section
@@ -11,8 +13,8 @@
 >
   <h2 class="text-center">Fabricator</h2>
   <div class="flex flex-row flex-wrap gap-2">
-    <Job />
-    <BuildQueue />
+    <Job {objectives} />
+    <BuildQueue {objectives} />
   </div>
 </section>
 

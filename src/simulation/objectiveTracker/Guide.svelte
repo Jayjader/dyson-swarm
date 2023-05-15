@@ -1,7 +1,8 @@
 <script lang="ts">
-  import type { Objective, ObjectiveTracker } from "./objectiveTracker";
+  import type { Objective, ObjectiveTracker } from "./store";
   import { onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
+  import { getNestedItem, getPositionOfFirstItem } from "./store";
 
   let dialogElement: HTMLDialogElement;
 
@@ -42,25 +43,6 @@
     }
   });
   onDestroy(storeSub);
-
-  function getPositionOfFirstItem(
-    list: Objective[],
-    position: Position = [0]
-  ): Position {
-    const element = getNestedItem(list, position);
-    if (element.details !== undefined) {
-      return position;
-    }
-    return [...position, ...getPositionOfFirstItem(element.subObjectives)];
-  }
-  function getNestedItem(list: Objective[], position: Position): Objective {
-    if (position.length < 2) {
-      return list[position[0]];
-    } else {
-      const [currentIndex, ...next] = position;
-      return getNestedItem(list[currentIndex].subObjectives, next);
-    }
-  }
 </script>
 
 <dialog
@@ -89,7 +71,7 @@
     <div class="flex flex-row flex-wrap gap-4">
       <h3>Steps:</h3>
       <ol class="flex flex-col flex-nowrap">
-        {#if trackerState.viewing}{#each trackerState.viewing.objective.steps as step, index}<li
+        {#if trackerState.viewing}{#each trackerState.viewing.objective.steps as [step], index}<li
               class="flex flex-row flex-nowrap gap-1"
             >
               <input
