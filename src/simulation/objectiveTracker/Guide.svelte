@@ -130,6 +130,7 @@
               data={{ objective, position: [index] }}
               progress={trackerState.tracking.progress}
               action={setViewing}
+              active={trackerState.tracking.active}
             />
           </li>{/each}
       </ol>
