@@ -47,6 +47,13 @@
     }
   });
   onDestroy(storeSub);
+
+  function setViewing(position) {
+    trackerState.viewing = {
+      objective: getNestedItem(trackerState.objectives, position),
+      position,
+    };
+  }
 </script>
 
 <dialog
@@ -87,6 +94,7 @@
                 checked={trackerState.tracking.progress.has(
                   JSON.stringify([...trackerState.viewing.position, index])
                 )}
+                class="mt-1 self-start"
               />
               <label for="guide-objective-step-progress-{index}">
                 {@html step}
@@ -106,6 +114,7 @@
             <ObjectiveNavItem
               data={{ objective, position: [index] }}
               progress={trackerState.tracking.progress}
+              action={setViewing}
             />
           </li>{/each}
       </ol>
