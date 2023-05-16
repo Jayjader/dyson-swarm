@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
-import type { EventTag } from "../../events/events";
-import { Construct } from "../../gameRules";
+import type { EventTag } from "../events/events";
+import { Construct } from "../gameRules";
 
 export const FabricatorOpened = Symbol("fabricator panel opened");
 export const EditingQueue = Symbol("started editing fabricator build queue");

@@ -11,7 +11,7 @@
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
   import { makeSimulationStore } from "../events";
-  import { makeObjectiveTracker } from "../simulation/objectiveTracker/store";
+  import { makeObjectiveTracker } from "../objectiveTracker/store";
   import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
   import { get } from "svelte/store";

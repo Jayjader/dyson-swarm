@@ -24,7 +24,7 @@ import {
   createObjectiveTrackerProbe,
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
-import type { ObjectiveTracker } from "../simulation/objectiveTracker/store";
+import type { ObjectiveTracker } from "../objectiveTracker/store";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;

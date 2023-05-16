@@ -21,7 +21,7 @@
     queryAt,
     stackMode,
   } from "./store";
-  import { OBJECTIVE_TRACKER_CONTEXT } from "../../simulation/objectiveTracker/store";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "../../objectiveTracker/store";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 

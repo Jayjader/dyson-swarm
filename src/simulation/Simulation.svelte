@@ -22,9 +22,9 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
-  import type { ObjectiveTracker } from "./objectiveTracker/store";
-  import Guide from "./objectiveTracker/Guide.svelte";
-  import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
+  import type { ObjectiveTracker } from "../objectiveTracker/store";
+  import Guide from "../objectiveTracker/Guide.svelte";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (

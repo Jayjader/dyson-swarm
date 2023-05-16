@@ -4,7 +4,7 @@
   import {
     FabricatorOpened,
     OBJECTIVE_TRACKER_CONTEXT,
-  } from "../simulation/objectiveTracker/store";
+  } from "../objectiveTracker/store";
   import { getContext } from "svelte";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);

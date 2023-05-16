@@ -67,11 +67,22 @@
   <div
     class="row-span-2 flex flex-grow flex-col flex-nowrap gap-4 bg-slate-300 p-4"
   >
-    <h2>
-      Objective: {#if trackerState.viewing}
-        {trackerState.viewing.objective.title}
-      {/if}
-    </h2>
+    <div class="flex flex-row flex-nowrap justify-between gap-4">
+      <h2>
+        Objective: {#if trackerState.viewing}
+          {trackerState.viewing.objective.title}
+        {/if}
+      </h2>
+      <button
+        disabled={trackerState.viewing.position.every(
+          (x, i) => trackerState.tracking.active[i] === x
+        )}
+        on:click={() => store.setActive(trackerState.viewing.position)}
+        class="rounded border-2 border-slate-900 p-4"
+        >{#if trackerState.viewing.position.every((x, i) => trackerState.tracking.active[i] === x)}Currently{:else}Set
+          As{/if} Active</button
+      >
+    </div>
     <div class="flex flex-row flex-wrap gap-4">
       <h3>Details:</h3>
       {#if trackerState.viewing}
@@ -121,11 +132,41 @@
   <div class="flex flex-grow flex-col flex-nowrap items-stretch gap-1">
     <nav
       aria-labelledby="Objectives-title"
-      class="max-w-full flex-grow bg-slate-300 p-2 pb-4"
+      class="grid max-w-full grid-cols-2 gap-2 bg-slate-300 p-4"
     >
-      <h2 id="Objectives-title" class="scroll-m-0">Objectives</h2>
-      <ol class="flex flex-col flex-nowrap gap-2.5 overflow-y-scroll ">
-        {#each trackerState.objectives as objective, index}<li>
+      <h2 id="Objectives-title" class="col-span-2 scroll-m-0">Objectives</h2>
+      <!--      <div class="mx-auto flex flex-row flex-nowrap justify-center gap-4">-->
+      <button
+        class="rounded border-2 border-slate-800 p-4"
+        disabled={trackerState.tracking.active.length === 0}
+        on:click={() =>
+          (trackerState.viewing = {
+            position: trackerState.tracking.active,
+            objective: getNestedItem(
+              trackerState.objectives,
+              trackerState.tracking.active
+            ),
+          })}>View Active</button
+      >
+      <button
+        class="rounded border-2 border-slate-800 p-4"
+        disabled={trackerState.tracking.active.length === 0}
+        on:click={() => store.setActive([])}>Clear Active</button
+      >
+      <!--      </div>-->
+      <input type="text" placeholder="Search..." class="col-span-2 m-2 p-2" />
+      <!--      <div class="mx-auto flex flex-row flex-nowrap justify-center gap-4">-->
+      <button class="rounded border-2 border-slate-800 p-4">Collapse All</button
+      >
+      <button class="rounded border-2 border-slate-800 p-4">Expand All</button>
+      <!--      </div>-->
+      <hr
+        class="col-span-2 rounded border-t-2 border-b-2 border-slate-900 text-slate-900"
+      />
+      <ol
+        class="p-l-1 col-span-2 flex flex-col flex-nowrap gap-2.5 overflow-y-scroll"
+      >
+        {#each trackerState.objectives as objective, index}<li class="-ml-2">
             <ObjectiveNavItem
               data={{ objective, position: [index] }}
               progress={trackerState.tracking.progress}

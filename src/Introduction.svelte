@@ -3,7 +3,7 @@
   import { getContext, onMount } from "svelte";
   import { APP_UI_CONTEXT } from "./appStateStore";
   import { makeSimulationStore } from "./events";
-  import { makeObjectiveTracker } from "./simulation/objectiveTracker/store";
+  import { makeObjectiveTracker } from "./objectiveTracker/store";
 
   let introDialog: HTMLDialogElement;
   let step = 0;

@@ -1,17 +1,14 @@
 import type { EventProcessor } from "./index";
 import type { BusEvent } from "../events";
-import type {
-  ObjectivePosition,
-  Trigger,
-} from "../../simulation/objectiveTracker/store";
+import type { ObjectivePosition, Trigger } from "../../objectiveTracker/store";
 
 export type ObjectiveTrackerProbe = EventProcessor<
   "probe",
-  { propagateTriggers: (triggers: Trigger[]) => ObjectivePosition[] }
+  { propagateTriggers: (triggers: Trigger[]) => void }
 >;
 
 export function createObjectiveTrackerProbe(
-  propagateTriggers: (triggers: Trigger[]) => ObjectivePosition[],
+  propagateTriggers: (triggers: Trigger[]) => void,
   id: ObjectiveTrackerProbe["id"] = "probe-0"
 ): ObjectiveTrackerProbe {
   return {

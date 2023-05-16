@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
 import type { SimulationStore } from "./events";
 import type { SettingsStore } from "./settings/store";
-import type { ObjectiveTracker } from "./simulation/objectiveTracker/store";
+import type { ObjectiveTracker } from "./objectiveTracker/store";
 
 export const MainMenu = Symbol("main menu");
 export const SettingsMenu = Symbol("settings menu");

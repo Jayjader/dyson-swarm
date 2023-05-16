@@ -2,12 +2,12 @@ import { writable } from "svelte/store";
 import type { Construct } from "../../gameRules";
 import type { BuildOrder, Repeat, SingleBuildOrder } from "../../types";
 import { isRepeat } from "../../types";
-import type { ObjectiveTracker } from "../../simulation/objectiveTracker/store";
+import type { ObjectiveTracker } from "../../objectiveTracker/store";
 import {
   AddBuildOrder,
   AddRepeatOrder,
   EditingQueue,
-} from "../../simulation/objectiveTracker/store";
+} from "../../objectiveTracker/store";
 
 type PositionInQueue = [number, ...number[]];
 
