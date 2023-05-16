@@ -1,79 +1,51 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
-  import { getPrimitive } from "./types";
-  import ProgressHeader from "./ProgressHeader.svelte";
-  import { getClock } from "../events/processes/clock";
-  import { getContext } from "svelte";
-  import { SIMULATION_STORE } from "../events";
-  import ProgressData from "./ProgressData.svelte";
+  import { getContext, onDestroy } from "svelte";
+  import {
+    getNestedItem,
+    OBJECTIVE_TRACKER_CONTEXT,
+  } from "../objectiveTracker/store";
 
-  const swarmSizeGoal = 2 ** 50;
-  export let count = 0;
-  let lastTick = 0;
-  let slidingWindow = Array(100).fill(undefined);
-
-  const simulation = getContext(SIMULATION_STORE).simulation;
-
-  simulation.subscribe((sim) => {
-    const tick = getPrimitive(getClock(sim)).tick;
-    if (tick === lastTick) {
-      return;
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
+  let activeObjective, currentStep, progress;
+  const trackerSub = objectives.subscribe((tracker) => {
+    if (tracker.active.length === 0) {
+      activeObjective = undefined;
+      currentStep = undefined;
+      progress = undefined;
+    } else {
+      activeObjective = getNestedItem(objectives.objectives, tracker.active);
+      currentStep = activeObjective.steps.find(
+        (_, index) =>
+          !tracker.progress.has(JSON.stringify([...tracker.active, index]))
+      );
+      progress = tracker.progress;
     }
-    lastTick = tick;
-
-    slidingWindow.shift();
-    slidingWindow.push(count);
-    slidingWindow = slidingWindow;
   });
-
-  $: definedValues = slidingWindow.slice(
-    slidingWindow.findIndex((val) => val !== undefined)
-  );
-  $: estimatedRatePerTick =
-    definedValues
-      .slice(1)
-      .reduce(
-        ([sum, prev], next) =>
-          next === undefined ? [sum, next] : [sum + next - (prev ?? 0), next],
-        [0, definedValues[0]]
-      )[0] /
-    (definedValues.length - 1);
+  onDestroy(trackerSub);
 </script>
 
 <table
-  class="border-separate rounded border-2 border-slate-100 p-1 text-slate-100"
+  class="flex border-collapse flex-col flex-nowrap gap-1 rounded border-2 border-slate-100 p-1 text-slate-100"
 >
-  <tr in:fade={{ delay: 150, duration: 1500 }}>
-    <ProgressHeader
-      >Number needed to capture 100% of the star's output</ProgressHeader
+  <tr class="flex flex-row flex-nowrap gap-2">
+    <th class="pr-2 text-left align-text-top"
+      ><span class="rounded-br border-b-2 border-b-stone-600 pb-1"
+        >Objective:</span
+      ></th
     >
-    <ProgressData>{swarmSizeGoal.toPrecision(6)}</ProgressData>
-  </tr>
-  <tr in:fade={{ delay: 1000, duration: 1500 }}>
-    <ProgressHeader>Percent of star's output captured</ProgressHeader>
-    <ProgressData>{((count * 100) / swarmSizeGoal).toPrecision(6)}</ProgressData
+    <td class="max-w-max align-text-top"
+      >{#if activeObjective}{activeObjective.title}{:else}(None){/if}</td
     >
   </tr>
-  <tr
-    in:fade={{ delay: 1500, duration: 1500 }}
-    title="Estimated over the past {definedValues.length} ticks"
-  >
-    <ProgressHeader>Estimated rate of deployment</ProgressHeader>
-    <ProgressData>{estimatedRatePerTick.toPrecision(8)} /tick</ProgressData>
-  </tr>
-  <tr
-    in:fade={{ delay: 2000, duration: 1500 }}
-    title="Estimated over the past {definedValues.length} ticks"
-  >
-    <ProgressHeader
-      >Estimated time to reach 100% at current rate:</ProgressHeader
+  <tr class="flex flex-row flex-nowrap gap-2">
+    <th class="pr-2 text-left align-text-top"
+      ><span class="rounded-br border-b-2 border-b-stone-600 pb-1"
+        >Current Step:</span
+      ></th
     >
-    <ProgressData>
-      {Math.floor(
-        (swarmSizeGoal - count) /
-          estimatedRatePerTick /
-          (365 * 24 * 3600 * 1000)
-      ).toPrecision(8)} tick-years
-    </ProgressData>
+    <td class="max-w-max align-text-top"
+      >{#if activeObjective}{#if currentStep}{@html currentStep[0]}{:else}(Objective
+          Completed){/if}{:else}(None){/if}</td
+    >
   </tr>
 </table>
