@@ -6,9 +6,11 @@
     getNextObjective,
     getPositionOfFirstItem,
     OBJECTIVE_TRACKER_CONTEXT,
+    walkObjectivePositions,
   } from "./store";
   import { getContext, onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
+  import CommonGuideButton from "./CommonGuideButton.svelte";
 
   let dialogElement: HTMLDialogElement;
 
@@ -73,14 +75,13 @@
           {trackerState.viewing.objective.title}
         {/if}
       </h2>
-      <button
+      <CommonGuideButton
         disabled={trackerState.viewing.position.every(
           (x, i) => trackerState.tracking.active[i] === x
         )}
         on:click={() => store.setActive(trackerState.viewing.position)}
-        class="rounded border-2 border-slate-900 p-4"
         >{#if trackerState.viewing.position.every((x, i) => trackerState.tracking.active[i] === x)}Currently{:else}Set
-          As{/if} Active</button
+          As{/if} Active</CommonGuideButton
       >
     </div>
     <div class="flex flex-row flex-wrap gap-4">
@@ -117,15 +118,14 @@
       </ol>
     </div>
     {#if trackerState.viewing && trackerState.tracking.progress.has(JSON.stringify(trackerState.viewing.position))}
-      <button
+      <CommonGuideButton
         on:click={() =>
           store.setActive(
             getNextObjective(
               trackerState.objectives,
               trackerState.viewing.position
-            )[1]
-          )}
-        class="self-center rounded border-2 border-slate-900 p-2">Next</button
+            )?.[1]
+          )}>Next</CommonGuideButton
       >
     {/if}
   </div>
@@ -135,31 +135,50 @@
       class="grid max-w-full grid-cols-2 gap-2 bg-slate-300 p-4"
     >
       <h2 id="Objectives-title" class="col-span-2 scroll-m-0">Objectives</h2>
-      <!--      <div class="mx-auto flex flex-row flex-nowrap justify-center gap-4">-->
-      <button
-        class="rounded border-2 border-slate-800 p-4"
+      <CommonGuideButton
         disabled={trackerState.tracking.active.length === 0}
-        on:click={() =>
+        on:click={() => (
           (trackerState.viewing = {
             position: trackerState.tracking.active,
             objective: getNestedItem(
               trackerState.objectives,
               trackerState.tracking.active
             ),
-          })}>View Active</button
+          }),
+          trackerState.tracking.active.forEach((_, i) =>
+            dialogElement
+              .querySelectorAll(
+                `[data-position="${JSON.stringify(
+                  trackerState.tracking.active.slice(0, i + 1)
+                )}"]`
+              )
+              .forEach((details) => !details.open && (details.open = true))
+          )
+        )}>View Active</CommonGuideButton
       >
-      <button
-        class="rounded border-2 border-slate-800 p-4"
+      <CommonGuideButton
         disabled={trackerState.tracking.active.length === 0}
-        on:click={() => store.setActive([])}>Clear Active</button
+        on:click={() => store.setActive([])}>Clear Active</CommonGuideButton
       >
-      <!--      </div>-->
       <input type="text" placeholder="Search..." class="col-span-2 m-2 p-2" />
-      <!--      <div class="mx-auto flex flex-row flex-nowrap justify-center gap-4">-->
-      <button class="rounded border-2 border-slate-800 p-4">Collapse All</button
+      <CommonGuideButton
+        class="rounded border-2 border-slate-800 p-4"
+        on:click={() =>
+          walkObjectivePositions(trackerState.objectives).forEach((position) =>
+            dialogElement
+              .querySelectorAll(`[data-position="${JSON.stringify(position)}"]`)
+              .forEach((details) => details.open && (details.open = false))
+          )}>Collapse All</CommonGuideButton
       >
-      <button class="rounded border-2 border-slate-800 p-4">Expand All</button>
-      <!--      </div>-->
+      <CommonGuideButton
+        class="rounded border-2 border-slate-800 p-4"
+        on:click={() =>
+          walkObjectivePositions(trackerState.objectives).forEach((position) =>
+            dialogElement
+              .querySelectorAll(`[data-position="${JSON.stringify(position)}"]`)
+              .forEach((details) => !details.open && (details.open = true))
+          )}>Expand All</CommonGuideButton
+      >
       <hr
         class="col-span-2 rounded border-t-2 border-b-2 border-slate-900 text-slate-900"
       />

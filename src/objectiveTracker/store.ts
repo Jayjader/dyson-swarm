@@ -120,6 +120,25 @@ export const ALL_OBJECTIVES: Objective[] = [
           },
         ],
       },
+      {
+        title: "Launching Your Packaged Satellites",
+        subObjectives: [
+          { title: "###TODO###", details: ["$##TODO##$"], steps: [] },
+        ],
+      },
+      {
+        title: "Meeting Excess Energy Quotas",
+        subObjectives: [
+          {
+            title: "$#>TODO<#$",
+            details: ["$>>TODO<<$"],
+            steps: [
+              // todo: make this earth global power consumption for year x
+              // sample years: 2019 -> https://arxiv.org/pdf/2109.11443.pdf
+            ],
+          },
+        ],
+      },
     ],
   },
   {
@@ -172,6 +191,10 @@ export const ALL_OBJECTIVES: Objective[] = [
         ],
       },
     ],
+  },
+  {
+    title: "Ramping Up With Feedback Loops",
+    subObjectives: [],
   },
 ];
 
@@ -246,6 +269,19 @@ export function getNextObjective(
     }
     return [next, nextPosition];
   }
+}
+export function walkObjectivePositions(
+  list: Objective[],
+  position: number[] = []
+): ObjectivePosition[] {
+  return list.flatMap((objective, i) =>
+    !hasSubObjectives(objective)
+      ? [[...position, i]]
+      : [
+          [...position, i],
+          ...walkObjectivePositions(objective.subObjectives, [...position, i]),
+        ]
+  );
 }
 
 type SerializedPosition = ReturnType<typeof JSON.stringify>;
@@ -436,36 +472,47 @@ export function debugProgress(
   progress: Set<SerializedPosition>,
   objectives: Objective[]
 ) {
-  const debugProgress = [...progress].map((serializedPosition) => {
+  let debugProgress = [...progress].map((serializedPosition) => {
     const position = JSON.parse(serializedPosition);
     try {
-      return getNestedItem(objectives, position).title;
+      return [
+        serializedPosition,
+        getNestedItem(objectives, position).title,
+      ] as const;
     } catch {
       try {
         const parent = getNestedItem(
           objectives,
           position.slice(0, -1)
         ) as Objective & { steps: Step[] };
-        return `${parent.title}##${
-          parent.steps[position.at(-1)][0] // step details
-        }`;
+        return [
+          serializedPosition,
+          `${parent.title}##${
+            parent.steps[position.at(-1)][0] // step details
+          }`,
+        ] as const;
       } catch {
         try {
           const parent = getNestedItem(
             objectives,
             position.slice(0, -2)
           ) as Objective & { steps: Step[] };
-          return `${parent.title}##${
-            parent.steps[position.at(-2)][0] // step details
-          }##${
-            position.at(-1) // step completion count
-          }`;
+          return [
+            serializedPosition,
+            `${parent.title}##${
+              parent.steps[position.at(-2)][0] // step details
+            }##${
+              position.at(-1) // step completion count
+            }`,
+          ] as const;
         } catch {
-          return serializedPosition;
+          return [serializedPosition, serializedPosition] as const;
         }
       }
     }
   });
-  debugProgress.sort(); // everything is serialized as a file-system-path-like-string, so this alphanumeric sort will group sub-objectives
-  console.debug({ debugProgress });
+  debugProgress.sort(([sPosA, txtA], [sPosB, txtB]) =>
+    sPosA > sPosB ? 1 : -1
+  ); // everything is serialized as a file-system-path-like-string, so this alphanumeric sort will group sub-objectives
+  console.debug({ debugProgress: new Map(debugProgress) });
 }

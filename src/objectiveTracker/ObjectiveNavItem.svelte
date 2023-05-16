@@ -14,7 +14,7 @@
 </script>
 
 {#if data?.objective && data.objective?.details === undefined}
-  <details class="ml-2">
+  <details class="ml-2" data-position={serializedPosition}>
     <summary class="cursor-pointer rounded border-2 border-slate-800 p-2"
       >{data.objective.title}</summary
     >
