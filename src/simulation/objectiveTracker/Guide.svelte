@@ -9,11 +9,6 @@
   } from "./store";
   import { getContext, onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
-  import {
-    getNestedItem,
-    getPositionOfFirstItem,
-    OBJECTIVE_TRACKER_CONTEXT,
-  } from "./store";
 
   let dialogElement: HTMLDialogElement;
 
@@ -110,6 +105,18 @@
             </li>{/each}{/if}
       </ol>
     </div>
+    {#if trackerState.viewing && trackerState.tracking.progress.has(JSON.stringify(trackerState.viewing.position))}
+      <button
+        on:click={() =>
+          store.setActive(
+            getNextObjective(
+              trackerState.objectives,
+              trackerState.viewing.position
+            )[1]
+          )}
+        class="self-center rounded border-2 border-slate-900 p-2">Next</button
+      >
+    {/if}
   </div>
   <div class="flex flex-grow flex-col flex-nowrap items-stretch gap-1">
     <nav

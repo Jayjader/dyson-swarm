@@ -20,11 +20,12 @@ export type Trigger =
   | EventTag
   | [EventTag, ...unknown[]];
 
+export type Step = [string, Trigger] | [string, Trigger, number];
 export type Objective = { title: string } & (
   | { subObjectives: Objective[] }
   | {
       details: string[];
-      steps: [string, Trigger][];
+      steps: Step[];
     }
 );
 function hasSubObjectives(
@@ -102,7 +103,8 @@ export const ALL_OBJECTIVES: Objective[] = [
               ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a>",
-                ["construct-fabricated", Construct.SOLAR_COLLECTOR, 10],
+                ["construct-fabricated", Construct.SOLAR_COLLECTOR],
+                10,
               ],
             ],
           },
@@ -197,6 +199,54 @@ export function getNestedItem(
     );
   }
 }
+export function getNextObjective(
+  list: Objective[],
+  position: ObjectivePosition
+): [Objective, ObjectivePosition] | undefined {
+  let parentPosition = position.slice(0, position.length - 1);
+  const parent = getNestedItem(list, parentPosition);
+  if (
+    hasSubObjectives(parent) &&
+    parent.subObjectives.length > position.at(-1)! + 1
+  ) {
+    return [
+      parent.subObjectives[position.at(-1)! + 1],
+      [...parentPosition, position.at(-1)! + 1],
+    ];
+  }
+  // we are the last sub-objective
+  // => "next" objective is next child of [first "recursive parent" that is not the last child of its parent]
+  let grandParentPosition = parentPosition.slice(0, parentPosition.length - 1);
+  let grandParent: Objective | undefined = getNestedItem(
+    list,
+    grandParentPosition
+  );
+  while (
+    grandParent &&
+    hasSubObjectives(grandParent) &&
+    grandParent.subObjectives.length === parentPosition.at(-1)
+  ) {
+    parentPosition = grandParentPosition;
+    grandParentPosition = parentPosition.slice(0, parentPosition.length - 1);
+
+    grandParent =
+      grandParentPosition.length > 0
+        ? getNestedItem(list, grandParentPosition)
+        : undefined;
+  }
+  if (grandParent && hasSubObjectives(grandParent)) {
+    let nextPosition = [
+      ...parentPosition.slice(0, parentPosition.length - 1),
+      parentPosition.at(-1)! + 1,
+    ];
+    let next = grandParent.subObjectives[nextPosition.at(-1)!];
+    while (hasSubObjectives(next)) {
+      next = next.subObjectives[0];
+      nextPosition.push(0);
+    }
+    return [next, nextPosition];
+  }
+}
 
 type SerializedPosition = ReturnType<typeof JSON.stringify>;
 export type TrackedObjectives = {
@@ -229,45 +279,30 @@ export function makeObjectiveTracker(
             nestedPosition
           )
         );
-      } else {
-        const stepPosition = [...nestedPosition, -1];
-        for (let step of objective.steps) {
-          stepPosition[stepPosition.length - 1] += 1;
-          const condition = step[1];
-          if (!Array.isArray(condition)) {
-            for (let trigger of triggers) {
-              if (trigger === condition) {
-                console.debug({
-                  simpleTrigger: {
-                    trigger,
-                    condition,
-                    position,
-                    step,
-                    stepPosition,
-                  },
-                });
-                triggered.push([...stepPosition]);
-                break;
-              }
+        continue;
+      }
+      const stepPosition = [...nestedPosition, -1];
+      for (let step of objective.steps) {
+        stepPosition[stepPosition.length - 1] += 1;
+        const condition = step[1];
+        if (!Array.isArray(condition)) {
+          for (let trigger of triggers) {
+            if (trigger === condition) {
+              // console.debug({ simpleTrigger: { trigger, condition, position, step, count, stepPosition, }, });
+              triggered.push([...stepPosition]);
+              break;
             }
-          } else {
-            for (let trigger of triggers) {
-              if (
-                Array.isArray(trigger) &&
-                trigger.every((element, index) => element === condition[index])
-              ) {
-                console.debug({
-                  complexTrigger: {
-                    trigger,
-                    condition,
-                    position,
-                    step,
-                    stepPosition,
-                  },
-                });
-                triggered.push([...stepPosition]);
-                break;
-              }
+          }
+        } else {
+          for (let trigger of triggers) {
+            if (
+              Array.isArray(trigger) &&
+              trigger.length === condition.length &&
+              trigger.every((element, index) => element === condition[index])
+            ) {
+              // console.debug({ complexTrigger: { trigger, condition, position, step, count, stepPosition, }, });
+              triggered.push([...stepPosition]);
+              break;
             }
           }
         }
@@ -308,6 +343,14 @@ export function makeObjectiveTracker(
       if (triggered.length > 0) {
         update((state) => {
           for (let position of triggered) {
+            const parentObjectivePosition = position.slice(
+              0,
+              position.length - 1
+            );
+            const parentObjective = getNestedItem(
+              store.objectives,
+              parentObjectivePosition
+            );
             // only count as triggered if previous sibling steps are complete
             const currentStepIndex = position.at(-1)!;
             if (currentStepIndex > 0) {
@@ -329,17 +372,51 @@ export function makeObjectiveTracker(
                 continue;
               }
             }
-            state.progress.add(JSON.stringify(position));
-            // if we are the last child of our parent, add it to progress as well
-            const parentPosition = position.slice(0, position.length - 1);
-            const parent = getNestedItem(store.objectives, parentPosition);
-            if (
-              position.at(-1) ===
-              (hasSubObjectives(parent) ? parent.subObjectives : parent.steps)
-                .length -
-                1
-            ) {
-              state.progress.add(JSON.stringify(parentPosition));
+            // handle steps with a defined count (ie the trigger needs to be seen [count] times)
+            // by treating each seen occurrence as a (fictional/virtual) sub-step of the current step's position
+            const stepCountForCompletion = hasSubObjectives(parentObjective)
+              ? undefined
+              : parentObjective.steps[position.at(-1)!]?.[2];
+            if (stepCountForCompletion) {
+              let completed = 1;
+              let serialized: SerializedPosition;
+              while (
+                ((serialized = JSON.stringify([...position, completed])),
+                state.progress.has(serialized))
+              ) {
+                completed += 1;
+              }
+              if (completed <= stepCountForCompletion) {
+                state.progress.add(serialized);
+                if (completed === stepCountForCompletion) {
+                  // if this is the final count for this step, complete the entire step
+                  state.progress.add(JSON.stringify(position));
+                  // if this is the final step for this objective, complete the objective
+                  if (
+                    !hasSubObjectives(parentObjective) &&
+                    position.at(-1) === parentObjective.steps.length - 1
+                  ) {
+                    state.progress.add(JSON.stringify(parentObjectivePosition));
+                  }
+                }
+              }
+            } else {
+              // step has no defined count => trigger just needs to be seen once to complete step
+              state.progress.add(JSON.stringify(position));
+              // if we are the last child of our parent, complete it as well
+              if (
+                position.at(-1) ===
+                (hasSubObjectives(parentObjective)
+                  ? parentObjective.subObjectives
+                  : parentObjective.steps
+                ).length -
+                  1
+              ) {
+                console.debug({
+                  autoComplete: { position, parentObjectivePosition },
+                });
+                state.progress.add(JSON.stringify(parentObjectivePosition));
+              }
             }
           }
           return state;
