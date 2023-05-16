@@ -354,3 +354,41 @@ export type ObjectiveTracker = ReturnType<typeof makeObjectiveTracker>;
 export const OBJECTIVE_TRACKER_CONTEXT = Symbol(
   "svelte context key for objective tracker store"
 );
+
+export function debugProgress(
+  progress: Set<SerializedPosition>,
+  objectives: Objective[]
+) {
+  const debugProgress = [...progress].map((serializedPosition) => {
+    const position = JSON.parse(serializedPosition);
+    try {
+      return getNestedItem(objectives, position).title;
+    } catch {
+      try {
+        const parent = getNestedItem(
+          objectives,
+          position.slice(0, -1)
+        ) as Objective & { steps: Step[] };
+        return `${parent.title}##${
+          parent.steps[position.at(-1)][0] // step details
+        }`;
+      } catch {
+        try {
+          const parent = getNestedItem(
+            objectives,
+            position.slice(0, -2)
+          ) as Objective & { steps: Step[] };
+          return `${parent.title}##${
+            parent.steps[position.at(-2)][0] // step details
+          }##${
+            position.at(-1) // step completion count
+          }`;
+        } catch {
+          return serializedPosition;
+        }
+      }
+    }
+  });
+  debugProgress.sort(); // everything is serialized as a file-system-path-like-string, so this alphanumeric sort will group sub-objectives
+  console.debug({ debugProgress });
+}

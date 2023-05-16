@@ -21,11 +21,7 @@
     queryAt,
     stackMode,
   } from "./store";
-  import {
-    AddBuildOrder,
-    EditingQueue,
-    OBJECTIVE_TRACKER_CONTEXT,
-  } from "../../simulation/objectiveTracker/store";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "../../simulation/objectiveTracker/store";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 
@@ -40,7 +36,7 @@
     savedQueue = getFabricator(sim).queue;
     tick = getPrimitive(getClock(sim)).tick;
   });
-  const uiState = makeBuildQueueUiStore();
+  const uiState = makeBuildQueueUiStore(objectives);
 
   setContext(BUILD_QUEUE_STORE, { uiState });
   let mode;
@@ -77,7 +73,6 @@
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
     uiState.enterEdit(queue);
-    objectives.handleTriggers([EditingQueue]);
   }
   function saveEdits() {
     const newQueue: BuildOrder[] = uiState.saveEdits();
@@ -276,37 +271,27 @@
     <div class="col-start-1 row-span-2 flex flex-col gap-0.5">
       <MenuButton
         text="Solar Collector"
-        on:click={uiState.selectNewBuildOrder.bind(
-          this,
-          Construct.SOLAR_COLLECTOR
-        )}
+        on:click={() => uiState.selectNewBuildOrder(Construct.SOLAR_COLLECTOR)}
       />
       <MenuButton
         text="Miner"
-        on:click={() => (
-          uiState.selectNewBuildOrder(Construct.MINER),
-          objectives.handleTriggers([[AddBuildOrder, Construct.MINER]])
-        )}
+        on:click={() => uiState.selectNewBuildOrder(Construct.MINER)}
       />
       <MenuButton
         text="Refiner"
-        on:click={uiState.selectNewBuildOrder.bind(this, Construct.REFINER)}
+        on:click={() => uiState.selectNewBuildOrder(Construct.REFINER)}
       />
     </div>
     <div class="col-start-3 row-span-2 flex flex-col items-end gap-0.5">
       <MenuButton
         text="Satellite Launcher"
-        on:click={uiState.selectNewBuildOrder.bind(
-          this,
-          Construct.SATELLITE_LAUNCHER
-        )}
+        on:click={() =>
+          uiState.selectNewBuildOrder(Construct.SATELLITE_LAUNCHER)}
       />
       <MenuButton
         text="Satellite Factory"
-        on:click={uiState.selectNewBuildOrder.bind(
-          this,
-          Construct.SATELLITE_FACTORY
-        )}
+        on:click={() =>
+          uiState.selectNewBuildOrder(Construct.SATELLITE_FACTORY)}
       />
     </div>
     <div class="col-span-3 col-start-1 row-start-3 flex flex-row gap-0.5">
@@ -366,7 +351,7 @@
       />
       <MenuButton
         text="Confirm"
-        on:click={() => uiState.confirmAddRepeat(edited.repeatCount)}
+        on:click={uiState.confirmAddRepeat}
         disabled={mode !== "add-repeat-confirm"}
       />
     </div>

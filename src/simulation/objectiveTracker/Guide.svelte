@@ -1,5 +1,12 @@
 <script lang="ts">
-  import type { Objective, ObjectiveTracker } from "./store";
+  import type { Objective } from "./store";
+  import {
+    debugProgress,
+    getNestedItem,
+    getNextObjective,
+    getPositionOfFirstItem,
+    OBJECTIVE_TRACKER_CONTEXT,
+  } from "./store";
   import { getContext, onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
   import {
@@ -31,6 +38,7 @@
     }
     trackerState.tracking = { open, active, progress };
 
+    debugProgress(progress, trackerState.objectives);
     if (trackerState.objectives.length === 0) {
       trackerState.viewing = undefined;
     } else {

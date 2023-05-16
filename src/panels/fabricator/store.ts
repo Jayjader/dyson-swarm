@@ -2,6 +2,12 @@ import { writable } from "svelte/store";
 import type { Construct } from "../../gameRules";
 import type { BuildOrder, Repeat, SingleBuildOrder } from "../../types";
 import { isRepeat } from "../../types";
+import type { ObjectiveTracker } from "../../simulation/objectiveTracker/store";
+import {
+  AddBuildOrder,
+  AddRepeatOrder,
+  EditingQueue,
+} from "../../simulation/objectiveTracker/store";
 
 type PositionInQueue = [number, ...number[]];
 
@@ -162,12 +168,13 @@ function wrapRepeatOrderAt(
   }
   return queue;
 }
-export function makeBuildQueueUiStore() {
+export function makeBuildQueueUiStore(objectives: ObjectiveTracker) {
   const { subscribe, set, update } = writable<UiStateStack>([]);
   return {
     subscribe,
     enterEdit: (queue: BuildOrder[]) => {
       set([{ future: [], past: [], present: { queue } }]);
+      objectives.handleTriggers([EditingQueue]);
     },
     cancelEdits: () => set([]),
     saveEdits: (): BuildOrder[] => {
@@ -245,7 +252,7 @@ export function makeBuildQueueUiStore() {
         if (!isAddBuildMode(head)) return stack;
         return [stack[1] as EditState];
       }),
-    selectNewBuildOrder: (building: Construct) =>
+    selectNewBuildOrder: (building: Construct) => {
       update((stack) => {
         const [head, ...tail] = stack;
         if (!isAddBuildMode(head) || head.mode !== "add-build-select-construct")
@@ -265,7 +272,9 @@ export function makeBuildQueueUiStore() {
             past,
           },
         ];
-      }),
+      });
+      objectives.handleTriggers([AddBuildOrder, [AddBuildOrder, building]]);
+    },
     enterAddRepeatOrder: () =>
       update((stack) => {
         const [head] = stack;
@@ -349,14 +358,19 @@ export function makeBuildQueueUiStore() {
         (queryAt(position, edit!.present.queue) as Repeat).count = count;
         return [head, edit!];
       }),
-    confirmAddRepeat: () =>
+    confirmAddRepeat: () => {
       update((stack) => {
         const [repeat, edit] = stack;
         if (!isAddRepeatMode(repeat) || repeat.mode !== "add-repeat-confirm") {
           return stack;
         }
+        const repeatCount = (
+          queryAt(repeat.initial, edit!.present.queue) as Repeat
+        ).count;
+        objectives.handleTriggers([[AddRepeatOrder, repeatCount]]);
         return [edit!];
-      }),
+      });
+    },
     clearQueue: () =>
       update((stack) => {
         const [head] = stack;
