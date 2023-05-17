@@ -198,6 +198,9 @@ export const ALL_OBJECTIVES: Objective[] = [
   },
 ];
 
+/**
+ * Returns position of first "leaf" objective, i.e. the first (sub-)objective with concrete steps, in the list
+ */
 export function getPositionOfFirstItem(
   list: Objective[],
   position: ObjectivePosition = [0]
@@ -270,6 +273,10 @@ export function getNextObjective(
     return [next, nextPosition];
   }
 }
+/** Recursively iterates over list (and nested sub-lists),
+ * mapping each item to its position and then flattening the result
+ * @param list
+ * @param [position=[]] used for recursive calls, this is the "starting contextual" position for the walk, and corresponds to the position of ``list`` in its parent collection */
 export function walkObjectivePositions(
   list: Objective[],
   position: number[] = []
