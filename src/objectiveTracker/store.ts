@@ -281,14 +281,15 @@ export function walkObjectivePositions(
   list: Objective[],
   position: number[] = []
 ): ObjectivePosition[] {
-  return list.flatMap((objective, i) =>
-    !hasSubObjectives(objective)
-      ? [[...position, i]]
-      : [
-          [...position, i],
-          ...walkObjectivePositions(objective.subObjectives, [...position, i]),
-        ]
-  );
+  return list.flatMap((objective, i) => {
+    const nestedPosition = [...position, i];
+    return [
+      nestedPosition,
+      ...(!hasSubObjectives(objective)
+        ? []
+        : walkObjectivePositions(objective.subObjectives, nestedPosition)),
+    ];
+  });
 }
 
 type SerializedPosition = ReturnType<typeof JSON.stringify>;
