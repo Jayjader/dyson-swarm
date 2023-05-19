@@ -25,6 +25,8 @@
   import type { ObjectiveTracker } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
+  import Introduction from "../Introduction.svelte";
+  import { CompleteIntroduction } from "../objectiveTracker/objectives";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -86,10 +88,14 @@
 
   export let objectives: ObjectiveTracker;
   let tracked = [],
-    guideOpen = false;
-  const objectiveSub = objectives.subscribe(({ open, active }) => {
+    guideOpen = false,
+    showIntro = false;
+  const objectiveSub = objectives.subscribe(({ open, active, completed }) => {
     tracked = active;
     guideOpen = open;
+    showIntro = !completed.has(
+      "[0]" /* Introduction is first in objective list */
+    );
   });
   setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });
   onDestroy(objectiveSub);
@@ -100,6 +106,9 @@
 <main
   class="m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2 p-0"
 >
+  {#if showIntro}
+    <Introduction />
+  {/if}
   <div class="flex flex-grow-0 flex-col gap-2">
     <div class="flex flex-row justify-between text-stone-200">
       <ResourceHud {resources} />

@@ -6,14 +6,12 @@ import type { ObjectiveTracker } from "./objectiveTracker/store";
 export const MainMenu = Symbol("main menu");
 export const SettingsMenu = Symbol("settings menu");
 export const SaveMenu = Symbol("save slots menu");
-export const Introduction = Symbol("introduction");
 export const SimMenu = Symbol("in-simulation menu");
 
 type Stack =
   | [SettingsStore, typeof MainMenu]
   | [SettingsStore, typeof MainMenu, typeof SettingsMenu]
   | [SettingsStore, typeof MainMenu, typeof SaveMenu]
-  | [SettingsStore, typeof Introduction]
   | [SettingsStore, SimulationStore, ObjectiveTracker]
   | [SettingsStore, SimulationStore, ObjectiveTracker, typeof SimMenu]
   | [
@@ -32,7 +30,7 @@ type Stack =
     ];
 
 export function makeAppStateStore(settings: SettingsStore) {
-  const { subscribe, update } = writable([settings, MainMenu]);
+  const { subscribe, update } = writable<Stack>([settings, MainMenu]);
   return {
     subscribe,
     push: (...items: any[]) =>

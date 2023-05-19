@@ -1,392 +1,74 @@
 import { writable } from "svelte/store";
-import type { EventTag } from "../events/events";
-import { Construct } from "../gameRules";
-
-export const FabricatorOpened = Symbol("fabricator panel opened");
-export const EditingQueue = Symbol("started editing fabricator build queue");
-export const AddBuildOrder = Symbol(
-  "inserted build order into the fabricator's build queue during editing"
-);
-export const AddRepeatOrder = Symbol(
-  "inserted repeat build order into the fabricator's build queue during editing"
-);
-
-export type Trigger =
-  | typeof FabricatorOpened
-  | typeof EditingQueue
-  | typeof AddBuildOrder
-  | [typeof AddBuildOrder, Construct]
-  | [typeof AddRepeatOrder, number]
-  | EventTag
-  | [EventTag, ...unknown[]];
-
-export type Step = [string, Trigger] | [string, Trigger, number];
-export type Objective = { title: string } & (
-  | { subObjectives: Objective[] }
-  | {
-      details: string[];
-      steps: Step[];
-    }
-);
-function hasSubObjectives(
-  o: Objective
-): o is Objective & { subObjectives: Objective[] } {
-  return Array.isArray(
-    (o as unknown as { subObjectives: Objective[] })?.subObjectives
-  );
-}
-
-export type ObjectivePosition = number[];
-
-export const ALL_OBJECTIVES: Objective[] = [
-  {
-    title: "Building the Swarm",
-    subObjectives: [
-      {
-        title: "Metal Production",
-        subObjectives: [
-          {
-            title: "Fabricate 1 Miner",
-            details: [
-              "The first order of priority is to set up a basic metal production chain. This will allow you to begin tapping into the planet's resources, an essential step in building the swarm.",
-              "Metal production starts with <a>miners</a> extracting ore from the planet's crust. Fabricate one, and make sure it is <a>working</a>.",
-            ],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a build order for a <a>Miner</a> to the queue",
-                [AddBuildOrder, Construct.MINER],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a> and complete that build order",
-                ["construct-fabricated", Construct.MINER],
-              ],
-            ],
-          },
-          {
-            title: "Fabricate 1 Refiner",
-            details: [
-              "Now that we are extracting ore, we can proceed to the second part of metal production: refining that ore into metal that can be used for further fabrication.",
-              "Fabricate a <a>refiner</a>, and make sure it is <a>working</a>",
-            ],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a build order for a <a>Refiner</a> to the queue",
-                [AddBuildOrder, Construct.REFINER],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a>",
-                ["construct-fabricated", Construct.REFINER],
-              ],
-            ],
-          },
-        ],
-      },
-      {
-        title: "Energy Production",
-        subObjectives: [
-          {
-            title: "Fabricate 10 Solar Collectors",
-            details: ["###TODO###"],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a repeating build order for 10 <a>Solar Collectors</a> to the queue",
-                [AddRepeatOrder, 10],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a>",
-                ["construct-fabricated", Construct.SOLAR_COLLECTOR],
-                10,
-              ],
-            ],
-          },
-        ],
-      },
-      {
-        title: "Satellite Production",
-        subObjectives: [
-          {
-            title: "###TODO###",
-            details: ["$##TODO##$"],
-            steps: [],
-          },
-        ],
-      },
-      {
-        title: "Launching Your Packaged Satellites",
-        subObjectives: [
-          { title: "###TODO###", details: ["$##TODO##$"], steps: [] },
-        ],
-      },
-      {
-        title: "Meeting Excess Energy Quotas",
-        subObjectives: [
-          {
-            title: "$#>TODO<#$",
-            details: ["$>>TODO<<$"],
-            steps: [
-              // todo: make this earth global power consumption for year x
-              // sample years: 2019 -> https://arxiv.org/pdf/2109.11443.pdf
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Manipulating the Simulation",
-    subObjectives: [
-      {
-        title: "Controlling the Flow of Time",
-        subObjectives: [
-          {
-            title: "Play and Pause the Simulation Clock",
-            details: [],
-            steps: [],
-          },
-          { title: "Changing the Clock Speed", details: [], steps: [] },
-        ],
-      },
-      {
-        title: "Controlling Fabrication",
-        subObjectives: [
-          {
-            title: "Single Build Orders",
-            subObjectives: [
-              { title: "Insert a Build Order", details: [], steps: [] },
-              {
-                title: "Change a Build Order's Construct",
-                details: [],
-                steps: [],
-              },
-              { title: "Remove a Build Order", details: [], steps: [] },
-            ],
-          },
-          {
-            title: "Repeat Build Orders",
-            subObjectives: [
-              { title: "Create a Repeat Order", details: [], steps: [] },
-              { title: "Remove a Repeat Order", details: [], steps: [] },
-              {
-                title: "Change a Repeat Order's Count",
-                details: [],
-                steps: [],
-              },
-              {
-                title: "Create an infinite Repeat Order",
-                details: [],
-                steps: [],
-              },
-              { title: "Unwrap a Repeat Order", details: [], steps: [] },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Ramping Up With Feedback Loops",
-    subObjectives: [],
-  },
-];
-
-/**
- * Returns position of first "leaf" objective, i.e. the first (sub-)objective with concrete steps, in the list
- */
-export function getPositionOfFirstItem(
-  list: Objective[],
-  position: ObjectivePosition = [0]
-): ObjectivePosition {
-  const element = getNestedItem(list, position);
-  if (!hasSubObjectives(element)) {
-    return position;
-  }
-  return [...position, ...getPositionOfFirstItem(element.subObjectives)];
-}
-export function getNestedItem(
-  list: Objective[],
-  position: ObjectivePosition
-): Objective {
-  if (position.length < 2) {
-    return list[position[0]];
-  } else {
-    const [currentIndex, ...next] = position;
-    return getNestedItem(
-      (list[currentIndex] as { subObjectives: Objective[] }).subObjectives,
-      next
-    );
-  }
-}
-export function getNextObjective(
-  list: Objective[],
-  position: ObjectivePosition
-): [Objective, ObjectivePosition] | undefined {
-  let parentPosition = position.slice(0, position.length - 1);
-  const parent = getNestedItem(list, parentPosition);
-  if (
-    hasSubObjectives(parent) &&
-    parent.subObjectives.length > position.at(-1)! + 1
-  ) {
-    return [
-      parent.subObjectives[position.at(-1)! + 1],
-      [...parentPosition, position.at(-1)! + 1],
-    ];
-  }
-  // we are the last sub-objective
-  // => "next" objective is next child of [first "recursive parent" that is not the last child of its parent]
-  let grandParentPosition = parentPosition.slice(0, parentPosition.length - 1);
-  let grandParent: Objective | undefined = getNestedItem(
-    list,
-    grandParentPosition
-  );
-  while (
-    grandParent &&
-    hasSubObjectives(grandParent) &&
-    grandParent.subObjectives.length === parentPosition.at(-1)
-  ) {
-    parentPosition = grandParentPosition;
-    grandParentPosition = parentPosition.slice(0, parentPosition.length - 1);
-
-    grandParent =
-      grandParentPosition.length > 0
-        ? getNestedItem(list, grandParentPosition)
-        : undefined;
-  }
-  if (grandParent && hasSubObjectives(grandParent)) {
-    let nextPosition = [
-      ...parentPosition.slice(0, parentPosition.length - 1),
-      parentPosition.at(-1)! + 1,
-    ];
-    let next = grandParent.subObjectives[nextPosition.at(-1)!];
-    while (hasSubObjectives(next)) {
-      next = next.subObjectives[0];
-      nextPosition.push(0);
-    }
-    return [next, nextPosition];
-  }
-}
-/** Recursively iterates over list (and nested sub-lists),
- * mapping each item to its position and then flattening the result
- * @param list
- * @param [position=[]] used for recursive calls, this is the "starting contextual" position for the walk, and corresponds to the position of ``list`` in its parent collection */
-export function walkObjectivePositions(
-  list: Objective[],
-  position: number[] = []
-): ObjectivePosition[] {
-  return list.flatMap((objective, i) => {
-    const nestedPosition = [...position, i];
-    return [
-      nestedPosition,
-      ...(!hasSubObjectives(objective)
-        ? []
-        : walkObjectivePositions(objective.subObjectives, nestedPosition)),
-    ];
-  });
-}
+import {
+  ALL_OBJECTIVES,
+  findAutoStartPositions,
+  findTriggeredSteps,
+  getNestedItem,
+  hasSubObjectives,
+  type Objective,
+  type ObjectivePosition,
+  type Step,
+  type Trigger,
+} from "./objectives";
 
 type SerializedPosition = ReturnType<typeof JSON.stringify>;
 export type TrackedObjectives = {
   open: boolean;
-  progress: Set<SerializedPosition>;
+  started: Set<SerializedPosition>;
+  completed: Set<SerializedPosition>;
   active: ObjectivePosition;
 };
-function findTriggeredSteps(
-  objectives: Objective[],
-  triggers: (Trigger | EventTag)[],
-  position: ObjectivePosition = []
-): ObjectivePosition[] {
-  const triggered = [];
-  const nestedPosition = [...position, -1];
-  for (let objective of objectives) {
-    nestedPosition[nestedPosition.length - 1] += 1;
-    if (hasSubObjectives(objective)) {
-      triggered.push(
-        ...findTriggeredSteps(objective.subObjectives, triggers, nestedPosition)
-      );
-      continue;
-    }
-    const stepPosition = [...nestedPosition, -1];
-    for (let step of objective.steps) {
-      stepPosition[stepPosition.length - 1] += 1;
-      const condition = step[1];
-      if (!Array.isArray(condition)) {
-        for (let trigger of triggers) {
-          if (trigger === condition) {
-            // console.debug({ simpleTrigger: { trigger, condition, position, step, count, stepPosition, }, });
-            triggered.push([...stepPosition]);
-            break;
-          }
-        }
-      } else {
-        for (let trigger of triggers) {
-          if (
-            Array.isArray(trigger) &&
-            trigger.length === condition.length &&
-            trigger.every((element, index) => element === condition[index])
-          ) {
-            // console.debug({ complexTrigger: { trigger, condition, position, step, count, stepPosition, }, });
-            triggered.push([...stepPosition]);
-            break;
-          }
-        }
-      }
-    }
-  }
-  return triggered;
-}
 export function makeObjectiveTracker(
   tracking: TrackedObjectives = {
     open: false,
-    progress: new Set([]),
+    started: new Set([]),
+    completed: new Set([]),
     active: [],
   }
 ) {
+  for (let position of findAutoStartPositions(ALL_OBJECTIVES)) {
+    tracking.started.add(JSON.stringify(position));
+  }
+  console.debug({ initallyStarted: tracking.started });
   const { update, subscribe } = writable(tracking);
 
   const store = {
     objectives: ALL_OBJECTIVES,
     subscribe,
-    open: () =>
-      update((state) => {
-        state.open = true;
-        return state;
-      }),
-    close: () =>
-      update((state) => {
-        state.open = false;
-        return state;
-      }),
+    open: () => update((state) => ((state.open = true), state)),
+    close: () => update((state) => ((state.open = false), state)),
     setActive: (p: ObjectivePosition) =>
       update((state) => {
+        console.debug({
+          message: "set active",
+          p,
+          started: [...state.started],
+        });
         state.active = p;
+        state.started.add(JSON.stringify(p));
+        if (p.length > 1) {
+          const loopStack = p.slice();
+          let coordinate;
+          while (loopStack.pop() !== undefined) {
+            state.started.add(JSON.stringify(loopStack));
+          }
+        }
         return state;
       }),
-    completeStep: (p: ObjectivePosition) =>
-      update((state) => {
-        state.progress.add(JSON.stringify(p));
-        return state;
-      }),
-    clearProgress: () =>
-      update((state) => {
-        state.progress.clear();
-        return state;
-      }),
+    clearProgress: () => update((state) => (state.completed.clear(), state)),
     handleTriggers: (triggers: Trigger[]) => {
       const triggered = findTriggeredSteps(store.objectives, triggers);
-      if (triggered.length === 0) {
+      if (triggered.completed.length === 0 && triggered.started.length === 0) {
         return;
       }
+      console.debug({ triggered });
       update((state) => {
-        const { progress } = state;
-        for (let position of triggered) {
+        const { completed, started } = state;
+        for (let position of triggered.started) {
+          started.add(JSON.stringify(position));
+        }
+        console.debug({ started: [...started] });
+        for (let position of triggered.completed) {
           {
             // if not the first step, only trigger if (all) previous sibling steps are complete
             const currentStepIndex = position.at(-1)!;
@@ -394,7 +76,7 @@ export function makeObjectiveTracker(
               let previousComplete = true;
               for (let i = currentStepIndex - 1; i >= 0; i--) {
                 if (
-                  !progress.has(
+                  !completed.has(
                     JSON.stringify([
                       ...position.slice(0, position.length - 1),
                       i,
@@ -426,34 +108,34 @@ export function makeObjectiveTracker(
             if (countForStepCompletion) {
               // step has a defined count => the trigger needs to be seen [count] times
               // this is essentially handled by treating each seen occurrence as a (fictional/virtual) 1-indexed sub-step of the current step's position
-              let completed = 1;
+              let completedIndex = 1;
               let serialized: SerializedPosition;
               // scan forwards from first step (1-indexed), hanging on to loop counter and serialized position of first uncompleted step for later work
               while (
-                ((serialized = JSON.stringify([...position, completed])),
-                progress.has(serialized))
+                ((serialized = JSON.stringify([...position, completedIndex])),
+                completed.has(serialized))
               ) {
-                completed += 1;
+                completedIndex += 1;
               }
-              if (completed <= countForStepCompletion) {
-                progress.add(serialized);
+              if (completedIndex <= countForStepCompletion) {
+                completed.add(serialized);
 
-                if (completed === countForStepCompletion) {
+                if (completedIndex === countForStepCompletion) {
                   // this is the final count for this step => complete the entire step
-                  progress.add(JSON.stringify(position));
+                  completed.add(JSON.stringify(position));
 
                   if (
                     !hasSubObjectives(parentObjective) &&
                     position.at(-1) === parentObjective.steps.length - 1
                   ) {
                     // this is the final step for this objective => complete the objective
-                    progress.add(JSON.stringify(parentObjectivePosition));
+                    completed.add(JSON.stringify(parentObjectivePosition));
                   }
                 }
               }
             } else {
               // step has no defined count => trigger just needs to be seen once to complete step
-              progress.add(JSON.stringify(position));
+              completed.add(JSON.stringify(position));
 
               if (
                 position.at(-1) ===
@@ -467,12 +149,13 @@ export function makeObjectiveTracker(
                 console.debug({
                   autoComplete: { position, parentObjectivePosition },
                 });
-                progress.add(JSON.stringify(parentObjectivePosition));
+                completed.add(JSON.stringify(parentObjectivePosition));
               }
             }
           }
         }
-        state.progress = progress;
+        state.completed = completed;
+        state.started = started;
         return state;
       });
     },
@@ -486,10 +169,11 @@ export const OBJECTIVE_TRACKER_CONTEXT = Symbol(
 );
 
 export function debugProgress(
-  progress: Set<SerializedPosition>,
+  started: Set<SerializedPosition>,
+  completed: Set<SerializedPosition>,
   objectives: Objective[]
 ) {
-  let debugProgress = [...progress].map((serializedPosition) => {
+  let debugProgress = [...completed].map((serializedPosition) => {
     const position = JSON.parse(serializedPosition);
     try {
       return [
@@ -531,5 +215,20 @@ export function debugProgress(
   debugProgress.sort(([sPosA, txtA], [sPosB, txtB]) =>
     sPosA > sPosB ? 1 : -1
   ); // everything is serialized as a file-system-path-like-string, so this alphanumeric sort will group sub-objectives
-  console.debug({ debugProgress: new Map(debugProgress) });
+  const startedProgress = [...started].map(
+    (serializedPosition) =>
+      [
+        serializedPosition,
+        getNestedItem(objectives, JSON.parse(serializedPosition)),
+      ] as const
+  );
+  startedProgress.sort(([sPosA, txtA], [sPosB, txtB]) =>
+    sPosA > sPosB ? 1 : -1
+  );
+  console.debug({
+    debugProgress: {
+      completed: new Map(debugProgress),
+      started: new Map(startedProgress),
+    },
+  });
 }

@@ -1,16 +1,16 @@
 <script lang="ts">
-  import type { Objective } from "./store";
+  import type { Objective } from "./objectives";
+  import { areEqual } from "./objectives";
 
   type Position = [number, ...number[]];
   export let data: { objective: Objective; position: Position };
-  export let progress: Set<ReturnType<typeof JSON.stringify>>;
+  export let completed: Set<ReturnType<typeof JSON.stringify>>;
+  export let started: Set<ReturnType<typeof JSON.stringify>>;
   export let action: (p: Position) => void;
   export let active: Position;
 
   $: serializedPosition = JSON.stringify(data.position);
-  $: isActive =
-    data.position.length === active.length &&
-    data.position.every((x, i) => x === active[i]);
+  $: isActive = areEqual(data.position, active);
 </script>
 
 {#if data?.objective && data.objective?.details === undefined}
@@ -20,17 +20,20 @@
     >
     <ol class="flex flex-col flex-nowrap justify-around gap-1 pt-1">
       {#each data.objective.subObjectives as subObjective, index}
-        <li class="contents">
-          <svelte:self
-            data={{
-              objective: subObjective,
-              position: [...data.position, index],
-            }}
-            {progress}
-            {action}
-            {active}
-          />
-        </li>
+        {#if started.has(JSON.stringify([...data.position, index]))}
+          <li class="contents">
+            <svelte:self
+              data={{
+                objective: subObjective,
+                position: [...data.position, index],
+              }}
+              {completed}
+              {started}
+              {action}
+              {active}
+            />
+          </li>
+        {/if}
       {/each}
     </ol>
   </details>
@@ -46,7 +49,7 @@
       type="checkbox"
       name="{data.objective.title} completion"
       disabled
-      checked={progress.has(serializedPosition)}
+      checked={completed.has(serializedPosition)}
       aria-labelledby="guide-nav-to-{serializedPosition}"
     />
     {data.objective.title}

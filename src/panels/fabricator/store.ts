@@ -3,11 +3,13 @@ import type { Construct } from "../../gameRules";
 import type { BuildOrder, Repeat, SingleBuildOrder } from "../../types";
 import { isRepeat } from "../../types";
 import type { ObjectiveTracker } from "../../objectiveTracker/store";
+
 import {
   AddBuildOrder,
   AddRepeatOrder,
   EditingQueue,
-} from "../../objectiveTracker/store";
+  triggerWithContents,
+} from "../../objectiveTracker/objectives";
 
 type PositionInQueue = [number, ...number[]];
 
@@ -364,10 +366,14 @@ export function makeBuildQueueUiStore(objectives: ObjectiveTracker) {
         if (!isAddRepeatMode(repeat) || repeat.mode !== "add-repeat-confirm") {
           return stack;
         }
-        const repeatCount = (
-          queryAt(repeat.initial, edit!.present.queue) as Repeat
-        ).count;
-        objectives.handleTriggers([[AddRepeatOrder, repeatCount]]);
+        const repeatOrder = queryAt(
+          repeat.initial,
+          edit!.present.queue
+        ) as Repeat;
+        objectives.handleTriggers([
+          [AddRepeatOrder, [repeatOrder.count]],
+          [AddRepeatOrder, triggerWithContents(repeatOrder)],
+        ]);
         return [edit!];
       });
     },

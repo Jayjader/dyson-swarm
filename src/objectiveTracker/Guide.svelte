@@ -1,16 +1,17 @@
 <script lang="ts">
-  import type { Objective } from "./store";
-  import {
-    debugProgress,
-    getNestedItem,
-    getNextObjective,
-    getPositionOfFirstItem,
-    OBJECTIVE_TRACKER_CONTEXT,
-    walkObjectivePositions,
-  } from "./store";
+  import { debugProgress, OBJECTIVE_TRACKER_CONTEXT } from "./store";
   import { getContext, onDestroy } from "svelte";
   import ObjectiveNavItem from "./ObjectiveNavItem.svelte";
   import CommonGuideButton from "./CommonGuideButton.svelte";
+  import {
+    areEqual,
+    getNestedItem,
+    getNextObjective,
+    getPositionOfFirstItem,
+    hasSubObjectives,
+    type Objective,
+    walkObjectivePositions,
+  } from "./objectives";
 
   let dialogElement: HTMLDialogElement;
 
@@ -19,23 +20,24 @@
     objectives: [],
     tracking: {
       open: false,
-      progress: new Set(),
+      completed: new Set(),
+      started: new Set(),
       active: [],
     },
     viewing: undefined as
-      | { objective: Objective; position: Position }
+      | { objective: Objective; position: Position; next?: Position }
       | undefined,
   };
 
   const store = getContext(OBJECTIVE_TRACKER_CONTEXT).objectives;
   trackerState.objectives = store.objectives;
-  const storeSub = store.subscribe(({ open, active, progress }) => {
+  const storeSub = store.subscribe(({ open, active, completed, started }) => {
     if (open && !trackerState.tracking.open) {
       dialogElement.show();
     }
-    trackerState.tracking = { open, active, progress };
+    trackerState.tracking = { open, active, completed, started };
 
-    debugProgress(progress, trackerState.objectives);
+    debugProgress(started, completed, trackerState.objectives);
     if (trackerState.objectives.length === 0) {
       trackerState.viewing = undefined;
     } else {
@@ -45,9 +47,12 @@
       } else {
         position = trackerState.tracking.active;
       }
+      const next = getNextObjective(trackerState.objectives, position);
+      console.debug({ nextObjective: next });
       trackerState.viewing = {
         objective: getNestedItem(trackerState.objectives, position),
         position,
+        next: next?.[1],
       };
     }
   });
@@ -57,8 +62,17 @@
     trackerState.viewing = {
       objective: getNestedItem(trackerState.objectives, position),
       position,
+      next: getNextObjective(trackerState.objectives, position)?.[1],
     };
   }
+
+  $: showNextButton =
+    trackerState.viewing?.next &&
+    ((!hasSubObjectives(trackerState.viewing.objective) &&
+      trackerState.viewing.objective.steps?.length === 0) ||
+      trackerState.tracking.completed.has(
+        JSON.stringify(trackerState.viewing.position)
+      ));
 </script>
 
 <dialog
@@ -76,13 +90,18 @@
         {/if}
       </h2>
       <CommonGuideButton
-        disabled={trackerState.viewing.position.every(
-          (x, i) => trackerState.tracking.active[i] === x
+        disabled={areEqual(
+          trackerState.tracking.active,
+          trackerState.viewing.position
         )}
         on:click={() => store.setActive(trackerState.viewing.position)}
-        >{#if trackerState.viewing.position.every((x, i) => trackerState.tracking.active[i] === x)}Currently{:else}Set
-          As{/if} Active</CommonGuideButton
       >
+        {#if areEqual(trackerState.tracking.active, trackerState.viewing.position)}
+          Currently
+        {:else}
+          Set As
+        {/if} Active
+      </CommonGuideButton>
     </div>
     <div class="flex flex-row flex-wrap gap-4">
       <h3>Details:</h3>
@@ -90,42 +109,39 @@
         <div class="flex flex-shrink flex-col flex-nowrap">
           {#each trackerState.viewing.objective.details as detail}
             <p class="max-w-lg">
-              {@html detail}
+              {@html Array.isArray(detail) ? detail[0] : detail}
             </p>
           {/each}
         </div>
       {/if}
     </div>
-    <div class="flex flex-row flex-wrap gap-4">
-      <h3>Steps:</h3>
-      <ol class="flex flex-col flex-nowrap">
-        {#if trackerState.viewing}{#each trackerState.viewing.objective.steps as [step], index}<li
+    {#if trackerState.viewing && trackerState.viewing.objective.steps?.length > 0}
+      <div class="flex flex-row flex-wrap gap-4">
+        <h3>Steps:</h3>
+        <ol class="flex flex-col flex-nowrap">
+          {#each trackerState.viewing.objective.steps as [step], index}<li
               class="flex flex-row flex-nowrap gap-1"
             >
               <input
                 type="checkbox"
                 disabled
-                id="guide-objective-step-progress-{index}"
-                checked={trackerState.tracking.progress.has(
+                id="guide-objective-step-completed-{index}"
+                checked={trackerState.tracking.completed.has(
                   JSON.stringify([...trackerState.viewing.position, index])
                 )}
                 class="mt-1 self-start"
               />
-              <label for="guide-objective-step-progress-{index}">
+              <label for="guide-objective-step-completed-{index}">
                 {@html step}
               </label>
-            </li>{/each}{/if}
-      </ol>
-    </div>
-    {#if trackerState.viewing && trackerState.tracking.progress.has(JSON.stringify(trackerState.viewing.position))}
+            </li>{/each}
+        </ol>
+      </div>
+    {/if}
+    {#if showNextButton}
       <CommonGuideButton
-        on:click={() =>
-          store.setActive(
-            getNextObjective(
-              trackerState.objectives,
-              trackerState.viewing.position
-            )?.[1]
-          )}>Next</CommonGuideButton
+        on:click={() => store.setActive(trackerState.viewing.next)}
+        >Next</CommonGuideButton
       >
     {/if}
   </div>
@@ -185,14 +201,19 @@
       <ol
         class="p-l-1 col-span-2 flex flex-col flex-nowrap gap-2.5 overflow-y-scroll"
       >
-        {#each trackerState.objectives as objective, index}<li class="-ml-2">
-            <ObjectiveNavItem
-              data={{ objective, position: [index] }}
-              progress={trackerState.tracking.progress}
-              action={setViewing}
-              active={trackerState.tracking.active}
-            />
-          </li>{/each}
+        {#each trackerState.objectives as objective, index (`${objective.title}-${index}`)}
+          {#if trackerState.tracking.started.has(JSON.stringify([index]))}
+            <li class="-ml-2">
+              <ObjectiveNavItem
+                data={{ objective, position: [index] }}
+                completed={trackerState.tracking.completed}
+                started={trackerState.tracking.started}
+                action={setViewing}
+                active={trackerState.tracking.active}
+              />
+            </li>
+          {/if}
+        {/each}
       </ol>
     </nav>
     <button

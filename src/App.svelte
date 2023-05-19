@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
     APP_UI_CONTEXT,
-    Introduction,
     MainMenu,
     makeAppStateStore,
     SaveMenu,
@@ -15,12 +14,17 @@
   import SimulationMenu from "./main-menu/SimulationMenu.svelte";
   import Settings from "./settings/Settings.svelte";
   import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/store";
-  import IntroductionDialog from "./Introduction.svelte";
+  import {
+    makeObjectiveTracker,
+    type ObjectiveTracker,
+  } from "./objectiveTracker/store";
+  import { makeSimulationStore } from "./events";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
   const appStateStack = makeAppStateStore(settings);
   setContext(APP_UI_CONTEXT, { appStateStack });
+  let objectiveTracker: ObjectiveTracker;
 
   // $: console.log($appStateStack);
 </script>
@@ -38,8 +42,17 @@
     <div class="flex flex-col gap-2 self-center">
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={() => (appStateStack.pop(), appStateStack.push(Introduction))}
-        >Start New Simulation</button
+        on:click={() => {
+          appStateStack.pop();
+          objectiveTracker = makeObjectiveTracker();
+          objectiveTracker.setActive([0]); // Intro
+          appStateStack.push(
+            makeSimulationStore(objectiveTracker).loadNew(
+              window.performance.now()
+            ),
+            objectiveTracker
+          );
+        }}>Start New Simulation</button
       >
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
@@ -66,8 +79,10 @@
   <Settings />
 {:else if $appStateStack.at(-1) === SaveMenu}
   <SaveSlots />
+  <!--
 {:else if $appStateStack.at(-1) === Introduction}
   <IntroductionDialog />
+-->
 {:else}
   <Simulation simulation={$appStateStack[1]} objectives={$appStateStack[2]} />
 {/if}

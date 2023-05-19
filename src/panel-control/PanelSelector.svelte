@@ -1,11 +1,9 @@
 <script lang="ts">
   import { uiPanelsState } from "./store";
   import PanelControl from "./PanelControl.svelte";
-  import {
-    FabricatorOpened,
-    OBJECTIVE_TRACKER_CONTEXT,
-  } from "../objectiveTracker/store";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import { getContext } from "svelte";
+  import { FabricatorOpened } from "../objectiveTracker/objectives";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 </script>

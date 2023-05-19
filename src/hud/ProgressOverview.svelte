@@ -1,24 +1,23 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
   import {
-    getNestedItem,
     OBJECTIVE_TRACKER_CONTEXT,
+    type TrackedObjectives,
   } from "../objectiveTracker/store";
+  import { getNestedItem } from "../objectiveTracker/objectives";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
-  let activeObjective, currentStep, progress;
-  const trackerSub = objectives.subscribe((tracker) => {
+  let activeObjective, currentStep;
+  const trackerSub = objectives.subscribe((tracker: TrackedObjectives) => {
     if (tracker.active.length === 0) {
       activeObjective = undefined;
       currentStep = undefined;
-      progress = undefined;
     } else {
       activeObjective = getNestedItem(objectives.objectives, tracker.active);
       currentStep = activeObjective.steps.find(
         (_, index) =>
-          !tracker.progress.has(JSON.stringify([...tracker.active, index]))
+          !tracker.completed.has(JSON.stringify([...tracker.active, index]))
       );
-      progress = tracker.progress;
     }
   });
   onDestroy(trackerSub);
@@ -43,9 +42,14 @@
         >Current Step:</span
       ></th
     >
-    <td class="max-w-max align-text-top"
-      >{#if activeObjective}{#if currentStep}{@html currentStep[0]}{:else}(Objective
-          Completed){/if}{:else}(None){/if}</td
-    >
+    <td class="max-w-max align-text-top">
+      {#if !activeObjective}
+        (None)
+      {:else if currentStep}
+        {@html currentStep[0]}
+      {:else}
+        Objective Complete (open guide to choose next active objective)
+      {/if}
+    </td>
   </tr>
 </table>

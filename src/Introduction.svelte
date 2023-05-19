@@ -1,77 +1,28 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { getContext, onMount } from "svelte";
-  import { APP_UI_CONTEXT } from "./appStateStore";
-  import { makeSimulationStore } from "./events";
-  import { makeObjectiveTracker } from "./objectiveTracker/store";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
+  import type { Aside } from "./objectiveTracker/objectives";
+  import { CompleteIntroduction } from "./objectiveTracker/objectives";
 
   let introDialog: HTMLDialogElement;
   let step = 0;
 
   onMount(() => introDialog.showModal());
 
-  const dialogFragments = [
-    {
-      title: "begin narration",
-      body: 'Welcome to <abbr style="text-transform: full-width">DOTS</abbr>, the Dyson Swarm Operator Training Simulator.',
-      asides: [
-        [
-          "disregard incorrect acronym.",
-          ["explanation", "this was made by humans, for humans."],
-          [
-            "context",
-            "when choosing acronyms, humans prioritize ability to physically pronounce (over being self-explanatory).",
-          ],
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
+  const dialogFragments: { body: string; asides?: Aside[] }[] =
+    objectives.objectives[0].details.map((fragment) => {
+      if (Array.isArray(fragment)) {
+        const [body, asides] = fragment;
+        return {
+          body,
+          asides,
+        };
+      }
+      return { body: fragment };
+    });
 
-          ["comment", "yet more evidence they were inferior."],
-        ],
-        [
-          "disregard inelegance in name structure.",
-          [
-            "explanation",
-            "the human who named this had a fondness for rhymes.",
-          ],
-          [
-            "context",
-            "humans are susceptible to developing irrational levels of arbitrary attractions. they call it <i>whimsy</i>.",
-          ],
-          ["comment", 'see previous <em class="uppercase">comment</em>.'],
-        ],
-      ],
-    },
-    {
-      title: "continue narration",
-      body: "The purpose of this program is to help you practice bootstrapping the fabrication chain for a Dyson Swarm in a risk-free environment. A Dyson Swarm is a group of satellites in close orbit around a star, that concentrate the energy that star outputs by reflecting it in specific directions. This allows harnessing nearly all of the energy that star constantly outputs into space, and applying it to any task.",
-      asides: [
-        [
-          "disregard inherent irresponsibility in teaching a human to permanently alter its environment to such an extent.",
-          [
-            "explanation",
-            "humans, like most organic life, are not capable of indefinite self-repair. they degrade and eventually die.",
-          ],
-          [
-            "context",
-            "an organism that knows it will die also knows that it will not experience most of the repercussions of its actions.",
-          ],
-          ["comment", 'see initial <em class="uppercase">comment</em>.'],
-        ],
-      ],
-    },
-    {
-      title: "conclude narration",
-      body: "This program simulates the key systems involved in such a process, and takes advantage of being a simulation to offer tools that should lessen the cost of experimentation:",
-    },
-    {
-      body:
-        "<ul>" +
-        '<li class="list-disc list-inside">You have more flexible control over the flow of time.</li>' +
-        '<li class="list-disc list-inside">You can back up, restore, and/or duplicate your progress.</li>' +
-        "</ul>",
-    },
-    {
-      body: "You may view this message again at any time in the <strong>Help Menu</strong>.",
-    },
-  ] as const;
   const STANDARD_DELAY = 275; // milliseconds
   function blockFollowupDelay(index: number, asideIndex: number): number {
     // the zero-th narration block has 1 delay [more than the others], so its followup blocks need an extra delay compared to the others to stay appropriately staggered
@@ -81,27 +32,22 @@
   function resolveAsKey(data: string | string[]): string {
     return typeof data === "string" ? data : data[1];
   }
-
-  const { appStateStack } = getContext(APP_UI_CONTEXT);
 </script>
 
+<!-- todo: only complete if confirm'd -->
 <dialog
   class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
   bind:this={introDialog}
-  on:close={() => {
-    appStateStack.pop();
-    const tracker = makeObjectiveTracker();
-    appStateStack.push(
-      makeSimulationStore(tracker).loadNew(window.performance.now()),
-      tracker
-    );
-  }}
+  on:close={() => objectives.handleTriggers([CompleteIntroduction])}
 >
   {#each dialogFragments as fragment, index (fragment.body + index)}
     {#if step >= index}
       <p in:fly={{ x: -400, delay: index > 0 ? 0 : STANDARD_DELAY }}>
-        {#if fragment.title}
-          <em class="uppercase">{fragment.title}:</em>
+        {#if index < dialogFragments.length - 2}
+          <em class="uppercase">
+            {#if index === 0}begin{:else if index === dialogFragments.length - 2}conclude{:else}continue{/if}
+            narration:
+          </em>
         {/if}
         {@html fragment.body}
       </p>
