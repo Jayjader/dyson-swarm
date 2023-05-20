@@ -59,7 +59,10 @@ export function makeObjectiveTracker(
         }
         return state;
       }),
-    clearProgress: () => update((state) => (state.completed.clear(), state)),
+    clearProgress: () =>
+      update(
+        (state) => (state.completed.clear(), state.started.clear(), state)
+      ),
     handleTriggers: (triggers: Trigger[]) => {
       const triggered = findTriggeredSteps(store.objectives, triggers);
       if (triggered.completed.size === 0 && triggered.started.size === 0) {

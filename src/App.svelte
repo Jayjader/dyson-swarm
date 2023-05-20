@@ -76,13 +76,12 @@
 {:else if $appStateStack.at(-1) === SimMenu}
   <SimulationMenu />
 {:else if $appStateStack.at(-1) === SettingsMenu}
-  <Settings />
+  <Settings
+    on:clear-progress={$appStateStack.at(2)?.clearProgress}
+    on:close={() => appStateStack.pop()}
+  />
 {:else if $appStateStack.at(-1) === SaveMenu}
   <SaveSlots />
-  <!--
-{:else if $appStateStack.at(-1) === Introduction}
-  <IntroductionDialog />
--->
 {:else}
   <Simulation simulation={$appStateStack[1]} objectives={$appStateStack[2]} />
 {/if}
