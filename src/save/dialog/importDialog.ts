@@ -1,4 +1,4 @@
-import type { Failure, Progress, Success } from "./dialog";
+import type { Failure, Progress, Success } from "./types";
 import { derived, writable } from "svelte/store";
 
 export type ImportDialog = { action: "import" } & (
