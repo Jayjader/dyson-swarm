@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { getContext, onDestroy, setContext } from "svelte";
+  import {
+    createEventDispatcher,
+    getContext,
+    onDestroy,
+    setContext,
+  } from "svelte";
   import "../app.css";
   import { APP_UI_CONTEXT, SimMenu } from "../appStateStore";
   import {
@@ -25,9 +30,7 @@
   import type { ObjectiveTracker } from "../objectiveTracker/store";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
-  import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Introduction from "../Introduction.svelte";
-  import { CompleteIntroduction } from "../objectiveTracker/objectives";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -85,7 +88,7 @@
 
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
 
-  const { appStateStack } = getContext(APP_UI_CONTEXT);
+  const dispatchEvent = createEventDispatcher();
 
   export let objectives: ObjectiveTracker;
   let tracked = [],
@@ -121,7 +124,7 @@
       <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
-          on:click={() => appStateStack.push(SimMenu)}>Menu</button
+          on:click={() => dispatchEvent("open-menu")}
         >
         <!-- todo: dispatch an event here instead, and extract the stack manipulation into the parent component, to avoid needing the entire store in this component-->
 

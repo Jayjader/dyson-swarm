@@ -74,7 +74,14 @@
     </div>
   </main>
 {:else if $appStateStack.at(-1) === SimMenu}
-  <SimulationMenu />
+  <SimulationMenu
+    on:open-save={() => appStateStack.push(SaveMenu)}
+    on:open-settings={() => appStateStack.push(SettingsMenu)}
+    on:close={(event) =>
+      event.detail === "exit-sim"
+        ? (appStateStack.pop(3), appStateStack.push(MainMenu))
+        : appStateStack.pop()}
+  />
 {:else if $appStateStack.at(-1) === SettingsMenu}
   <Settings
     on:clear-progress={$appStateStack.at(2)?.clearProgress}
@@ -83,7 +90,11 @@
 {:else if $appStateStack.at(-1) === SaveMenu}
   <SaveSlots />
 {:else}
-  <Simulation simulation={$appStateStack[1]} objectives={$appStateStack[2]} />
+  <Simulation
+    simulation={$appStateStack[1]}
+    objectives={$appStateStack[2]}
+    on:open-menu={() => appStateStack.push(SimMenu)}
+  />
 {/if}
 
 <style>

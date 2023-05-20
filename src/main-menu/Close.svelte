@@ -1,16 +1,8 @@
 <script lang="ts">
-  import {createEventDispatcher} from "svelte";
-
-  const dispatch = createEventDispatcher();
-
   export let element: HTMLDialogElement;
 </script>
 
-<dialog
-  class="border-2 border-slate-900"
-  bind:this={element}
-  on:close={(event) => dispatch("close", event.target.returnValue)}
->
+<dialog class="border-2 border-slate-900" bind:this={element} on:close>
   <form method="dialog">
     <h3>Warning</h3>
     <p>
