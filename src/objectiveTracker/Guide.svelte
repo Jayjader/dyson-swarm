@@ -162,6 +162,10 @@
               trackerState.objectives,
               trackerState.tracking.active
             ),
+            next: getNextObjective(
+              trackerState.objectives,
+              trackerState.tracking.active
+            ),
           }),
           trackerState.tracking.active.forEach((_, i) =>
             dialogElement
