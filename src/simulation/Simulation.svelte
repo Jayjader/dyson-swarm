@@ -23,6 +23,7 @@
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
   import type { ObjectiveTracker } from "../objectiveTracker/store";
+  import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Introduction from "../Introduction.svelte";
@@ -94,7 +95,7 @@
     tracked = active;
     guideOpen = open;
     showIntro = !completed.has(
-      "[0]" /* Introduction is first in objective list */
+      "[0]" /* Introduction is first in objective list (check the actual data if reading this is not enough to convince you) */
     );
   });
   setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });

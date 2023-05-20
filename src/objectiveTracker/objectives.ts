@@ -1,38 +1,16 @@
 import { Construct } from "../gameRules";
 import type { EventTag } from "../events/events";
 import { isRepeat, type Repeat } from "../types";
+import type { TrackedObjectives } from "./store";
 
-export const CompleteIntroduction = Symbol("introduction dialog completed");
-export const FabricatorOpened = Symbol("fabricator panel opened");
-export const EditingQueue = Symbol("started editing fabricator build queue");
-export const AddBuildOrder = Symbol(
-  "inserted build order into the fabricator's build queue during editing"
-);
-export const AddRepeatOrder = Symbol(
-  "inserted repeat build order into the fabricator's build queue during editing"
-);
-type RepeatCountTrigger = [number];
-export type RepeatsTriggerWithContents = [
-  ...RepeatCountTrigger,
-  (Construct | RepeatsTriggerWithContents)[]
-];
-export type RepeatsTrigger = RepeatCountTrigger | RepeatsTriggerWithContents;
-export type Trigger =
-  | typeof CompleteIntroduction
-  | typeof FabricatorOpened
-  | typeof EditingQueue
-  | typeof AddBuildOrder
-  | [typeof AddBuildOrder, Construct]
-  | [typeof AddRepeatOrder, RepeatsTrigger]
-  | EventTag
-  | [EventTag, ...unknown[]];
-export type Step = [string, Trigger] | [string, Trigger, number];
-export type Aside = [
-  string,
-  [string, string],
-  [string, string],
-  [string, string]
-];
+import type { RepeatsTriggerWithContents, Trigger } from "./triggers";
+import {
+  AddBuildOrder,
+  AddRepeatOrder,
+  EditingQueue,
+  FabricatorOpened,
+  GuideOpened,
+} from "./triggers";
 
 export type Objective = { title: string } & { autostart?: true | Trigger } & (
     | { subObjectives: Objective[] }
@@ -41,6 +19,13 @@ export type Objective = { title: string } & { autostart?: true | Trigger } & (
         steps: Step[];
       }
   );
+export type Step = [string, Trigger] | [string, Trigger, number];
+export type Aside = [
+  string,
+  [string, string],
+  [string, string],
+  [string, string]
+];
 
 export function hasSubObjectives(
   o: Objective
@@ -105,7 +90,12 @@ export const ALL_OBJECTIVES: Objective[] = [
         "</ul>",
       "You may view this message again at any time in the <a>Guide</a>.",
     ],
-    steps: [],
+    steps: [
+      [
+        "Open the <a>Guide</a> to continue learning how to use the Simulator.",
+        GuideOpened,
+      ],
+    ],
     autostart: true,
   },
   {
@@ -197,7 +187,7 @@ export const ALL_OBJECTIVES: Objective[] = [
         ],
       },
       {
-        title: "Meeting Excess Energy Quotas",
+        title: "Meeting Quotas for Excess Energy Production",
         subObjectives: [
           {
             title: "$#>TODO<#$",
@@ -227,6 +217,7 @@ export const ALL_OBJECTIVES: Objective[] = [
       },
       {
         title: "Controlling Fabrication",
+        autostart: FabricatorOpened,
         subObjectives: [
           {
             title: "Single Build Orders",

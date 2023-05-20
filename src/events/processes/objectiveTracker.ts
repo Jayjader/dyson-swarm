@@ -1,7 +1,7 @@
 import type { EventProcessor } from "./index";
 import type { BusEvent } from "../events";
 
-import type { Trigger } from "../../objectiveTracker/objectives";
+import type { Trigger } from "../../objectiveTracker/triggers";
 
 export type ObjectiveTrackerProbe = EventProcessor<
   "probe",

@@ -3,7 +3,8 @@
   import { getContext, onMount } from "svelte";
   import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
   import type { Aside } from "./objectiveTracker/objectives";
-  import { CompleteIntroduction } from "./objectiveTracker/objectives";
+
+  import { CompleteIntroduction } from "./objectiveTracker/triggers";
 
   let introDialog: HTMLDialogElement;
   let step = 0;

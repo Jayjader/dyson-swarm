@@ -4,12 +4,13 @@ import {
   findAutoStartPositions,
   findTriggeredSteps,
   getNestedItem,
-  hasSubObjectives,
   type Objective,
   type ObjectivePosition,
   type Step,
-  type Trigger,
 } from "./objectives";
+
+import type { Trigger } from "./triggers";
+import { GuideOpened } from "./triggers";
 
 type SerializedPosition = ReturnType<typeof JSON.stringify>;
 export type TrackedObjectives = {
@@ -35,7 +36,10 @@ export function makeObjectiveTracker(
   const store = {
     objectives: ALL_OBJECTIVES,
     subscribe,
-    open: () => update((state) => ((state.open = true), state)),
+    open: () => {
+      update((state) => ((state.open = true), state));
+      store.handleTriggers([GuideOpened]);
+    },
     close: () => update((state) => ((state.open = false), state)),
     setActive: (p: ObjectivePosition) =>
       update((state) => {

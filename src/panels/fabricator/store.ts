@@ -4,12 +4,13 @@ import type { BuildOrder, Repeat, SingleBuildOrder } from "../../types";
 import { isRepeat } from "../../types";
 import type { ObjectiveTracker } from "../../objectiveTracker/store";
 
+import { triggerWithContents } from "../../objectiveTracker/objectives";
+
 import {
   AddBuildOrder,
   AddRepeatOrder,
   EditingQueue,
-  triggerWithContents,
-} from "../../objectiveTracker/objectives";
+} from "../../objectiveTracker/triggers";
 
 type PositionInQueue = [number, ...number[]];
 
