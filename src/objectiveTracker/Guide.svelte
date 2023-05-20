@@ -84,7 +84,7 @@
     class="row-span-2 flex flex-grow flex-col flex-nowrap gap-4 bg-slate-300 p-4"
   >
     <div class="flex flex-row flex-nowrap justify-between gap-4">
-      <h2>
+      <h2 style="font-size: clamp(1rem, 4ch, 2.75rem)">
         Objective: {#if trackerState.viewing}
           {trackerState.viewing.objective.title}
         {/if}
@@ -145,10 +145,12 @@
       >
     {/if}
   </div>
-  <div class="flex flex-grow flex-col flex-nowrap items-stretch gap-1">
+  <div
+    class="flex flex-grow flex-col flex-nowrap items-stretch justify-between gap-1"
+  >
     <nav
       aria-labelledby="Objectives-title"
-      class="grid max-w-full grid-cols-2 gap-2 bg-slate-300 p-4"
+      class="grid max-w-full flex-grow grid-cols-2 gap-2 bg-slate-300 p-4"
     >
       <h2 id="Objectives-title" class="col-span-2 scroll-m-0">Objectives</h2>
       <CommonGuideButton
