@@ -10,6 +10,7 @@ import {
   EditingQueue,
   FabricatorOpened,
   GuideOpened,
+  matchesTrigger,
 } from "./triggers";
 
 export type Objective = { title: string } & { autostart?: true | Trigger } & (
@@ -123,7 +124,6 @@ export const ALL_OBJECTIVES: Objective[] = [
                 ["construct-fabricated", Construct.MINER],
               ],
             ],
-            autostart: CompleteIntroduction,
           },
           {
             title: "Fabricate 1 Refiner",
@@ -348,6 +348,31 @@ function recursiveWorker(
   });
 }
 
+function walkObjectives(list: Objective[], position: ObjectivePosition = []) {
+  const objectives = recursiveObjectiveWalk(list);
+  if (position.length > 0) {
+    const index = objectives.findIndex(([p, o]) => areEqual(p, position));
+    if (index > 0) {
+      return objectives.slice(index);
+    }
+  }
+  return objectives;
+}
+function recursiveObjectiveWalk(
+  list: Objective[],
+  position: ObjectivePosition = []
+): [ObjectivePosition, Objective][] {
+  return list.flatMap((objective, i) => {
+    const nestedPosition: ObjectivePosition = [...position, i];
+    return [
+      [nestedPosition, objective],
+      ...(!hasSubObjectives(objective)
+        ? []
+        : recursiveObjectiveWalk(objective.subObjectives, nestedPosition)),
+    ];
+  });
+}
+
 export function isBefore(a: ObjectivePosition, b: ObjectivePosition): boolean {
   if (a.length === 0) {
     return true;
@@ -371,66 +396,146 @@ export function areEqual(a: ObjectivePosition, b: ObjectivePosition): boolean {
   );
 }
 
-/* todo: start **next** objective when current is completed, not just next sub-objective */
 export function findTriggeredSteps(
   objectives: Objective[],
   triggers: (Trigger | EventTag)[],
-  position: ObjectivePosition = []
-): { completed: ObjectivePosition[]; started: ObjectivePosition[] } {
-  const triggered = { completed: [], started: [] } as {
-    completed: ObjectivePosition[];
-    started: ObjectivePosition[];
-  };
-  const nestedPosition = [...position, -1];
-  for (let objective of objectives) {
-    nestedPosition[nestedPosition.length - 1] += 1;
-    if (
-      objective?.autostart !== undefined &&
-      objective.autostart !== true &&
-      triggers.includes(objective.autostart)
-    ) {
-      triggered.started.push(nestedPosition);
-    }
-    if (hasSubObjectives(objective)) {
-      const sub = findTriggeredSteps(
-        objective.subObjectives,
-        triggers,
-        nestedPosition
-      );
-      triggered.completed.push(...sub.completed);
-      triggered.started.push(...sub.started);
-      continue;
-    }
-    const stepPosition = [...nestedPosition, -1];
-    for (let step of objective.steps) {
-      stepPosition[stepPosition.length - 1] += 1;
-      const completeCondition = step[1];
-      if (!Array.isArray(completeCondition)) {
-        for (let trigger of triggers) {
-          if (trigger === completeCondition) {
-            // console.debug({ simpleTrigger: { trigger, condition, position, step, count, stepPosition, }, });
-            triggered.completed.push([...stepPosition]);
-            break;
-          }
-        }
-      } else {
-        for (let trigger of triggers) {
+  parentPositionConsidered: ObjectivePosition = []
+): {
+  completed: TrackedObjectives["completed"];
+  started: TrackedObjectives["started"];
+} {
+  const result = walkObjectives(objectives, parentPositionConsidered).reduce(
+    (
+      { started, completed, previousCompleted, previousStarted },
+      [position, objective]
+    ) => {
+      const serializedPosition = JSON.stringify(position);
+      if (!started.has(serializedPosition)) {
+        // started if child of previous started
+        if (previousStarted !== undefined) {
           if (
-            Array.isArray(trigger) &&
-            trigger.length === completeCondition.length &&
-            trigger.every(
-              (element, index) => element === completeCondition[index]
+            previousStarted.every(
+              (coordinate, index) => position[index] === coordinate
             )
           ) {
-            // console.debug({ complexTrigger: { trigger, condition, position, step, count, stepPosition, }, });
-            triggered.completed.push([...stepPosition]);
-            break;
+            started.add(serializedPosition);
+            return {
+              started,
+              completed,
+              previousCompleted: false,
+              previousStarted,
+            };
+          }
+        }
+
+        // started if autoStart condition triggered
+        if (
+          objective?.autostart !== undefined &&
+          objective.autostart !== true &&
+          triggers.includes(objective.autostart)
+        ) {
+          let parent = [...position];
+          do {
+            console.debug({ autoStarts: [...parent] });
+            started.add(JSON.stringify([...parent]));
+          } while (parent.pop() !== undefined);
+          return {
+            started,
+            completed,
+            previousCompleted: false,
+            previousStarted: [...position],
+          };
+        }
+
+        // started if previous completed
+        if (previousCompleted) {
+          started.add(JSON.stringify(position));
+          return {
+            started,
+            completed,
+            previousCompleted: false,
+            previousStarted: [...position],
+          };
+        }
+      }
+
+      /* objective already started => can be completed */
+
+      if (hasSubObjectives(objective)) {
+        return {
+          started,
+          completed,
+          previousCompleted: false,
+          previousStarted,
+        };
+      }
+
+      // check steps for completion
+      const stepPosition = [...position, -1];
+      let incomplete = true;
+      for (let step of objective.steps) {
+        stepPosition[stepPosition.length - 1] += 1;
+        const [_, stepTrigger, stepCount] = step;
+        for (let trigger of triggers) {
+          if (matchesTrigger(stepTrigger, trigger)) {
+            if (stepCount === undefined) {
+              completed.add(JSON.stringify([...stepPosition]));
+              incomplete = false;
+              break;
+            }
+            // step has a defined count => the trigger needs to be seen [count] times
+            // this is essentially handled by treating each seen occurrence as a (fictional/virtual) 1-indexed sub-step of the current step's position
+            let completedIndex = 1;
+            let serialized;
+            // scan forwards from first step (1-indexed), hanging on to loop counter and serialized position of first uncompleted step for later work
+            while (
+              ((serialized = JSON.stringify([...stepPosition, completedIndex])),
+              completed.has(serialized))
+            ) {
+              completedIndex += 1;
+            }
+            if (completedIndex <= stepCount) {
+              completed.add(JSON.stringify(serialized));
+              if (completedIndex === stepCount) {
+                completed.add(JSON.stringify(stepPosition));
+                incomplete = false;
+                break;
+              }
+            }
           }
         }
       }
+
+      // some steps incomplete => goto next in reducer
+      if (incomplete) {
+        return {
+          started,
+          completed,
+          previousCompleted: false,
+          previousStarted: undefined,
+        };
+      }
+
+      // all steps complete => complete objective and all its ancestors
+      let parent = [...position];
+      do {
+        completed.add(JSON.stringify([...parent]));
+      } while (parent.pop() !== undefined);
+      return {
+        started,
+        completed,
+        previousCompleted: true,
+        previousStarted: undefined,
+      };
+    },
+    {
+      completed: new Set<string>(),
+      started: new Set<string>(),
+      previousStarted: undefined as undefined | ObjectivePosition,
+      previousCompleted: false,
     }
-  }
-  return triggered;
+  );
+  return { started: result.started, completed: result.completed };
 }
 
 export function findAutoStartPositions(

@@ -62,102 +62,19 @@ export function makeObjectiveTracker(
     clearProgress: () => update((state) => (state.completed.clear(), state)),
     handleTriggers: (triggers: Trigger[]) => {
       const triggered = findTriggeredSteps(store.objectives, triggers);
-      if (triggered.completed.length === 0 && triggered.started.length === 0) {
+      if (triggered.completed.size === 0 && triggered.started.size === 0) {
         return;
       }
       console.debug({ triggered });
       update((state) => {
         const { completed, started } = state;
         for (let position of triggered.started) {
-          started.add(JSON.stringify(position));
+          started.add(position);
         }
-        console.debug({ started: [...started] });
         for (let position of triggered.completed) {
-          {
-            // if not the first step, only trigger if (all) previous sibling steps are complete
-            const currentStepIndex = position.at(-1)!;
-            if (currentStepIndex > 0) {
-              let previousComplete = true;
-              for (let i = currentStepIndex - 1; i >= 0; i--) {
-                if (
-                  !completed.has(
-                    JSON.stringify([
-                      ...position.slice(0, position.length - 1),
-                      i,
-                    ])
-                  )
-                ) {
-                  previousComplete = false;
-                  break;
-                }
-              }
-              if (!previousComplete) {
-                continue; // skip to considered next triggered position
-              }
-            }
-          }
-
-          {
-            const parentObjectivePosition = position.slice(
-              0,
-              position.length - 1
-            );
-            const parentObjective = getNestedItem(
-              store.objectives,
-              parentObjectivePosition
-            );
-            const countForStepCompletion = hasSubObjectives(parentObjective)
-              ? undefined
-              : parentObjective.steps[position.at(-1)!]?.[2];
-            if (countForStepCompletion) {
-              // step has a defined count => the trigger needs to be seen [count] times
-              // this is essentially handled by treating each seen occurrence as a (fictional/virtual) 1-indexed sub-step of the current step's position
-              let completedIndex = 1;
-              let serialized: SerializedPosition;
-              // scan forwards from first step (1-indexed), hanging on to loop counter and serialized position of first uncompleted step for later work
-              while (
-                ((serialized = JSON.stringify([...position, completedIndex])),
-                completed.has(serialized))
-              ) {
-                completedIndex += 1;
-              }
-              if (completedIndex <= countForStepCompletion) {
-                completed.add(serialized);
-
-                if (completedIndex === countForStepCompletion) {
-                  // this is the final count for this step => complete the entire step
-                  completed.add(JSON.stringify(position));
-
-                  if (
-                    !hasSubObjectives(parentObjective) &&
-                    position.at(-1) === parentObjective.steps.length - 1
-                  ) {
-                    // this is the final step for this objective => complete the objective
-                    completed.add(JSON.stringify(parentObjectivePosition));
-                  }
-                }
-              }
-            } else {
-              // step has no defined count => trigger just needs to be seen once to complete step
-              completed.add(JSON.stringify(position));
-
-              if (
-                position.at(-1) ===
-                (hasSubObjectives(parentObjective)
-                  ? parentObjective.subObjectives
-                  : parentObjective.steps
-                ).length -
-                  1
-              ) {
-                // we are the last child of our parent => complete it as well
-                console.debug({
-                  autoComplete: { position, parentObjectivePosition },
-                });
-                completed.add(JSON.stringify(parentObjectivePosition));
-              }
-            }
-          }
+          completed.add(position);
         }
+        console.debug({ started: [...started], completed: [...completed] });
         state.completed = completed;
         state.started = started;
         return state;
