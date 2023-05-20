@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Objective } from "./objectives";
-  import { areEqual } from "./objectives";
+  import { areEqual, isBefore } from "./objectives";
 
   type Position = [number, ...number[]];
   export let data: { objective: Objective; position: Position };
@@ -11,13 +11,23 @@
 
   $: serializedPosition = JSON.stringify(data.position);
   $: isActive = areEqual(data.position, active);
+  $: containsActive =
+    data.position[0] === active[0] &&
+    isBefore(data.position, active) &&
+    !areEqual(data.position, active);
 </script>
 
 {#if data?.objective && data.objective?.details === undefined}
   <details class="ml-2" data-position={serializedPosition}>
-    <summary class="cursor-pointer rounded border-2 border-slate-800 p-2"
-      >{data.objective.title}</summary
+    <summary
+      class="cursor-pointer rounded border-2 border-slate-800 p-2"
+      class:bg-orange-300={containsActive}
     >
+      {data.objective.title}
+      {#if containsActive}
+        <span class="text-slate-600">(Contains Active)</span>
+      {/if}
+    </summary>
     <ol class="flex flex-col flex-nowrap justify-around gap-1 pt-1">
       {#each data.objective.subObjectives as subObjective, index}
         {#if started.has(JSON.stringify([...data.position, index]))}
