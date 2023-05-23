@@ -82,16 +82,14 @@ export const ALL_OBJECTIVES: Objective[] = [
             details: [
               "The first order of priority is to set up a basic metal production chain. This will allow you to begin tapping into the planet's resources, an essential step in building the swarm.",
               "Metal production starts with <a>miners</a> extracting ore from the planet's crust. Fabricate one, and make sure it is <a>working</a>.",
-              "Warning: You only have a limited starting amount of metal that can be used for fabrication. Until you are producing more, you should be careful not to consume too much or else you will find yourself <a>stuck</a>.",
+              "<strong>Warning:</strong> You only have a limited starting amount of metal that can be used for fabrication. Until you are producing more, you should be careful not to consume too much or else you will find yourself <a>stuck</a>.",
             ],
             steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
+              // todo: adapt handleTriggers() to allow the following
               [
-                "Add a build order for a <a>Miner</a> to the queue",
-                [AddBuildOrder, Construct.MINER],
+                "Add a build order for a <a>Miner</a> to the fabricator <a>queue</a>",
+                ["command-set-fabricator-queue", Construct.MINER],
               ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a> and complete that build order",
                 ["construct-fabricated", Construct.MINER],
@@ -105,13 +103,10 @@ export const ALL_OBJECTIVES: Objective[] = [
               "Fabricate a <a>refiner</a>, and make sure it is <a>working</a>.",
             ],
             steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
               [
                 "Add a build order for a <a>Refiner</a> to the queue",
-                [AddBuildOrder, Construct.REFINER],
+                ["command-set-fabricator-queue", Construct.REFINER],
               ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a>",
                 ["construct-fabricated", Construct.REFINER],
@@ -131,13 +126,13 @@ export const ALL_OBJECTIVES: Objective[] = [
               "Fabricate 10 more <a>collectors</a>.",
             ],
             steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
               [
                 "Add a repeating build order for 10 <a>Solar Collectors</a> to the queue",
-                [AddRepeatOrder, [10, [Construct.SOLAR_COLLECTOR]]],
+                [
+                  "command-set-fabricator-queue",
+                  [10, [Construct.SOLAR_COLLECTOR]],
+                ],
               ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a>",
                 ["construct-fabricated", Construct.SOLAR_COLLECTOR],
@@ -157,13 +152,10 @@ export const ALL_OBJECTIVES: Objective[] = [
               "<a>Factories</a> consume <a>metal</a> to produce <a>packaged satellites</a>. Fabricate one, and make sure it is <a>working</a> and well-<a>supplied</a>.",
             ],
             steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
               [
                 "Add a build order for a <a>Satellite Factory</a> to the queue",
-                [AddBuildOrder, Construct.SATELLITE_FACTORY],
+                ["command-set-fabricator-queue", Construct.SATELLITE_FACTORY],
               ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a>",
                 ["construct-fabricated", Construct.SATELLITE_FACTORY],
@@ -177,16 +169,17 @@ export const ALL_OBJECTIVES: Objective[] = [
               "<a>Launchers</a> consume a lot of power to launch a single satellite into orbit. Fabricate one, and make sure it is <a>working</a> and well-<a>supplied</a>.",
             ],
             steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
               [
                 "Add a build order for a <a>Satellite Launcher</a> to the queue",
-                [AddBuildOrder, Construct.SATELLITE_LAUNCHER],
+                ["command-set-fabricator-queue", Construct.SATELLITE_LAUNCHER],
               ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
               [
                 "<a>Wait</a> for the fabricator to <a>Work</a>",
                 ["construct-fabricated", Construct.SATELLITE_LAUNCHER],
+              ],
+              [
+                "<a>Wait</a> for the launcher to <a>Work</a>",
+                "launch-satellite",
               ],
             ],
           },
@@ -196,8 +189,10 @@ export const ALL_OBJECTIVES: Objective[] = [
         title: "Meeting Quotas for Excess Energy Production",
         subObjectives: [
           {
-            title: "$#>TODO<#$",
-            details: ["$>>TODO<<$"],
+            title: "Powering the Earth",
+            details: [
+              "Congratulations on launching your first satellite! You have covered all of the fundamental basics required for building a Dyson Swarm.",
+            ],
             steps: [
               // todo: make this earth global power consumption for year x
               // sample years: 2019 -> https://arxiv.org/pdf/2109.11443.pdf
