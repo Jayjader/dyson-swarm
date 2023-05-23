@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Objective } from "./objectives";
-  import { areEqual, isNode, isBefore } from "./objectives";
+  import { areEqual, isNode } from "./objectives";
 
   type Position = [number, ...number[]];
   export let data: { objective: Objective; position: Position };
@@ -12,9 +12,9 @@
   $: serializedPosition = JSON.stringify(data.position);
   $: isActive = areEqual(data.position, active);
   $: containsActive =
-    data.position[0] === active[0] &&
-    isBefore(data.position, active) &&
-    !areEqual(data.position, active);
+    data.position.every(
+      (coordinate, index) => active?.[index] === coordinate
+    ) && !isActive;
 </script>
 
 {#if data?.objective && isNode(data.objective)}
