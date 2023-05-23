@@ -103,28 +103,16 @@ export function getNextObjective(
   list: Objective[],
   position: ObjectivePosition
 ): [Objective, ObjectivePosition] | undefined {
-  const [currentCoord, ...nextCoords] = position;
-  const current = list[currentCoord];
-  if (nextCoords.length > 0) {
-    if (hasSubObjectives(current)) {
-      const nextSub = getNextObjective(current.subObjectives, nextCoords);
-      if (nextSub !== undefined) {
-        const [nextFromSubs, nextPosition] = nextSub;
-        return [nextFromSubs, [currentCoord, ...nextPosition]];
-      }
+  const following = walkObjectives(list, position).slice(1); // skip index 0 which corresponds to the input position
+  if (following.length > 0) {
+    // there is at least 1 objective following the given position => find first leaf objective among them
+    const firstLeaf = following.find(([pos, obj]) => !isNode(obj));
+    if (firstLeaf !== undefined) {
+      const [nextPosition, nextObjective] = firstLeaf;
+      return [nextObjective, nextPosition];
     }
     return undefined;
   }
-  if (currentCoord === list.length - 1) {
-    return undefined;
-  }
-  let next = list[currentCoord + 1];
-  let nextPosition = [currentCoord + 1];
-  while (hasSubObjectives(next)) {
-    next = next.subObjectives[0];
-    nextPosition.push(0);
-  }
-  return [next, nextPosition];
 }
 
 /** Recursively iterates over list (and nested sub-lists),
@@ -165,6 +153,8 @@ function walkObjectives(list: Objective[], position: ObjectivePosition = []) {
     const index = objectives.findIndex(([p, o]) => areEqual(p, position));
     if (index > 0) {
       return objectives.slice(index);
+    } else if (index === -1) {
+      return [];
     }
   }
   return objectives;

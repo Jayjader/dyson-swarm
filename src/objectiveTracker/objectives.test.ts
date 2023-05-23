@@ -140,29 +140,32 @@ describe("objective tracker", () => {
         ).toEqual([{ title: "c", details: [""], steps: [] }, [2]]);
       });
       test("nested objective list", () => {
-        expect(
-          getNextObjective(
-            [
-              { title: "a", details: [""], steps: [] },
+        const objectives = [
+          { title: "a", details: [""], steps: [] },
+          {
+            title: "b",
+            subObjectives: [
               {
-                title: "b",
+                title: "c",
                 subObjectives: [
-                  {
-                    title: "c",
-                    subObjectives: [
-                      { title: "d", details: [""], steps: [] },
-                      { title: "e", details: [""], steps: [] },
-                    ],
-                  },
-                  { title: "f", details: [""], steps: [] },
+                  { title: "d", details: [""], steps: [] },
+                  { title: "e", details: [""], steps: [] },
                 ],
               },
-              { title: "g", details: [""], steps: [] },
-              { title: "h", details: [""], steps: [] },
+              { title: "f", details: [""], steps: [] },
             ],
-            [0]
-          )
-        ).toEqual([{ title: "d", details: [""], steps: [] }, [1, 0, 0]]);
+          },
+          { title: "g", details: [""], steps: [] },
+          { title: "h", details: [""], steps: [] },
+        ];
+        expect(getNextObjective(objectives, [0])).toEqual([
+          { title: "d", details: [""], steps: [] },
+          [1, 0, 0],
+        ]);
+        expect(getNextObjective(objectives, [1, 0, 1])).toEqual([
+          { title: "g", details: [""], steps: [] },
+          [1, 1, 0],
+        ]);
       });
     });
   });
