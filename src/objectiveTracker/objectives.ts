@@ -325,6 +325,10 @@ function findStartedFromCompleted(
     ) {
       // previous sibling was just completed
       startedFromCompleted.add(serializedPosition);
+      if (!isNode(objective)) {
+        // start first step
+        startedFromCompleted.add(JSON.stringify([...position, 0]));
+      }
       continue;
     }
     if (!isNode(objective)) {
