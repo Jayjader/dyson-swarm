@@ -81,6 +81,7 @@ export function makeObjectiveTracker(
         (state) => (
           state.completed.clear(),
           state.started.clear(),
+          (state.active = []),
           init(state, store.objectives)
         )
       ),
