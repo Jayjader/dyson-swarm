@@ -157,9 +157,15 @@ export function parseProcessors(formatted: string): SaveState {
 }
 
 export function formatProcessors(procs: SaveState): string {
-  return JSON.stringify(procs, (_key, value) =>
-    typeof value === "bigint" ? value.toString() : value
-  );
+  return JSON.stringify(procs, (key, value) => {
+    if (key.startsWith("probe")) {
+      return undefined;
+    }
+    if (typeof value === "bigint") {
+      return value.toString();
+    }
+    return value;
+  });
 }
 
 function stripNonCommandsInTicksOlderThan(
