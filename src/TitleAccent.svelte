@@ -1,1 +1,1 @@
-<b class="text-purple-700 text-7xl"><slot/></b>
+<b class="text-7xl text-purple-700"><slot /></b>
