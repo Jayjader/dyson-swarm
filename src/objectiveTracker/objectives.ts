@@ -354,21 +354,22 @@ function propagateStartedFromCompleted(
   const startedFromCompletedPropagation = new Set<SerializedPosition>();
   for (let [position, objective] of walkObjectives(objectives)) {
     const serializedPosition = JSON.stringify(position);
-    const positionIndex = position.at(-1)!;
-
-    if (
-      positionIndex === 0 &&
-      startedFromCompleted.has(
-        JSON.stringify(position.slice(0, position.length - 1))
-      )
-    ) {
-      // parent is started and this is its first child
-      startedFromCompletedPropagation.add(serializedPosition);
-      continue;
-    }
-    if (!isNode(objective) && startedFromCompleted.has(serializedPosition)) {
-      // is first step for newly started parent
-      startedFromCompletedPropagation.add(JSON.stringify([...position, 0]));
+    if (position.length > 1 && position.at(-1)! === 0) {
+      // this is the first child of an objective
+      const serializedParentPosition = JSON.stringify(
+        position.slice(0, position.length - 1)
+      );
+      if (
+        startedFromCompleted.has(serializedParentPosition) ||
+        startedFromCompletedPropagation.has(serializedParentPosition)
+      ) {
+        // that parent objective is newly started => this starts as well
+        startedFromCompletedPropagation.add(serializedPosition);
+        if (!isNode(objective)) {
+          // this has steps => start first step as well
+          startedFromCompletedPropagation.add(JSON.stringify([...position, 0]));
+        }
+      }
     }
   }
   console.debug({ startedFromCompletedPropagation });
