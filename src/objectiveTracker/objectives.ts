@@ -241,9 +241,6 @@ function findCompleted(
         stepComplete = false;
         const [_, triggerMatch, countForCompletion] = step;
         const matches = matchesTrigger(triggerMatch, trigger);
-        if (trigger === FabricatorOpened) {
-          console.debug({ triggerMatch, trigger, matches });
-        }
         if (!matches) {
           break; // next steps won't have started, so we can bail out of iterating over them entirely
         }
