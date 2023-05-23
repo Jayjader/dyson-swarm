@@ -1,25 +1,43 @@
 import { writable } from "svelte/store";
+import type { Objective, ObjectivePosition, Step } from "./objectives";
 import {
-  ALL_OBJECTIVES,
   findAutoStartPositions,
+  propagateStartedFromTrigger,
   findTriggeredSteps,
   getNestedItem,
-  type Objective,
-  type ObjectivePosition,
-  type Step,
 } from "./objectives";
-
 import type { Trigger } from "./triggers";
 import { GuideOpened } from "./triggers";
+import { ALL_OBJECTIVES } from "./staticObjectiveList";
 
-type SerializedPosition = ReturnType<typeof JSON.stringify>;
+export type SerializedPosition = ReturnType<typeof JSON.stringify>;
 export type TrackedObjectives = {
   open: boolean;
   started: Set<SerializedPosition>;
   completed: Set<SerializedPosition>;
   active: ObjectivePosition;
 };
+function init(
+  tracking: TrackedObjectives,
+  objectives: Objective[]
+): TrackedObjectives {
+  const autoStarts = new Set(
+    findAutoStartPositions(objectives).map((position) =>
+      JSON.stringify(position)
+    )
+  );
+  console.debug({ init: [...autoStarts] });
+  for (let position of [
+    ...autoStarts,
+    ...propagateStartedFromTrigger(objectives, autoStarts),
+  ]) {
+    tracking.started.add(position);
+  }
+  console.debug({ initallyStarted: tracking.started });
+  return tracking;
+}
 export function makeObjectiveTracker(
+  objectives = ALL_OBJECTIVES,
   tracking: TrackedObjectives = {
     open: false,
     started: new Set([]),
@@ -27,14 +45,10 @@ export function makeObjectiveTracker(
     active: [],
   }
 ) {
-  for (let position of findAutoStartPositions(ALL_OBJECTIVES)) {
-    tracking.started.add(JSON.stringify(position));
-  }
-  console.debug({ initallyStarted: tracking.started });
-  const { update, subscribe } = writable(tracking);
+  const { update, subscribe } = writable(init(tracking, objectives));
 
   const store = {
-    objectives: ALL_OBJECTIVES,
+    objectives,
     subscribe,
     open: () => {
       update((state) => ((state.open = true), state));
@@ -49,38 +63,52 @@ export function makeObjectiveTracker(
           started: [...state.started],
         });
         state.active = p;
+        if (p.length === 0) {
+          return state;
+        }
         state.started.add(JSON.stringify(p));
-        if (p.length > 1) {
-          const loopStack = p.slice();
-          let coordinate;
-          while (loopStack.pop() !== undefined) {
-            state.started.add(JSON.stringify(loopStack));
-          }
+        if (p.length === 1) {
+          return state;
+        }
+        const loopStack = p.slice();
+        while ((loopStack.pop(), loopStack.length > 0)) {
+          state.started.add(JSON.stringify(loopStack));
         }
         return state;
       }),
     clearProgress: () =>
       update(
-        (state) => (state.completed.clear(), state.started.clear(), state)
+        (state) => (
+          state.completed.clear(),
+          state.started.clear(),
+          init(state, store.objectives)
+        )
       ),
     handleTriggers: (triggers: Trigger[]) => {
-      const triggered = findTriggeredSteps(store.objectives, triggers);
-      if (triggered.completed.size === 0 && triggered.started.size === 0) {
-        return;
-      }
-      console.debug({ triggered });
       update((state) => {
-        const { completed, started } = state;
-        for (let position of triggered.started) {
-          started.add(position);
+        for (let trigger of triggers) {
+          const previousSizes = {
+            started: state.started.size,
+            completed: state.completed.size,
+          };
+          const triggered = findTriggeredSteps(store.objectives, trigger, {
+            started: new Set([...state.started]),
+            completed: new Set([...state.completed]),
+          });
+          if (
+            triggered.completed.size - previousSizes.completed === 0 &&
+            triggered.started.size - previousSizes.started === 0
+          ) {
+            continue;
+          }
+          for (let position of triggered.started) {
+            state.started.add(position);
+          }
+          for (let position of triggered.completed) {
+            state.completed.add(position);
+          }
         }
-        for (let position of triggered.completed) {
-          completed.add(position);
-        }
-        console.debug({ started: [...started], completed: [...completed] });
-        state.completed = completed;
-        state.started = started;
-        return state;
+        return { ...state };
       });
     },
   };

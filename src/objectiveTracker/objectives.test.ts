@@ -124,31 +124,6 @@ describe("objective tracker", () => {
           ])
         ).toEqual([[0], [2, 0, 0]]);
       });
-      test("resume from position", () => {
-        expect(
-          findAutoStartPositions(
-            [
-              { title: "", details: [""], steps: [], autostart: true },
-              { title: "", details: [""], steps: [] },
-              {
-                title: "",
-                subObjectives: [
-                  {
-                    title: "",
-                    subObjectives: [
-                      { title: "", details: [""], steps: [], autostart: true },
-                      { title: "", details: [""], steps: [] },
-                    ],
-                  },
-                  { title: "", details: [""], steps: [] },
-                ],
-              },
-              { title: "", details: [""], steps: [] },
-            ],
-            [1, 0]
-          )
-        ).toEqual([[2, 0, 0]]);
-      });
     });
     describe("find next objective", () => {
       test("flat objective list", () => {

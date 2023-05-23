@@ -1,7 +1,6 @@
 import type { Construct } from "../gameRules";
 import type { EventTag } from "../events/events";
 
-export const CompleteIntroduction = Symbol("introduction dialog completed");
 export const GuideOpened = Symbol("guide ui opened");
 export const FabricatorOpened = Symbol("fabricator panel opened");
 export const EditingQueue = Symbol("started editing fabricator build queue");
@@ -19,7 +18,6 @@ export type RepeatsTriggerWithContents = [
 export type RepeatsTrigger = RepeatCountTrigger | RepeatsTriggerWithContents;
 export type Trigger =
   | typeof GuideOpened
-  | typeof CompleteIntroduction
   | typeof FabricatorOpened
   | typeof EditingQueue
   | typeof AddBuildOrder

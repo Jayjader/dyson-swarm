@@ -4,8 +4,6 @@
   import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
   import type { Aside } from "./objectiveTracker/objectives";
 
-  import { CompleteIntroduction } from "./objectiveTracker/triggers";
-
   let introDialog: HTMLDialogElement;
   let step = 0;
 
@@ -39,7 +37,6 @@
 <dialog
   class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
   bind:this={introDialog}
-  on:close={() => objectives.handleTriggers([CompleteIntroduction])}
 >
   {#each dialogFragments as fragment, index (fragment.body + index)}
     {#if step >= index}

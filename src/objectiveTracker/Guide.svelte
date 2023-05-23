@@ -8,7 +8,7 @@
     getNestedItem,
     getNextObjective,
     getPositionOfFirstItem,
-    hasSubObjectives,
+    isNode,
     type Objective,
     walkObjectivePositions,
   } from "./objectives";
@@ -28,34 +28,34 @@
       | { objective: Objective; position: Position; next?: Position }
       | undefined,
   };
-
-  const store = getContext(OBJECTIVE_TRACKER_CONTEXT).objectives;
-  trackerState.objectives = store.objectives;
-  const storeSub = store.subscribe(({ open, active, completed, started }) => {
-    if (open && !trackerState.tracking.open) {
-      dialogElement.show();
-    }
-    trackerState.tracking = { open, active, completed, started };
-
-    debugProgress(started, completed, trackerState.objectives);
-    if (trackerState.objectives.length === 0) {
-      trackerState.viewing = undefined;
-    } else {
-      let position;
-      if (trackerState.tracking.active.length === 0) {
-        position = getPositionOfFirstItem(trackerState.objectives);
-      } else {
-        position = trackerState.tracking.active;
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
+  trackerState.objectives = objectives.objectives;
+  const storeSub = objectives.subscribe(
+    ({ open, active, completed, started }) => {
+      if (open && !trackerState.tracking.open) {
+        dialogElement.show();
       }
-      const next = getNextObjective(trackerState.objectives, position);
-      console.debug({ nextObjective: next });
-      trackerState.viewing = {
-        objective: getNestedItem(trackerState.objectives, position),
-        position,
-        next: next?.[1],
-      };
+      trackerState.tracking = { open, active, completed, started };
+
+      if (trackerState.objectives.length === 0) {
+        trackerState.viewing = undefined;
+      } else {
+        let position;
+        if (trackerState.tracking.active.length === 0) {
+          position = getPositionOfFirstItem(trackerState.objectives);
+        } else {
+          position = trackerState.tracking.active;
+        }
+        const next = getNextObjective(trackerState.objectives, position);
+        console.debug({ nextObjective: next });
+        trackerState.viewing = {
+          objective: getNestedItem(trackerState.objectives, position),
+          position,
+          next: next?.[1],
+        };
+      }
     }
-  });
+  );
   onDestroy(storeSub);
 
   function setViewing(position) {
@@ -66,9 +66,15 @@
     };
   }
 
+  $: debugProgress(
+    $objectives.started,
+    $objectives.completed,
+    objectives.objectives
+  );
+
   $: showNextButton =
     trackerState.viewing?.next &&
-    ((!hasSubObjectives(trackerState.viewing.objective) &&
+    ((!isNode(trackerState.viewing.objective) &&
       trackerState.viewing.objective.steps?.length === 0) ||
       trackerState.tracking.completed.has(
         JSON.stringify(trackerState.viewing.position)
@@ -77,7 +83,7 @@
 
 <dialog
   bind:this={dialogElement}
-  on:close={store.close}
+  on:close={objectives.close}
   class="flex-row flex-wrap items-stretch gap-1 border-4 border-slate-900 bg-slate-900 p-0"
 >
   <div
@@ -94,7 +100,7 @@
           trackerState.tracking.active,
           trackerState.viewing.position
         )}
-        on:click={() => store.setActive(trackerState.viewing.position)}
+        on:click={() => objectives.setActive(trackerState.viewing.position)}
       >
         {#if areEqual(trackerState.tracking.active, trackerState.viewing.position)}
           Currently
@@ -140,7 +146,7 @@
     {/if}
     {#if showNextButton}
       <CommonGuideButton
-        on:click={() => store.setActive(trackerState.viewing.next)}
+        on:click={() => objectives.setActive(trackerState.viewing.next)}
         >Next</CommonGuideButton
       >
     {/if}
@@ -165,7 +171,7 @@
             next: getNextObjective(
               trackerState.objectives,
               trackerState.tracking.active
-            ),
+            )?.[1],
           }),
           trackerState.tracking.active.forEach((_, i) =>
             dialogElement
@@ -180,7 +186,8 @@
       >
       <CommonGuideButton
         disabled={trackerState.tracking.active.length === 0}
-        on:click={() => store.setActive([])}>Clear Active</CommonGuideButton
+        on:click={() => objectives.setActive([])}
+        >Clear Active</CommonGuideButton
       >
       <input type="text" placeholder="Search..." class="col-span-2 m-2 p-2" />
       <CommonGuideButton

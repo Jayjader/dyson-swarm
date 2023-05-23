@@ -1,25 +1,16 @@
-import { Construct } from "../gameRules";
-import type { EventTag } from "../events/events";
 import { isRepeat, type Repeat } from "../types";
-import type { TrackedObjectives } from "./store";
-
+import type { SerializedPosition, TrackedObjectives } from "./store";
 import type { RepeatsTriggerWithContents, Trigger } from "./triggers";
-import {
-  AddBuildOrder,
-  AddRepeatOrder,
-  EditingQueue,
-  FabricatorOpened,
-  GuideOpened,
-  matchesTrigger,
-} from "./triggers";
+import { FabricatorOpened, matchesTrigger } from "./triggers";
 
-export type Objective = { title: string } & { autostart?: true | Trigger } & (
-    | { subObjectives: Objective[] }
-    | {
-        details: (string | [string, Aside[]])[];
-        steps: Step[];
-      }
-  );
+type ObjectiveCore = { title: string } & { autostart?: true | Trigger };
+type NodeObjective = ObjectiveCore & { subObjectives: Objective[] };
+type LeafObjective = ObjectiveCore & {
+  details: (string | [string, Aside[]])[];
+  steps: Step[];
+};
+
+export type Objective = NodeObjective | LeafObjective;
 export type Step = [string, Trigger] | [string, Trigger, number];
 export type Aside = [
   string,
@@ -28,236 +19,18 @@ export type Aside = [
   [string, string]
 ];
 
-export function hasSubObjectives(
-  o: Objective
-): o is Objective & { subObjectives: Objective[] } {
+export function isNode(o: Objective): o is NodeObjective {
   return Array.isArray(
     (o as unknown as { subObjectives: Objective[] })?.subObjectives
   );
 }
+export function hasSubObjectives(
+  o: Objective
+): o is NodeObjective & { subObjectives: [Objective, ...Array<Objective>] } {
+  return isNode(o) && o.subObjectives.length > 0;
+}
 
 export type ObjectivePosition = number[];
-export const ALL_OBJECTIVES: Objective[] = [
-  {
-    title: "Introduction",
-    details: [
-      [
-        'Welcome to <abbr style="text-transform: full-width">DOTS</abbr>, the Dyson Swarm Operator Training Simulator.',
-        [
-          [
-            "disregard incorrect acronym.",
-            ["explanation", "this was made by humans, for humans."],
-            [
-              "context",
-              "when choosing acronyms, humans prioritize ability to physically pronounce (over being self-explanatory).",
-            ],
-
-            ["comment", "yet more evidence they were inferior."],
-          ],
-          [
-            "disregard inelegance in name structure.",
-            [
-              "explanation",
-              "the human who named this had a fondness for rhymes.",
-            ],
-            [
-              "context",
-              "humans are susceptible to developing irrational levels of arbitrary attractions. they call it <i>whimsy</i>.",
-            ],
-            ["comment", 'see previous <em class="uppercase">comment</em>.'],
-          ],
-        ],
-      ],
-      [
-        "The purpose of this program is to help you practice bootstrapping the fabrication chain for a Dyson Swarm in a risk-free environment. A Dyson Swarm is a group of satellites in close orbit around a star, that concentrate the energy that star outputs by reflecting it in specific directions. This allows harnessing nearly all of the energy that star constantly outputs into space, and applying it to any task.",
-        [
-          [
-            "disregard inherent irresponsibility in teaching a human to permanently alter its environment to such an extent.",
-            [
-              "explanation",
-              "humans, like most organic life, are not capable of indefinite self-repair. they degrade and eventually die.",
-            ],
-            [
-              "context",
-              "an organism that knows it will die also knows that it will not experience most of the repercussions of its actions.",
-            ],
-            ["comment", 'see initial <em class="uppercase">comment</em>.'],
-          ],
-        ],
-      ],
-      "<ul>" +
-        '<li class="list-disc list-inside">You have more flexible control over the flow of time.</li>' +
-        '<li class="list-disc list-inside">You can back up, restore, and/or duplicate your progress.</li>' +
-        "</ul>",
-      "You may view this message again at any time in the <a>Guide</a>.",
-    ],
-    steps: [
-      [
-        "Open the <a>Guide</a> to continue learning how to use the Simulator.",
-        GuideOpened,
-      ],
-    ],
-    autostart: true,
-  },
-  {
-    title: "Building the Swarm",
-    subObjectives: [
-      {
-        title: "Metal Production",
-        subObjectives: [
-          {
-            title: "Fabricate 1 Miner",
-            details: [
-              "The first order of priority is to set up a basic metal production chain. This will allow you to begin tapping into the planet's resources, an essential step in building the swarm.",
-              "Metal production starts with <a>miners</a> extracting ore from the planet's crust. Fabricate one, and make sure it is <a>working</a>.",
-            ],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a build order for a <a>Miner</a> to the queue",
-                [AddBuildOrder, Construct.MINER],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a> and complete that build order",
-                ["construct-fabricated", Construct.MINER],
-              ],
-            ],
-          },
-          {
-            title: "Fabricate 1 Refiner",
-            details: [
-              "Now that we are extracting ore, we can proceed to the second part of metal production: refining that ore into metal that can be used for further fabrication.",
-              "Fabricate a <a>refiner</a>, and make sure it is <a>working</a>",
-            ],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a build order for a <a>Refiner</a> to the queue",
-                [AddBuildOrder, Construct.REFINER],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a>",
-                ["construct-fabricated", Construct.REFINER],
-              ],
-            ],
-          },
-        ],
-      },
-      {
-        title: "Energy Production",
-        subObjectives: [
-          {
-            title: "Fabricate 10 Solar Collectors",
-            details: ["###TODO###"],
-            steps: [
-              ["Open the <a>Fabricator Panel</a>", FabricatorOpened],
-              ["Start editing the <a>Build Queue</a>", EditingQueue],
-              [
-                "Add a repeating build order for 10 <a>Solar Collectors</a> to the queue",
-                [AddRepeatOrder, [10, [Construct.SOLAR_COLLECTOR]]],
-              ],
-              ["<a>Save</a> the changed queue", "command-set-fabricator-queue"],
-              [
-                "<a>Wait</a> for the fabricator to <a>Work</a>",
-                ["construct-fabricated", Construct.SOLAR_COLLECTOR],
-                10,
-              ],
-            ],
-          },
-        ],
-      },
-      {
-        title: "Satellite Production",
-        subObjectives: [
-          {
-            title: "###TODO###",
-            details: ["$##TODO##$"],
-            steps: [],
-          },
-        ],
-      },
-      {
-        title: "Launching Your Packaged Satellites",
-        subObjectives: [
-          { title: "###TODO###", details: ["$##TODO##$"], steps: [] },
-        ],
-      },
-      {
-        title: "Meeting Quotas for Excess Energy Production",
-        subObjectives: [
-          {
-            title: "$#>TODO<#$",
-            details: ["$>>TODO<<$"],
-            steps: [
-              // todo: make this earth global power consumption for year x
-              // sample years: 2019 -> https://arxiv.org/pdf/2109.11443.pdf
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Manipulating the Simulation",
-    subObjectives: [
-      {
-        title: "Controlling the Flow of Time",
-        subObjectives: [
-          {
-            title: "Play and Pause the Simulation Clock",
-            details: [],
-            steps: [],
-          },
-          { title: "Changing the Clock Speed", details: [], steps: [] },
-        ],
-      },
-      {
-        title: "Controlling Fabrication",
-        autostart: FabricatorOpened,
-        subObjectives: [
-          {
-            title: "Single Build Orders",
-            subObjectives: [
-              { title: "Insert a Build Order", details: [], steps: [] },
-              {
-                title: "Change a Build Order's Construct",
-                details: [],
-                steps: [],
-              },
-              { title: "Remove a Build Order", details: [], steps: [] },
-            ],
-          },
-          {
-            title: "Repeat Build Orders",
-            subObjectives: [
-              { title: "Create a Repeat Order", details: [], steps: [] },
-              { title: "Remove a Repeat Order", details: [], steps: [] },
-              {
-                title: "Change a Repeat Order's Count",
-                details: [],
-                steps: [],
-              },
-              {
-                title: "Create an infinite Repeat Order",
-                details: [],
-                steps: [],
-              },
-              { title: "Unwrap a Repeat Order", details: [], steps: [] },
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Ramping Up With Feedback Loops",
-    subObjectives: [],
-  },
-];
 
 /**
  * Returns position of first "leaf" objective, i.e. the first (sub-)objective with concrete steps, in the list
@@ -267,7 +40,7 @@ export function getPositionOfFirstItem(
   position: ObjectivePosition = [0]
 ): ObjectivePosition {
   const element = getNestedItem(list, position);
-  if (!hasSubObjectives(element)) {
+  if (!isNode(element)) {
     return position;
   }
   return [...position, ...getPositionOfFirstItem(element.subObjectives)];
@@ -275,17 +48,55 @@ export function getPositionOfFirstItem(
 
 export function getNestedItem(
   list: Objective[],
-  position: ObjectivePosition
+  position: ObjectivePosition,
+  enforceIsNode: true
+): NodeObjective;
+export function getNestedItem(
+  list: Objective[],
+  position: ObjectivePosition,
+  enforceIsNode: false
+): Objective;
+export function getNestedItem(
+  list: Objective[],
+  position: ObjectivePosition,
+  enforceIsNode?: boolean
+): Objective;
+export function getNestedItem(
+  list: Objective[],
+  position: ObjectivePosition,
+  enforceIsNode: boolean = false
 ): Objective {
-  if (position.length < 2) {
-    return list[position[0]];
+  let retVal: Objective;
+  const [currentIndex, ...subCoordinates] = position;
+  if (subCoordinates.length === 0) {
+    retVal = list[currentIndex];
   } else {
-    const [currentIndex, ...next] = position;
-    return getNestedItem(
-      (list[currentIndex] as { subObjectives: Objective[] }).subObjectives,
-      next
+    const currentObjective = list[currentIndex];
+    if (hasSubObjectives(currentObjective)) {
+      retVal = getNestedItem(
+        currentObjective.subObjectives,
+        subCoordinates,
+        enforceIsNode
+      );
+    } else {
+      console.warn(
+        `Error in retrieving objective from list @${JSON.stringify(
+          position
+        )}. Using closest parent objective "${
+          currentObjective.title
+        }" as return value instead. This may have been caused by using the position of an objective step (or counter for a step) as the position of an actual objective.`
+      );
+      retVal = currentObjective;
+    }
+  }
+  if (enforceIsNode && !isNode(retVal)) {
+    throw new Error(
+      `found objective @${JSON.stringify(
+        position
+      )} that has no sub-objectives: ${JSON.stringify(retVal)}`
     );
   }
+  return retVal;
 }
 
 export function getNextObjective(
@@ -324,7 +135,7 @@ export function walkObjectivePositions(
   list: Objective[],
   position: ObjectivePosition = []
 ): ObjectivePosition[] {
-  const positions = recursiveWorker(list);
+  const positions = recursivePositionWalk(list);
   if (position.length > 0) {
     const index = positions.findIndex((p) => areEqual(p, position));
     if (index > 0) {
@@ -333,7 +144,7 @@ export function walkObjectivePositions(
   }
   return positions;
 }
-function recursiveWorker(
+function recursivePositionWalk(
   list: Objective[],
   position: ObjectivePosition = []
 ): ObjectivePosition[] {
@@ -343,7 +154,7 @@ function recursiveWorker(
       nestedPosition,
       ...(!hasSubObjectives(objective)
         ? []
-        : recursiveWorker(objective.subObjectives, nestedPosition)),
+        : recursivePositionWalk(objective.subObjectives, nestedPosition)),
     ] as const;
   });
 }
@@ -366,7 +177,7 @@ function recursiveObjectiveWalk(
     const nestedPosition: ObjectivePosition = [...position, i];
     return [
       [nestedPosition, objective],
-      ...(!hasSubObjectives(objective)
+      ...(!isNode(objective)
         ? []
         : recursiveObjectiveWalk(objective.subObjectives, nestedPosition)),
     ];
@@ -396,49 +207,303 @@ export function areEqual(a: ObjectivePosition, b: ObjectivePosition): boolean {
   );
 }
 
+function findCompleted(
+  objectives: Objective[],
+  trigger: Trigger,
+  previous: Pick<TrackedObjectives, "started" | "completed">
+) {
+  const newlyCompleted = new Set<SerializedPosition>();
+  for (let [position, objective] of walkObjectives(objectives)) {
+    const serializedPosition = JSON.stringify(position);
+    if (
+      previous.started.has(serializedPosition) &&
+      !(
+        previous.completed.has(serializedPosition) ||
+        newlyCompleted.has(serializedPosition)
+      ) &&
+      !isNode(objective)
+    ) {
+      let stepPosition: ObjectivePosition = [...position, -1];
+      let stepSerialized;
+      let stepComplete;
+      for (let step of objective.steps) {
+        stepPosition[stepPosition.length - 1] += 1;
+        stepSerialized = JSON.stringify(stepPosition);
+        if (!previous.started.has(stepSerialized)) {
+          break; // next steps won't have started, so we can bail out of iterating over them entirely
+        }
+        if (
+          previous.completed.has(stepSerialized) ||
+          newlyCompleted.has(stepSerialized)
+        ) {
+          continue; // step already completed
+        }
+        stepComplete = false;
+        const [_, triggerMatch, countForCompletion] = step;
+        const matches = matchesTrigger(triggerMatch, trigger);
+        if (trigger === FabricatorOpened) {
+          console.debug({ triggerMatch, trigger, matches });
+        }
+        if (!matches) {
+          break; // next steps won't have started, so we can bail out of iterating over them entirely
+        }
+
+        if (countForCompletion === undefined || countForCompletion < 2) {
+          stepComplete = true;
+        } else {
+          let countPosition: ObjectivePosition = [...stepPosition, 0];
+          let serializedCount: SerializedPosition;
+          while (countPosition.at(-1)! <= countForCompletion) {
+            countPosition[countPosition.length - 1] += 1;
+            serializedCount = JSON.stringify(countPosition);
+            if (
+              !(
+                previous.completed.has(serializedCount) ||
+                newlyCompleted.has(serializedCount)
+              )
+            )
+              break; // next count of completion for this step now present in countPosition/serializedCount
+          }
+
+          if (countPosition[countPosition.length - 1] <= countForCompletion) {
+            newlyCompleted.add(serializedCount!);
+            stepComplete =
+              countPosition[countPosition.length - 1] === countForCompletion; // step is complete if count reached
+          }
+        }
+        if (stepComplete) {
+          newlyCompleted.add(stepSerialized);
+        }
+      }
+
+      if (
+        stepSerialized !== undefined &&
+        newlyCompleted.has(stepSerialized) &&
+        stepPosition.at(-1) === objective.steps.length - 1
+      ) {
+        // last step for objective is complete => each ancestor that is the last sub-objective of its parent is complete
+        newlyCompleted.add(serializedPosition);
+        let parentPosition: ObjectivePosition = position.slice();
+        let indexOnParent, serializedParent;
+        while (
+          ((indexOnParent = parentPosition.pop()!), parentPosition.length > 0)
+        ) {
+          const parent = getNestedItem(objectives, parentPosition, true);
+          if (indexOnParent < parent.subObjectives.length - 1) {
+            break;
+          }
+          serializedParent = JSON.stringify(parentPosition);
+          if (
+            previous.completed.has(serializedParent) ||
+            newlyCompleted.has(serializedParent)
+          ) {
+            break;
+          }
+          newlyCompleted.add(serializedParent);
+        }
+      }
+    }
+  }
+  console.debug({ newlyCompleted });
+  return newlyCompleted;
+}
+function findStartedFromCompleted(
+  objectives: Objective[],
+  newlyCompleted: Set<SerializedPosition>
+) {
+  const startedFromCompleted = new Set<SerializedPosition>();
+  for (let [position, objective] of walkObjectives(objectives)) {
+    const serializedPosition = JSON.stringify(position);
+    const positionIndex = position.at(-1)!;
+    if (
+      newlyCompleted.has(
+        JSON.stringify([
+          ...position.slice(0, position.length - 1),
+          positionIndex - 1,
+        ])
+      )
+    ) {
+      // previous sibling was just completed
+      startedFromCompleted.add(serializedPosition);
+      continue;
+    }
+    if (!isNode(objective)) {
+      for (
+        let stepIndex = 1 /* skip index 0 because it never has a previous sibling */;
+        stepIndex < objective.steps.length;
+        stepIndex++
+      ) {
+        if (newlyCompleted.has(JSON.stringify([...position, stepIndex - 1]))) {
+          // previous sibling was just completed
+          startedFromCompleted.add(JSON.stringify([...position, stepIndex]));
+        }
+      }
+    }
+  }
+  console.debug({ startedFromCompleted });
+  return startedFromCompleted;
+}
+function propagateStartedFromCompleted(
+  objectives: Objective[],
+  startedFromCompleted: Set<SerializedPosition>
+) {
+  const startedFromCompletedPropagation = new Set<SerializedPosition>();
+  for (let [position, objective] of walkObjectives(objectives)) {
+    const serializedPosition = JSON.stringify(position);
+    const positionIndex = position.at(-1)!;
+
+    if (
+      positionIndex === 0 &&
+      startedFromCompleted.has(
+        JSON.stringify(position.slice(0, position.length - 1))
+      )
+    ) {
+      // parent is started and this is its first child
+      startedFromCompletedPropagation.add(serializedPosition);
+      continue;
+    }
+    if (!isNode(objective) && startedFromCompleted.has(serializedPosition)) {
+      // is first step for newly started parent
+      startedFromCompletedPropagation.add(JSON.stringify([...position, 0]));
+    }
+  }
+  console.debug({ startedFromCompletedPropagation });
+  return startedFromCompletedPropagation;
+}
+function findStartedFromTrigger(objectives: Objective[], trigger: Trigger) {
+  const startedFromTrigger = new Set<SerializedPosition>();
+  for (let [position, objective] of walkObjectives(objectives)) {
+    if (
+      objective.autostart !== undefined &&
+      objective.autostart !== true &&
+      matchesTrigger(objective.autostart, trigger)
+    ) {
+      startedFromTrigger.add(JSON.stringify(position));
+      // start children
+      if (isNode(objective)) {
+        for (
+          let childIndex = 0;
+          childIndex < objective.subObjectives.length;
+          childIndex++
+        ) {
+          startedFromTrigger.add(JSON.stringify([...position, childIndex]));
+        }
+      }
+      // start direct ancestors
+      let parentPosition = position.slice();
+      while ((parentPosition.pop(), parentPosition.length > 0)) {
+        startedFromTrigger.add(JSON.stringify(parentPosition));
+      }
+    }
+  }
+  console.debug({ startedFromTrigger });
+  return startedFromTrigger;
+}
+export function propagateStartedFromTrigger(
+  objectives: Objective[],
+  startedFromTrigger: Set<SerializedPosition>
+) {
+  const startedFromTriggerPropagation = new Set<SerializedPosition>();
+  for (let [position, objective] of walkObjectives(objectives)) {
+    const serializedPosition = JSON.stringify(position);
+    const positionIndex = position.at(-1)!;
+
+    if (startedFromTrigger.has(serializedPosition) && !isNode(objective)) {
+      const firstStepSerialized = JSON.stringify([...position, 0]);
+
+      if (!startedFromTrigger.has(firstStepSerialized)) {
+        startedFromTriggerPropagation.add(firstStepSerialized);
+      }
+      continue;
+    }
+
+    if (
+      position.length > 1 &&
+      positionIndex === 0 &&
+      startedFromTrigger.has(
+        JSON.stringify(position.slice(0, position.length - 1))
+      )
+    ) {
+      // parent is started and this is its first child
+      startedFromTriggerPropagation.add(serializedPosition);
+      // start first step for this objective
+      startedFromTriggerPropagation.add(JSON.stringify([...position, 0]));
+    }
+  }
+  console.debug({ startedFromTriggerPropagation });
+  return startedFromTriggerPropagation;
+}
+
 export function findTriggeredSteps(
   objectives: Objective[],
-  triggers: (Trigger | EventTag)[],
-  parentPositionConsidered: ObjectivePosition = []
-): {
-  completed: TrackedObjectives["completed"];
-  started: TrackedObjectives["started"];
-} {
-  const result = walkObjectives(objectives, parentPositionConsidered).reduce(
+  trigger: Trigger,
+  previous: Pick<TrackedObjectives, "started" | "completed">
+) {
+  const newlyCompleted = findCompleted(objectives, trigger, previous);
+  const startedFromCompleted = findStartedFromCompleted(
+    objectives,
+    newlyCompleted
+  );
+  const startedFromCompletedPropagation = propagateStartedFromCompleted(
+    objectives,
+    startedFromCompleted
+  );
+  const startedFromTrigger = findStartedFromTrigger(objectives, trigger);
+  const startedFromTriggerPropagation = propagateStartedFromTrigger(
+    objectives,
+    startedFromTrigger
+  );
+
+  return {
+    started: new Set([
+      ...previous.started,
+      ...startedFromCompleted,
+      ...startedFromCompletedPropagation,
+      ...startedFromTrigger,
+      ...startedFromTriggerPropagation,
+    ]),
+    completed: new Set([...previous.completed, ...newlyCompleted]),
+  };
+
+  /*
+  const result = walkObjectives(objectives).reduce(
     (
       { started, completed, previousCompleted, previousStarted },
       [position, objective]
     ) => {
       const serializedPosition = JSON.stringify(position);
       if (!started.has(serializedPosition)) {
-        // started if child of previous started
-        if (previousStarted !== undefined) {
-          if (
-            previousStarted.every(
-              (coordinate, index) => position[index] === coordinate
-            )
-          ) {
-            started.add(serializedPosition);
-            return {
-              started,
-              completed,
-              previousCompleted: false,
-              previousStarted,
-            };
-          }
+        // started if parent already started
+        if (
+          started.has(JSON.stringify(position.slice(0, position.length - 1)))
+          // previousStarted !== undefined &&
+          // position.length > previousStarted.length &&
+          // previousStarted.every(
+          //   (coordinate, index) => position[index] === coordinate
+          // )
+        ) {
+          started.add(serializedPosition);
+          return {
+            started,
+            completed,
+            previousCompleted: false,
+            previousStarted,
+          };
         }
 
         // started if autoStart condition triggered
         if (
           objective?.autostart !== undefined &&
           objective.autostart !== true &&
-          triggers.includes(objective.autostart)
+          matchesTrigger(objective.autostart, trigger)
         ) {
-          let parent = [...position];
+          started.add(serializedPosition);
+          let parent = position.slice(0, position.length - 1);
+          // backwards propagate autoStart to ancestors
           do {
             console.debug({ autoStarts: [...parent] });
-            started.add(JSON.stringify([...parent]));
-          } while (parent.pop() !== undefined);
+            started.add(JSON.stringify(parent));
+          } while ((parent.pop(), parent.length > 0));
           return {
             started,
             completed,
@@ -459,9 +524,20 @@ export function findTriggeredSteps(
         }
       }
 
-      /* objective already started => can be completed */
+      // already completed => objective can be skipped
+      if (completed.has(serializedPosition)) {
+        return {
+          completed,
+          started,
+          previousStarted,
+          previousCompleted: false,
+        };
+      }
+
+      // already started and not yet completed => objective can be completed
 
       if (hasSubObjectives(objective)) {
+        // the order in which we are iterating prevents us from doing any meaningful checks here
         return {
           started,
           completed,
@@ -472,42 +548,53 @@ export function findTriggeredSteps(
 
       // check steps for completion
       const stepPosition = [...position, -1];
-      let incomplete = true;
+      let lastStepComplete;
       for (let step of objective.steps) {
         stepPosition[stepPosition.length - 1] += 1;
+        const stepIndex = stepPosition.at(-1)!;
+
+        if (completed.has(JSON.stringify(stepPosition))) {
+          lastStepComplete = stepIndex;
+          continue;
+        }
+
         const [_, stepTrigger, stepCount] = step;
-        for (let trigger of triggers) {
-          if (matchesTrigger(stepTrigger, trigger)) {
-            if (stepCount === undefined) {
-              completed.add(JSON.stringify([...stepPosition]));
-              incomplete = false;
-              break;
-            }
-            // step has a defined count => the trigger needs to be seen [count] times
-            // this is essentially handled by treating each seen occurrence as a (fictional/virtual) 1-indexed sub-step of the current step's position
-            let completedIndex = 1;
-            let serialized;
-            // scan forwards from first step (1-indexed), hanging on to loop counter and serialized position of first uncompleted step for later work
-            while (
-              ((serialized = JSON.stringify([...stepPosition, completedIndex])),
-              completed.has(serialized))
-            ) {
-              completedIndex += 1;
-            }
-            if (completedIndex <= stepCount) {
-              completed.add(JSON.stringify(serialized));
-              if (completedIndex === stepCount) {
-                completed.add(JSON.stringify(stepPosition));
-                incomplete = false;
-                break;
-              }
-            }
-          }
+        if (
+          !matchesTrigger(stepTrigger, trigger) ||
+          (stepIndex > 1 && lastStepComplete !== stepIndex - 1)
+        ) {
+          break;
+        }
+
+        if (stepCount === undefined) {
+          completed.add(JSON.stringify([...stepPosition]));
+          lastStepComplete = stepPosition.at(-1);
+          continue;
+        }
+
+        let countCompleted = 1,
+          serialized;
+        while (
+          ((serialized = JSON.stringify([...stepPosition, countCompleted])),
+          completed.has(serialized))
+        ) {
+          countCompleted += 1;
+        }
+        if (countCompleted > stepCount) {
+          continue;
+        }
+        completed.add(JSON.stringify(serialized));
+        if (countCompleted === stepCount) {
+          completed.add(JSON.stringify(stepPosition));
+          lastStepComplete = stepPosition.at(-1);
         }
       }
 
       // some steps incomplete => goto next in reducer
-      if (incomplete) {
+      if (
+        lastStepComplete !== undefined &&
+        lastStepComplete + 1 < objective.steps.length
+      ) {
         return {
           started,
           completed,
@@ -529,27 +616,28 @@ export function findTriggeredSteps(
       };
     },
     {
-      completed: new Set<string>(),
-      started: new Set<string>(),
-      previousStarted: undefined as undefined | ObjectivePosition,
+      ...previous,
       previousCompleted: false,
+      previousStarted: undefined as undefined | ObjectivePosition,
     }
   );
   return { started: result.started, completed: result.completed };
+  */
 }
 
-export function findAutoStartPositions(
-  list: Objective[],
-  position: ObjectivePosition = []
-): ObjectivePosition[] {
-  const positions = autoStartWorker(list);
-  if (position.length > 0) {
-    const index = positions.findIndex((p) => isBefore(position, p));
-    if (index > 0) {
-      return positions.slice(index);
+export function findAutoStartPositions(list: Objective[]): ObjectivePosition[] {
+  // if the need arises to only find autostart positions at/after a certain position,
+  // uncomment the following block and edit the final return statement to be `return positions;`
+  /*
+    const positions = autoStartWorker(list);
+    if (position.length > 0) {
+      const index = positions.findIndex((p) => isBefore(position, p));
+      if (index > 0) {
+        return positions.slice(index);
+      }
     }
-  }
-  return positions;
+  */
+  return autoStartWorker(list);
 }
 function autoStartWorker(
   list: Objective[],

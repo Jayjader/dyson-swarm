@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Objective } from "./objectives";
-  import { areEqual, isBefore } from "./objectives";
+  import { areEqual, isNode, isBefore } from "./objectives";
 
   type Position = [number, ...number[]];
   export let data: { objective: Objective; position: Position };
@@ -17,7 +17,7 @@
     !areEqual(data.position, active);
 </script>
 
-{#if data?.objective && data.objective?.details === undefined}
+{#if data?.objective && isNode(data.objective)}
   <details class="ml-2" data-position={serializedPosition}>
     <summary
       class="cursor-pointer rounded border-2 border-slate-800 p-2"
