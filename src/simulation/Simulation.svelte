@@ -26,7 +26,10 @@
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
   import { SETTINGS_CONTEXT } from "../settings/store";
-  import type { ObjectiveTracker } from "../objectiveTracker/store";
+  import type {
+    ObjectiveTracker,
+    TrackedObjectives,
+  } from "../objectiveTracker/store";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import Introduction from "../Introduction.svelte";
@@ -91,17 +94,13 @@
 
   export let objectives: ObjectiveTracker;
   let tracked = [],
-    guideOpen = false,
-    showIntro = false;
-  const objectiveSub = objectives.subscribe(({ open, active, completed }) => {
+    guideOpen = false;
+  setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });
+  $: {
+    const { active, open }: TrackedObjectives = $objectives;
     tracked = active;
     guideOpen = open;
-    showIntro = !completed.has(
-      "[0]" /* Introduction is first in objective list (check the actual data if reading this is not enough to convince you) */
-    );
-  });
-  setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });
-  onDestroy(objectiveSub);
+  }
 
   scheduleCallback(outsideClockLoop);
 </script>
@@ -109,9 +108,6 @@
 <main
   class="m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2 p-0"
 >
-  {#if showIntro}
-    <Introduction />
-  {/if}
   <div class="flex flex-grow-0 flex-col gap-2">
     <div class="flex flex-row justify-between text-stone-200">
       <ResourceHud {resources} />

@@ -7,7 +7,6 @@
     areEqual,
     getNestedItem,
     getNextObjective,
-    getPositionOfFirstItem,
     isNode,
     type Objective,
     walkObjectivePositions,
@@ -30,33 +29,26 @@
   };
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
   trackerState.objectives = objectives.objectives;
-  const storeSub = objectives.subscribe(
-    ({ open, active, completed, started }) => {
+  onDestroy(
+    objectives.subscribe(({ open, active, completed, started }) => {
       if (open && !trackerState.tracking.open) {
         dialogElement.show();
       }
       trackerState.tracking = { open, active, completed, started };
 
-      if (trackerState.objectives.length === 0) {
+      if (
+        trackerState.objectives.length === 0 ||
+        trackerState.tracking.active.length === 0
+      ) {
         trackerState.viewing = undefined;
       } else {
-        let position;
-        if (trackerState.tracking.active.length === 0) {
-          position = getPositionOfFirstItem(trackerState.objectives);
-        } else {
-          position = trackerState.tracking.active;
-        }
-        const next = getNextObjective(trackerState.objectives, position);
-        console.debug({ nextObjective: next });
-        trackerState.viewing = {
-          objective: getNestedItem(trackerState.objectives, position),
-          position,
-          next: next?.[1],
-        };
+        const position = trackerState.tracking.active;
+        const objective = getNestedItem(trackerState.objectives, position);
+        const next = getNextObjective(trackerState.objectives, position)?.[1];
+        trackerState.viewing = { objective, position, next };
       }
-    }
+    })
   );
-  onDestroy(storeSub);
 
   function setViewing(position) {
     trackerState.viewing = {
@@ -95,19 +87,22 @@
           {trackerState.viewing.objective.title}
         {/if}
       </h2>
-      <CommonGuideButton
-        disabled={areEqual(
-          trackerState.tracking.active,
-          trackerState.viewing.position
-        )}
-        on:click={() => objectives.setActive(trackerState.viewing.position)}
-      >
-        {#if areEqual(trackerState.tracking.active, trackerState.viewing.position)}
-          Currently
-        {:else}
-          Set As
-        {/if} Active
-      </CommonGuideButton>
+      {#if trackerState.viewing}
+        <CommonGuideButton
+          disabled={trackerState.viewing === undefined ||
+            areEqual(
+              trackerState.tracking.active,
+              trackerState.viewing.position
+            )}
+          on:click={() => objectives.setActive(trackerState.viewing.position)}
+        >
+          {#if areEqual(trackerState.tracking.active, trackerState.viewing.position)}
+            Currently
+          {:else}
+            Set As
+          {/if} Active
+        </CommonGuideButton>
+      {/if}
     </div>
     <div class="flex flex-row flex-wrap gap-4">
       <h3>Details:</h3>
@@ -115,7 +110,7 @@
         <div class="flex flex-shrink flex-col flex-nowrap">
           {#each trackerState.viewing.objective.details as detail}
             <p class="max-w-lg">
-              {@html Array.isArray(detail) ? detail[0] : detail}
+              {@html detail.main}
             </p>
           {/each}
         </div>

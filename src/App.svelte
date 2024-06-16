@@ -19,6 +19,7 @@
     type ObjectiveTracker,
   } from "./objectiveTracker/store";
   import { makeSimulationStore } from "./events";
+  import Introduction from "./Introduction.svelte";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
@@ -26,7 +27,7 @@
   setContext(APP_UI_CONTEXT, { appStateStack });
   let objectiveTracker: ObjectiveTracker;
 
-  // $: console.log($appStateStack);
+  let showIntro = false;
 </script>
 
 {#if $appStateStack.at(-1) === MainMenu}
@@ -52,6 +53,7 @@
             ),
             objectiveTracker
           );
+          showIntro = true;
         }}>Start New Simulation</button
       >
       <button
@@ -90,6 +92,12 @@
 {:else if $appStateStack.at(-1) === SaveMenu}
   <SaveSlots />
 {:else}
+  {#if showIntro && objectiveTracker}
+    <Introduction
+      fragments={objectiveTracker.objectives[0].details}
+      on:close={() => (showIntro = false)}
+    />
+  {/if}
   <Simulation
     simulation={$appStateStack[1]}
     objectives={$appStateStack[2]}

@@ -1,12 +1,12 @@
 import { isRepeat, type Repeat } from "../types";
 import type { SerializedPosition, TrackedObjectives } from "./store";
 import type { RepeatsTriggerWithContents, Trigger } from "./triggers";
-import { FabricatorOpened, matchesTrigger } from "./triggers";
+import { matchesTrigger } from "./triggers";
 
 type ObjectiveCore = { title: string } & { autostart?: true | Trigger };
 type NodeObjective = ObjectiveCore & { subObjectives: Objective[] };
 type LeafObjective = ObjectiveCore & {
-  details: (string | [string, Aside[]])[];
+  details: { main: string; asides?: Aside[] }[];
   steps: Step[];
 };
 
@@ -51,11 +51,6 @@ export function getNestedItem(
   position: ObjectivePosition,
   enforceIsNode: true
 ): NodeObjective;
-export function getNestedItem(
-  list: Objective[],
-  position: ObjectivePosition,
-  enforceIsNode: false
-): Objective;
 export function getNestedItem(
   list: Objective[],
   position: ObjectivePosition,

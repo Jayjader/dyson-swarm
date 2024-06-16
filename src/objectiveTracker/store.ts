@@ -5,6 +5,7 @@ import {
   propagateStartedFromTrigger,
   findTriggeredSteps,
   getNestedItem,
+  walkObjectivePositions,
 } from "./objectives";
 import type { Trigger } from "./triggers";
 import { GuideOpened } from "./triggers";
@@ -19,21 +20,23 @@ export type TrackedObjectives = {
 };
 function init(
   tracking: TrackedObjectives,
-  objectives: Objective[]
+  objectives: Objective[],
+  withTutorial = false
 ): TrackedObjectives {
   const autoStarts = new Set(
-    findAutoStartPositions(objectives).map((position) =>
-      JSON.stringify(position)
-    )
+    (withTutorial ? findAutoStartPositions : walkObjectivePositions)(
+      objectives
+    ).map((position) => JSON.stringify(position))
   );
-  console.debug({ init: [...autoStarts] });
   for (let position of [
     ...autoStarts,
     ...propagateStartedFromTrigger(objectives, autoStarts),
   ]) {
     tracking.started.add(position);
   }
-  console.debug({ initallyStarted: tracking.started });
+  if (withTutorial) {
+    tracking.active = [0]; // Introduction
+  }
   return tracking;
 }
 export function makeObjectiveTracker(
@@ -43,9 +46,12 @@ export function makeObjectiveTracker(
     started: new Set([]),
     completed: new Set([]),
     active: [],
-  }
+  },
+  withTutorial = false
 ) {
-  const { update, subscribe } = writable(init(tracking, objectives));
+  const { update, subscribe } = writable(
+    init(tracking, objectives, withTutorial)
+  );
 
   const store = {
     objectives,
@@ -82,7 +88,7 @@ export function makeObjectiveTracker(
           state.completed.clear(),
           state.started.clear(),
           (state.active = []),
-          init(state, store.objectives)
+          init(state, store.objectives, withTutorial)
         )
       ),
     handleTriggers: (triggers: Trigger[]) => {

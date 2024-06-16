@@ -1,26 +1,13 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
-  import { getContext, onMount } from "svelte";
-  import { OBJECTIVE_TRACKER_CONTEXT } from "./objectiveTracker/store";
-  import type { Aside } from "./objectiveTracker/objectives";
+  import { onMount } from "svelte";
+
+  export let fragments;
 
   let introDialog: HTMLDialogElement;
   let step = 0;
 
   onMount(() => introDialog.showModal());
-
-  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
-  const dialogFragments: { body: string; asides?: Aside[] }[] =
-    objectives.objectives[0].details.map((fragment) => {
-      if (Array.isArray(fragment)) {
-        const [body, asides] = fragment;
-        return {
-          body,
-          asides,
-        };
-      }
-      return { body: fragment };
-    });
 
   const STANDARD_DELAY = 275; // milliseconds
   function blockFollowupDelay(index: number, asideIndex: number): number {
@@ -33,21 +20,21 @@
   }
 </script>
 
-<!-- todo: only complete if confirm'd -->
 <dialog
   class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
   bind:this={introDialog}
+  on:close
 >
-  {#each dialogFragments as fragment, index (fragment.body + index)}
+  {#each fragments as fragment, index (fragment.main + index)}
     {#if step >= index}
       <p in:fly={{ x: -400, delay: index > 0 ? 0 : STANDARD_DELAY }}>
-        {#if index < dialogFragments.length - 2}
+        {#if index < fragments.length - 2}
           <em class="uppercase">
-            {#if index === 0}begin{:else if index === dialogFragments.length - 2}conclude{:else}continue{/if}
+            {#if index === 0}begin{:else if index === fragments.length - 2}conclude{:else}continue{/if}
             narration:
           </em>
         {/if}
-        {@html fragment.body}
+        {@html fragment.main}
       </p>
       {#if fragment.asides}
         <ul class="flex flex-row">
@@ -79,7 +66,7 @@
   {/each}
 
   <form method="dialog" class="flex flex-row flex-nowrap justify-center">
-    {#if step === dialogFragments.length - 1}
+    {#if step === fragments.length - 1}
       <button type="submit" class="rounded border-2 border-slate-500 p-2">
         Begin!
       </button>
