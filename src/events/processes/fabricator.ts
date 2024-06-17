@@ -18,7 +18,8 @@ export type Fabricator = EventProcessor<
 >;
 
 export function createFabricator(
-  id: Fabricator["id"] = "fabricator-0"
+  id: Fabricator["id"] = "fabricator-0",
+  startingQueue: BuildOrder[] = []
 ): Fabricator {
   return {
     id,
@@ -27,7 +28,7 @@ export function createFabricator(
     data: {
       working: true,
       job: null,
-      queue: [],
+      queue: startingQueue,
       received: [],
     },
   };
@@ -60,12 +61,11 @@ export function fabricatorProcess(
         break;
       case "command-set-fabricator-queue":
         fabricator.data.queue = event.queue;
-        const busEvent = {
+        emitted.push({
           tag: "fabricator-queue-set",
           queue: event.queue,
           beforeTick: event.afterTick + 1,
-        } as const;
-        emitted.push(busEvent);
+        });
         break;
       case "command-clear-fabricator-job":
         fabricator.data.job = null;

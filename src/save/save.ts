@@ -8,7 +8,7 @@ import { SUBSCRIPTIONS } from "../events/subscriptions";
 import type { EventTag } from "../events/events";
 import { createPowerGrid } from "../events/processes/powerGrid";
 import { createStorage } from "../events/processes/storage";
-import { Resource } from "../gameRules";
+import { Construct, Resource } from "../gameRules";
 import { createStar } from "../events/processes/star";
 import { createPlanet } from "../events/processes/planet";
 import { createCollectorManager } from "../events/processes/collector";
@@ -90,7 +90,10 @@ export function newGame(): Processor[] {
     createFactoryManager(),
     createLauncherManager(),
     createSwarm(),
-    createFabricator(),
+    createFabricator("fabricator-0", [
+      { building: Construct.MINER },
+      { building: Construct.REFINER },
+    ]),
   ];
 }
 
