@@ -21,7 +21,7 @@
 </script>
 
 <dialog
-  class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all"
+  class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all p-2 bg-slate-100"
   bind:this={introDialog}
   on:close
 >
@@ -43,7 +43,7 @@
               class="shrink-0 grow basis-1/2"
               in:fly={{ x: 100, delay: blockFollowupDelay(index, asideIndex) }}
             >
-              <details class="ml-2 rounded-2xl bg-slate-200 p-3">
+              <details class="ml-2 rounded-2xl bg-slate-300 p-3">
                 <summary class="cursor-pointer uppercase">aside</summary>
                 <aside class="flex flex-col justify-between gap-2">
                   {#each aside as segment, segmentIndex (resolveAsKey(segment) + segmentIndex)}
