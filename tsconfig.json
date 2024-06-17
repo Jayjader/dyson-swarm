@@ -6,7 +6,9 @@
   "compilerOptions": {
     "types": ["jest", "svelte", "@testing-library/jest-dom"],
     "target": "ESNext",
-    "strict": true
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "moduleResolution": "Bundler"
   }
 }
 
