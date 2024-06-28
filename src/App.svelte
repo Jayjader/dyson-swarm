@@ -49,9 +49,9 @@
           objectiveTracker.setActive([0]); // Intro
           appStateStack.push(
             makeSimulationStore(objectiveTracker).loadNew(
-              window.performance.now()
+              window.performance.now(),
             ),
-            objectiveTracker
+            objectiveTracker,
           );
           showIntro = true;
         }}>Start New Simulation</button

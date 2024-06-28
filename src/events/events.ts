@@ -2,7 +2,7 @@ import type { Construct, Resource } from "../gameRules";
 import type { BuildOrder } from "../types";
 import type { Id } from "./processes";
 
-type TimeStamped = { timeStamp: DOMHighResTimeStamp };
+export type TimeStamped = { timeStamp: DOMHighResTimeStamp };
 export type AfterTick = { afterTick: number };
 export type BeforeTick = { beforeTick: number };
 export type ReceivedTick = { receivedTick: number };

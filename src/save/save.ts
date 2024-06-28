@@ -33,14 +33,14 @@ export function loadSave(save: SaveState): Simulation {
   const stream = parseStream(save.stream);
   const flatSubs = save.processors
     .flatMap((p) =>
-      [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id])
+      [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id]),
     )
     .concat(
-      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [tag, stream.id])
+      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [tag, stream.id]),
     );
   const subsByTag = flatSubs.reduce<Map<EventTag, Set<Id>>>(
     (accu, [tag, id]) => accu.set(tag, (accu.get(tag) ?? new Set()).add(id)),
-    new Map()
+    new Map(),
   );
   const processorsById = new Map([
     [stream.id, stream],
@@ -107,7 +107,7 @@ export function readSave(name: string, storage: Storage): null | SaveState {
  * @param queue
  */
 function convertNullBuildOrderCountsToInfinity(
-  queue: BuildOrder[]
+  queue: BuildOrder[],
 ): BuildOrder[] {
   return queue.map((order) =>
     !isRepeat(order)
@@ -115,65 +115,67 @@ function convertNullBuildOrderCountsToInfinity(
       : {
           repeat: convertNullBuildOrderCountsToInfinity(order.repeat) as [
             BuildOrder,
-            ...BuildOrder[]
+            ...BuildOrder[],
           ],
           count: order.count ?? Infinity,
-        }
+        },
   );
 }
 const BIG_INT_PROPERTY_KEYS = ["charge", "flux", "amount", "stored", "mass"];
+export function bigIntRestorer(key: string, value: any) {
+  return BIG_INT_PROPERTY_KEYS.includes(key) ? BigInt(value) : value;
+}
+export function bigIntReplacer(key: string, value: any) {
+  if (key.startsWith("probe")) {
+    return undefined;
+  }
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+  return value;
+}
 export function parseProcessors(formatted: string): SaveState {
-  const parsed = JSON.parse(formatted, (key, value) =>
-    BIG_INT_PROPERTY_KEYS.includes(key) ? BigInt(value) : value
-  ) as SaveState;
+  const parsed = JSON.parse(formatted, bigIntRestorer) as SaveState;
   parsed.stream.incoming = parsed.stream.incoming.map((e) =>
     e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
       ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-      : e
+      : e,
   );
   console.log({ parsedStream: parsed.stream });
   for (const [index, [_tick, events]] of parsed.stream.data.received.map(
-    (value, index) => [index, value] as const
+    (value, index) => [index, value] as const,
   )) {
     parsed.stream.data.received[index][1] = events.map((e) =>
       e.tag === "command-set-fabricator-queue" ||
       e.tag === "fabricator-queue-set"
         ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-        : e
+        : e,
     );
   }
   const fabricatorIndex = parsed.processors.findIndex(
-    (p) => p.tag === "fabricator"
+    (p) => p.tag === "fabricator",
   )!;
   parsed.processors[fabricatorIndex].incoming = parsed.processors[
     fabricatorIndex
   ].incoming.map((e) =>
     e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
       ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-      : e
+      : e,
   );
   (parsed.processors[fabricatorIndex] as Fabricator).data.queue =
     convertNullBuildOrderCountsToInfinity(
-      (parsed.processors[fabricatorIndex] as Fabricator).data.queue
+      (parsed.processors[fabricatorIndex] as Fabricator).data.queue,
     );
   return parsed;
 }
 
 export function formatProcessors(procs: SaveState): string {
-  return JSON.stringify(procs, (key, value) => {
-    if (key.startsWith("probe")) {
-      return undefined;
-    }
-    if (typeof value === "bigint") {
-      return value.toString();
-    }
-    return value;
-  });
+  return JSON.stringify(procs, bigIntReplacer);
 }
 
 function stripNonCommandsInTicksOlderThan(
   ticksIntoThePast: number,
-  stream: SerializedStream
+  stream: SerializedStream,
 ): SerializedStream {
   return {
     ...stream,
@@ -187,7 +189,7 @@ function stripNonCommandsInTicksOlderThan(
               tick >= stream.data.unfinishedTick - ticksIntoThePast
                 ? events
                 : events.filter((e) => e.tag.startsWith("command")),
-            ] as SerializedStream["data"]["received"][number]
+            ] as SerializedStream["data"]["received"][number],
         )
         .filter(([_tick, events]) => events.length > 0),
     },
@@ -198,12 +200,12 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
   const formattedSave = formatProcessors({
     stream: stripNonCommandsInTicksOlderThan(
       longEnoughToRebuildState,
-      save.stream
+      save.stream,
     ),
     processors: save.processors,
   });
   const saveKey = slotStorageKey(
-    save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME
+    save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME,
   )(save.name);
   try {
     storage.setItem(saveKey, formattedSave);
@@ -213,7 +215,7 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
       const hopefullyEnoughToDebugAnyErrors = 10; // 5 seconds (at 60t/s) is too big, so just grab 10 ticks
       const stream = stripNonCommandsInTicksOlderThan(
         hopefullyEnoughToDebugAnyErrors,
-        save.stream
+        save.stream,
       );
       const formattedSave = formatProcessors({
         stream,
@@ -242,7 +244,7 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
 
 export function writeSaveDataToBlob(
   save: SaveStub & SaveState,
-  root: Document
+  root: Document,
 ): void {
   // todo: move link creation out of function; directly take link as argument
   const machineDrivenLink = root.createElement("a");
@@ -253,7 +255,7 @@ export function writeSaveDataToBlob(
   const blobData = encodeURIComponent(formattedSave);
   machineDrivenLink.setAttribute(
     "href",
-    `data:text/plain;charset=utf-8,${blobData}`
+    `data:text/plain;charset=utf-8,${blobData}`,
   );
   machineDrivenLink.setAttribute("download", save.name);
   machineDrivenLink.click();
@@ -261,14 +263,14 @@ export function writeSaveDataToBlob(
 
 export function deleteSave(storage: Storage, name: string): void {
   const saveKey = slotStorageKey(name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME)(
-    name
+    name,
   );
   storage.removeItem(saveKey);
   if (name !== "AUTOSAVE") {
     const NAMES_KEY = slotStorageKey(Slot.NAMES)("useless-string");
     const currentNames = storage.getItem(NAMES_KEY);
     const nextNames = new Set(
-      currentNames === null ? [] : JSON.parse(currentNames)
+      currentNames === null ? [] : JSON.parse(currentNames),
     );
     nextNames.delete(name);
     storage.setItem(NAMES_KEY, JSON.stringify([...nextNames]));

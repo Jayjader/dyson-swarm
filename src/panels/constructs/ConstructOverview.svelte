@@ -261,7 +261,7 @@
               min={0}
               value={working(constructs, Construct.MINER)}
               on:change={(e) =>
-                setCount(Construct.MINER, parseInt(e.target.value, 10))}
+                setCount(Construct.MINER, parseInt(e?.target?.value ?? 0, 10))}
               style="max-width: {widthForNumberInput(
                 working(constructs, Construct.MINER)
               )}ch"

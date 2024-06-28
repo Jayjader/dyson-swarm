@@ -25,6 +25,11 @@ import {
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
 import type { ObjectiveTracker } from "../objectiveTracker/store";
+import {
+  type EventPersistenceAdapter,
+  sqlEventPersistenceAdapter,
+} from "./persistence";
+import { createSqlWorker } from "./sqlWorker";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -38,13 +43,20 @@ export function insertProcessor(sim: Simulation, p: Processor) {
   SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
     sim.bus.subscriptions.set(
       eventTag,
-      (sim.bus.subscriptions.get(eventTag) ?? new Set()).add(p.id)
-    )
+      (sim.bus.subscriptions.get(eventTag) ?? new Set()).add(p.id),
+    ),
   );
   sim.processors.set(p.id, p);
 }
 
-export function broadcastEvent(sim: Simulation, event: BusEvent): Simulation {
+export function broadcastEvent(
+  sim: Simulation,
+  event: BusEvent,
+  eventPersistenceAdapter: EventPersistenceAdapter = sqlEventPersistenceAdapter(
+    createSqlWorker(),
+  ),
+): Simulation {
+  eventPersistenceAdapter.persistEvent(event);
   const processorIds = sim.bus.subscriptions.get(event.tag);
   if (processorIds) {
     for (let id of processorIds) {

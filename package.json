@@ -34,6 +34,7 @@
     "svelte-jester": "^3.0.0",
     "svelte-preprocess": "^6.0.1",
     "svelte-sequential-preprocessor": "^0.0.7",
+    "sql.js": "^1.10.3",
     "tailwindcss": "^3.4.4",
     "three": "^0.149.0",
     "ts-jest": "^28.0.8",
