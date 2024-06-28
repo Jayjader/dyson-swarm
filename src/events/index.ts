@@ -119,7 +119,7 @@ export function processUntilSettled(sim: Simulation): Simulation {
 export const SIMULATION_STORE = Symbol();
 
 export function makeSimulationStore(
-  objectives: ObjectiveTracker
+  objectives: ObjectiveTracker,
 ): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
@@ -148,12 +148,12 @@ export function makeSimulationStore(
       });
       insertProcessor(
         simulation,
-        createClock(outsideTick, "clock-0", { mode: "pause" })
+        createClock(outsideTick, "clock-0", { mode: "pause" }),
       );
       insertProcessor(simulation, createMemoryStream());
       insertProcessor(
         simulation,
-        createObjectiveTrackerProbe(objectives.handleTriggers)
+        createObjectiveTrackerProbe(objectives.handleTriggers),
       );
       set(simulation);
       return store;

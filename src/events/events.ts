@@ -85,7 +85,7 @@ export type Events<Tags extends EventTag> = BusEvent & { tag: Tags };
 
 export function indexOfFirstFutureEvent(
   events: (BusEvent & ReceivedTick)[],
-  lastTick: number
+  lastTick: number,
 ): number | undefined {
   const index = events.findIndex(({ receivedTick }) => receivedTick > lastTick);
   return index >= 0 ? index : undefined; // convert -1 ("not found") result to undefined, encoding it in the type
@@ -93,7 +93,7 @@ export function indexOfFirstFutureEvent(
 
 export function compareReceivedTicks<E extends BusEvent & ReceivedTick>(
   a: E,
-  b: E
+  b: E,
 ): number {
   return a.receivedTick - b.receivedTick;
 }
