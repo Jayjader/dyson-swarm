@@ -28,10 +28,10 @@ export function createSqlWorker(): SqlWorker {
   if (worker === undefined) {
     worker = new Worker("/worker.sql-wasm.js");
     worker.onerror = (event) => console.error("Worker error: ", event);
-    worker.onmessage = (e) => {
-      console.debug(e);
-      if (e.data.ready) {
-        worker.onmessage = (e) => console.debug(e);
+    worker.addEventListener("message", (event) => console.debug(event));
+    function createTables(event: MessageEvent) {
+      if (event.data.ready) {
+        worker.removeEventListener("message", createTables);
         worker.postMessage({
           id: ++messageId,
           action: "exec",
@@ -43,8 +43,9 @@ export function createSqlWorker(): SqlWorker {
           sql: event_sources_table_creation,
         });
       }
-    };
-    worker.postMessage({ id: messageId++, action: "open" });
+    }
+    worker.addEventListener("message", createTables);
+    worker.postMessage({ id: ++messageId, action: "open" });
   }
   return {
     dumpState() {
