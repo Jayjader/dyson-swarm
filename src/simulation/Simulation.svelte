@@ -33,11 +33,14 @@
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import Introduction from "../Introduction.svelte";
+  import History from "../panels/history/History.svelte";
+  import { sqlEventsQueryAdapter } from "../events/query";
+  import { createSqlWorker } from "../events/sqlWorker";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
     simulation: Simulation,
-    resource: Resource
+    resource: Resource,
   ): bigint =>
     resource === Resource.ELECTRICITY
       ? gridState(simulation).stored
@@ -57,7 +60,7 @@
       Resource.METAL,
       Resource.PACKAGED_SATELLITE,
     ].forEach((resource) =>
-      resources.set(resource, readStoredResource(sim, resource))
+      resources.set(resource, readStoredResource(sim, resource)),
     );
     resources = resources; // trigger svelte reactivity
   });
@@ -80,7 +83,7 @@
         "You've successfully launched enough satellites into the star's orbit to capture and redirect the majority of its output!\n" +
           "Thanks for playing for so long.\n" +
           "If you feel up to the effort, I would greatly appreciate you save your game, export that save to a file, and find a way to share that file with me (I will try to update this message with an email address once I have set that up).\n" +
-          "This game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published."
+          "This game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published.",
       );
     }
     simulation.broadcastEvent({ tag: "outside-clock-tick", timeStamp });
@@ -146,6 +149,9 @@
   </div>
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
+    {#if $uiPanelsState.has("history")}
+      <History eventsAdapter={sqlEventsQueryAdapter(createSqlWorker())} />
+    {/if}
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview />
     {/if}

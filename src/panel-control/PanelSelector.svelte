@@ -19,6 +19,14 @@
   </PanelControl>
   <div class="flex flex-row flex-wrap gap-1">
     <PanelControl
+      on={$uiPanelsState.has("history")}
+      on:click={$uiPanelsState.has("history")
+        ? uiPanelsState.closeHistory
+        : uiPanelsState.openHistory}
+    >
+      History
+    </PanelControl>
+    <PanelControl
       on={$uiPanelsState.has("construct-overview")}
       on:click={$uiPanelsState.has("construct-overview")
         ? uiPanelsState.closeConstructOverview

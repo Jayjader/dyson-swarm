@@ -10,13 +10,22 @@ const events_table_creation = `CREATE TABLE IF NOT EXISTS events (
   data TEXT
 );`;
 
+export type RawEvent = [
+  number /*id*/,
+  number | null /*timestamp*/,
+  number | null /*tick*/,
+  BusEvent["tag"] /*name*/,
+  number /*source_id*/,
+  string /*data*/,
+];
+
 const event_sources_table_creation = `CREATE TABLE IF NOT EXISTS event_sources (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT
 );`;
 
 export interface SqlWorker {
-  dumpState(): void;
+  queryTickEvents(tick: number): Promise<RawEvent[]>;
   persistTickTimestampEvent(tick: number, event: BusEvent): void;
   persistTimestampEvent(event: BusEvent): void;
   persistTickEvent(tick: number, event: BusEvent): void;
@@ -48,11 +57,22 @@ export function createSqlWorker(): SqlWorker {
     worker.postMessage({ id: ++messageId, action: "open" });
   }
   return {
-    dumpState() {
-      worker.postMessage({
-        id: messageId++,
-        action: "exec",
-        sql: "SELECT * FROM events; SELECT name, id FROM event_sources;",
+    queryTickEvents(tick: number): Promise<RawEvent[]> {
+      const queryId = ++messageId;
+      return new Promise((resolve) => {
+        function resolveOnQuery(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", resolveOnQuery);
+            resolve(event.data.results[0].values);
+          }
+        }
+        worker.addEventListener("message", resolveOnQuery);
+        worker.postMessage({
+          id: queryId,
+          action: "exec",
+          sql: "SELECT * FROM events WHERE tick = $tick",
+          params: { $tick: tick },
+        });
       });
     },
     persistTickTimestampEvent(tick: number, event: BusEvent & TimeStamped) {

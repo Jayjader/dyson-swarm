@@ -1,13 +1,30 @@
 import { derived, writable } from "svelte/store";
 
 const uiState = writable<
-  Set<"construct-overview" | "storage-overview" | "fabricator" | "order-queue">
+  Set<
+    | "history"
+    | "construct-overview"
+    | "storage-overview"
+    | "fabricator"
+    | "order-queue"
+  >
 >(new Set());
 export const uiPanelsState = {
   ...derived(uiState, (state) => state),
   closeAllPanels: () => {
     console.info({ command: "close-panels" });
     uiState.set(new Set());
+  },
+  openHistory: () => {
+    console.info({ command: "open-history" });
+    uiState.update((state) => state.add("history"));
+  },
+  closeHistory: () => {
+    console.info({ command: "close-history" });
+    uiState.update((state) => {
+      state.delete("history");
+      return state;
+    });
   },
   openConstructOverview: () => {
     console.info({ command: "open-construct-overview" });
