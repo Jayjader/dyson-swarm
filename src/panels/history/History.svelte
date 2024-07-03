@@ -4,9 +4,10 @@
   import type { EventsQueryAdapter } from "../../events/query";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
-  import type { BusEvent } from "../../events/events";
+  import type { BusEvent, EventTag } from "../../events/events";
+  import { createWindowStore } from "./slidingWindow";
 
-  const getPoint = (e: BusEvent) => {
+  const getPointData = (e: BusEvent) => {
     switch (e.tag) {
       /*
       case "outside-clock-tick":
@@ -99,32 +100,56 @@
   const simulation = getContext(SIMULATION_STORE).simulation;
 
   let lastTick = 0;
-  let points = new Map<string, Array<[number, number | bigint]>>();
-  const unsubFromSim = simulation.subscribe(async (sim) => {
-    const currentTick = getPrimitive(getClock(sim)).tick;
-    if (currentTick > lastTick) {
-      lastTick = currentTick;
-      const events = await eventsAdapter.getTickEvents(currentTick);
-      for (const event of events) {
-        const point = getPoint(event);
-        if (point !== undefined) {
-          const [pointCategory, value] = point;
-          let categoryPoints = points.get(pointCategory);
-          if (categoryPoints === undefined) {
-            points.set(pointCategory, [[currentTick, value]]);
-          } else {
-            categoryPoints.push([currentTick, value]);
+  // let windowSize = 100;
+  // let windowStart = 0;
+  // let slidingWindow = new Map<string, [number, number | bigint][]>();
+  const slidingWindow = createWindowStore();
+  let windowPromise: Promise<void>;
+  $: {
+    if (windowPromise === undefined) {
+      const { windowStart, windowSize } = slidingWindow.windowConfig;
+      windowPromise = eventsAdapter
+        .getTickEventsRange(windowStart, windowStart + windowSize)
+        .then((events) => {
+          for (const [tick, event] of events) {
+            const data = getPointData(event);
+            if (data === undefined) {
+              continue;
+            }
+            console.log({ data, tick });
+            const [category, value] = data;
+            slidingWindow.pushPoint(category, [tick, value]);
+            /*
+            const points = slidingWindow.get(category);
+            if (points === undefined) {
+              slidingWindow.set(category, [[tick, value]]);
+            } else {
+              if (points.length >= windowSize) {
+                points.shift();
+              }
+              points.push([tick, value]);
+            }
+*/
           }
-        }
-      }
-      points = points;
-      /* */
+        });
+    }
+  }
+  const unsubFromSim = simulation.subscribe((sim) => {
+    const currentTick = getPrimitive(getClock(sim)).tick;
+    if (currentTick !== lastTick) {
+      console.log({ currentTick, lastTick });
+      lastTick = currentTick;
+      windowPromise = undefined;
     }
   });
   onDestroy(unsubFromSim);
 
-  $: keys = [...points.keys()];
-  $: values = [...points.values()];
+  let categories: string[] = [];
+  const unsubFromWindow = slidingWindow.subscribe((map) => {
+    categories = [...map.keys()];
+  });
+  onDestroy(unsubFromWindow);
+  $: values = [...$slidingWindow.values()];
 
   // $: minTick = Math.min(...values.map(([x, y]) => Number(x)));
   $: minTick = values.reduce<number>(
@@ -136,13 +161,13 @@
     (acc, [[x]]) => (acc < x ? x : acc),
     minTick,
   );
-  function pointString(
+  function pointsString(
     minTick: number,
     maxTick: number,
-    maxValue: number,
-    minValue: number,
     points: Array<[number, number | bigint]>,
   ): string {
+    const maxValue = Math.max(...points.map(([x, y]) => Number(y)));
+    const minValue = Math.min(...points.map(([x, y]) => Number(y)));
     const tickRange = maxTick - minTick;
     const numberOfPoints = points.length;
     const valueRange = maxValue === minValue ? 1 : maxValue - minValue;
@@ -151,52 +176,61 @@
       maxTick,
       tickRange,
       numberOfPoints,
+      minValue,
+      maxValue,
       valueRange,
       points,
     });
     return points
       .map(([x, y]) => {
         if (typeof y === "number") {
-          return `${100 * ((x - minTick) / tickRange)},${100 * ((y - minValue) / valueRange)}`;
+          return `${100 * ((x - minTick) / tickRange)},${100 * (1 - (y - minValue) / valueRange)}`;
+          // return `${100 * ((x - minTick) / tickRange)},${50}`;
         } else {
-          return `${100 * ((x - minTick) / tickRange)},${100 * (Number(y - BigInt(minValue)) / valueRange)}`;
+          // return `${100 * ((x - minTick) / tickRange)},${100 * (Number(y - BigInt(minValue)) / valueRange)}`;
+          if (y < BigInt(Number.MAX_VALUE)) {
+            return `${100 * ((x - minTick) / tickRange)},${100 * ((valueRange === 1 ? 0.45 : Number(y) - minValue) / valueRange)}`;
+          }
+          return `${100 * ((x - minTick) / tickRange)},${80}`;
         }
       })
       .join("\n");
   }
+  const categoryColors = {
+    "star-flux-emission": "#ffc803",
+    "produce-power": "#1382C5",
+    "produce-ore": "#682315",
+    "produce-metal": "#567783",
+  };
 </script>
 
 <section>
   <h2>History</h2>
-  <button on:click={() => console.log({ reactive: { keys, values }, points })}>
+  <button on:click={() => console.log({ $slidingWindow })}>
     debug points
   </button>
   <div class="flex-row items-stretch gap-1">
     <figure>
       <svg
-        class="max-h-48 bg-slate-500"
+        class="max-h-48 bg-slate-800"
         width="100%"
         viewBox="{0} {0} {100} {100}"
         preserveAspectRatio="xMinYMin"
       >
-        {#each keys as pointCategory (pointCategory)}
-          {@const categoryPoints = points.get(pointCategory) ?? []}
-          {@const maxValue = Math.max(
-            ...categoryPoints.map(([x, y]) => Number(y)),
-          )}
-          {@const minValue = Math.min(
-            ...categoryPoints.map(([x, y]) => Number(y)),
-          )}
+        {#each [...$slidingWindow] as [pointCategory, categoryPoints] (pointCategory)}
           <polyline
+            data-category={pointCategory}
             fill="none"
-            stroke="red"
+            stroke={categoryColors[pointCategory] ?? "red"}
             stroke-linejoin="round"
             stroke-linecap="round"
-            points={pointString(
-              minTick,
-              maxTick,
-              maxValue,
-              minValue,
+            points={pointsString(
+              Math.max(minTick, slidingWindow.windowConfig.windowStart),
+              Math.min(
+                maxTick,
+                slidingWindow.windowConfig.windowStart +
+                  slidingWindow.windowConfig.windowSize,
+              ),
               categoryPoints,
             )}
           />

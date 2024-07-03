@@ -24,16 +24,10 @@ const event_sources_table_creation = `CREATE TABLE IF NOT EXISTS event_sources (
   name TEXT
 );`;
 
-export interface SqlWorker {
-  queryTickEvents(tick: number): Promise<RawEvent[]>;
-  persistTickTimestampEvent(tick: number, event: BusEvent): void;
-  persistTimestampEvent(event: BusEvent): void;
-  persistTickEvent(tick: number, event: BusEvent): void;
-}
-
+export type SqlWorker = ReturnType<typeof createSqlWorker>;
 let messageId = 0;
 let worker: Worker;
-export function createSqlWorker(): SqlWorker {
+export function createSqlWorker() {
   if (worker === undefined) {
     worker = new Worker("/worker.sql-wasm.js");
     worker.onerror = (event) => console.error("Worker error: ", event);
@@ -72,6 +66,34 @@ export function createSqlWorker(): SqlWorker {
           action: "exec",
           sql: "SELECT * FROM events WHERE tick = $tick",
           params: { $tick: tick },
+        });
+      });
+    },
+    queryEventDataTickRange(
+      start: number,
+      end?: number,
+    ): Promise<[number, string][]> {
+      const queryId = ++messageId;
+      return new Promise((resolve) => {
+        function resolveOnQuery(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", resolveOnQuery);
+            if (event.data.results.length > 0) {
+              resolve(event.data.results[0].values);
+            } else {
+              resolve([]);
+            }
+          }
+        }
+        worker.addEventListener("message", resolveOnQuery);
+        worker.postMessage({
+          id: queryId,
+          action: "exec",
+          sql: "SELECT tick, data FROM events WHERE (tick >= $start AND ($end IS NULL OR tick < $end)) ORDER BY tick ASC",
+          params: {
+            $start: start,
+            $end: end,
+          },
         });
       });
     },
