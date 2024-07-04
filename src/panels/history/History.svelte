@@ -10,36 +10,6 @@
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
-      /*
-      case "outside-clock-tick":
-        break;
-      case "simulation-clock-tick":
-        break;
-      case "command-simulation-clock-play":
-        break;
-      case "simulation-clock-play":
-        break;
-      case "command-simulation-clock-pause":
-        break;
-      case "simulation-clock-pause":
-        break;
-      case "command-simulation-clock-indirect-pause":
-        break;
-      case "simulation-clock-indirect-pause":
-        break;
-      case "command-simulation-clock-indirect-resume":
-        break;
-      case "simulation-clock-indirect-resume":
-        break;
-      case "command-simulation-clock-start-editing-speed":
-        break;
-      case "simulation-clock-editing-speed":
-        break;
-      case "command-simulation-clock-set-speed":
-        break;
-      case "simulation-clock-new-speed":
-        break;
-*/
       case "star-flux-emission":
         return [e.tag, e.flux] as const;
       case "mine-planet-surface":
@@ -47,51 +17,25 @@
       case "produce":
         return [`produce-${e.resource}`, e.amount] as const;
       case "draw":
-        break;
+        return [`draw-${e.resource}`, e.amount] as const;
       case "supply":
-        break;
+        return [`supply-${e.resource}`, e.amount] as const;
       case "launch-satellite":
         break;
       case "satellite-flux-reflection":
-        break;
+        return [e.tag, e.flux] as const;
       case "construct-fabricated":
-        break;
+        return [`fabricated-${e.construct}`, 1] as const;
       case "circuit-breaker-tripped":
         break;
-      /*
-      case "command-reset-circuit-breaker":
-        break;
-*/
       case "circuit-breaker-reset":
         break;
-      /*
-      case "command-trip-circuit-breaker":
-        break;
-      case "command-set-working-count":
-        break;
-*/
       case "working-count-set":
         break;
-      /*
-      case "command-turn-on-fabricator":
-        break;
-*/
       case "fabricator-turned-on":
         break;
-      /*
-      case "command-turn-off-fabricator":
-        break;
-*/
       case "fabricator-turned-off":
         break;
-      /*
-      case "command-set-fabricator-queue":
-        break;
-      case "fabricator-queue-set":
-        break;
-      case "command-clear-fabricator-job":
-        break;
-*/
       default:
         return undefined;
     }
