@@ -30,10 +30,10 @@ export function sqlEventsQueryAdapter(
       const busEvents = [];
       for (const element of rawEvents) {
         const [tick, rawEvent] = element;
-        busEvents.push([tick, JSON.parse(rawEvent) as unknown as BusEvent] as [
-          number,
-          BusEvent,
-        ]);
+        busEvents.push([
+          tick,
+          JSON.parse(rawEvent, bigIntRestorer) as unknown as BusEvent,
+        ] as [number, BusEvent]);
       }
       return busEvents;
     },
