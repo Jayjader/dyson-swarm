@@ -6,6 +6,7 @@
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent, EventTag } from "../../events/events";
   import { createWindowStore } from "./slidingWindow";
+  import HistoryGraph from "./HistoryGraph.svelte";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -100,9 +101,6 @@
   const simulation = getContext(SIMULATION_STORE).simulation;
 
   let lastTick = 0;
-  // let windowSize = 100;
-  // let windowStart = 0;
-  // let slidingWindow = new Map<string, [number, number | bigint][]>();
   const slidingWindow = createWindowStore();
   let windowPromise: Promise<void>;
   $: {
@@ -116,20 +114,8 @@
             if (data === undefined) {
               continue;
             }
-            console.log({ data, tick });
             const [category, value] = data;
             slidingWindow.pushPoint(category, [tick, value]);
-            /*
-            const points = slidingWindow.get(category);
-            if (points === undefined) {
-              slidingWindow.set(category, [[tick, value]]);
-            } else {
-              if (points.length >= windowSize) {
-                points.shift();
-              }
-              points.push([tick, value]);
-            }
-*/
           }
         });
     }
@@ -137,7 +123,6 @@
   const unsubFromSim = simulation.subscribe((sim) => {
     const currentTick = getPrimitive(getClock(sim)).tick;
     if (currentTick !== lastTick) {
-      console.log({ currentTick, lastTick });
       lastTick = currentTick;
       windowPromise = undefined;
     }
@@ -161,81 +146,21 @@
     (acc, [[x]]) => (acc < x ? x : acc),
     minTick,
   );
-  function pointsString(
-    minTick: number,
-    maxTick: number,
-    points: Array<[number, number | bigint]>,
-  ): string {
-    const maxValue = Math.max(...points.map(([x, y]) => Number(y)));
-    const minValue = Math.min(...points.map(([x, y]) => Number(y)));
-    const tickRange = maxTick - minTick;
-    const numberOfPoints = points.length;
-    const valueRange = maxValue === minValue ? 1 : maxValue - minValue;
-    console.log({
-      minTick,
-      maxTick,
-      tickRange,
-      numberOfPoints,
-      minValue,
-      maxValue,
-      valueRange,
-      points,
-    });
-    return points
-      .map(([x, y]) => {
-        if (typeof y === "number") {
-          return `${100 * ((x - minTick) / tickRange)},${100 * (1 - (y - minValue) / valueRange)}`;
-          // return `${100 * ((x - minTick) / tickRange)},${50}`;
-        } else {
-          // return `${100 * ((x - minTick) / tickRange)},${100 * (Number(y - BigInt(minValue)) / valueRange)}`;
-          if (y < BigInt(Number.MAX_VALUE)) {
-            return `${100 * ((x - minTick) / tickRange)},${100 * ((valueRange === 1 ? 0.45 : Number(y) - minValue) / valueRange)}`;
-          }
-          return `${100 * ((x - minTick) / tickRange)},${80}`;
-        }
-      })
-      .join("\n");
-  }
-  const categoryColors = {
-    "star-flux-emission": "#ffc803",
-    "produce-power": "#1382C5",
-    "produce-ore": "#682315",
-    "produce-metal": "#567783",
-  };
 </script>
 
 <section>
   <h2>History</h2>
-  <button on:click={() => console.log({ $slidingWindow })}>
+  <button
+    class="m-2 rounded border-2 border-gray-900 px-2"
+    on:click={() => console.log({ $slidingWindow })}
+  >
     debug points
   </button>
-  <div class="flex-row items-stretch gap-1">
-    <figure>
-      <svg
-        class="max-h-48 bg-slate-800"
-        width="100%"
-        viewBox="{0} {0} {100} {100}"
-        preserveAspectRatio="xMinYMin"
-      >
-        {#each [...$slidingWindow] as [pointCategory, categoryPoints] (pointCategory)}
-          <polyline
-            data-category={pointCategory}
-            fill="none"
-            stroke={categoryColors[pointCategory] ?? "red"}
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            points={pointsString(
-              Math.max(minTick, slidingWindow.windowConfig.windowStart),
-              Math.min(
-                maxTick,
-                slidingWindow.windowConfig.windowStart +
-                  slidingWindow.windowConfig.windowSize,
-              ),
-              categoryPoints,
-            )}
-          />
-        {/each}
-      </svg>
-    </figure>
+  <div class="flex flex-row items-stretch gap-1">
+    <HistoryGraph
+      points={$slidingWindow}
+      toX={lastTick}
+      fromX={lastTick - 100}
+    />
   </div>
 </section>
