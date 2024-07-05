@@ -74,5 +74,5 @@
   stroke-linejoin="round"
   stroke-linecap="round"
   points={dataString}
-  stroke-opacity="80%"
+  stroke-opacity="60%"
 />

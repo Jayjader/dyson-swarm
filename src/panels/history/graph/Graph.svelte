@@ -3,10 +3,9 @@
   import colors from "./colors";
   import Line from "./Line.svelte";
 
-  export let data: Map<
-    keyof typeof colors,
-    [number, number][] | [number, bigint][]
-  > = new Map();
+  export let data: Array<
+    [keyof typeof colors, [number, number][] | [number, bigint][]]
+  > = [];
   export let fromX = 0;
   export let toX = 100;
   $: width = toX - fromX;
@@ -27,23 +26,7 @@
 >
   <rect x={fromX} y="0" {height} {width} />
   <Axis {width} {height} {fromX} />
-  {#each data.entries() as [category, points]}
+  {#each data as [category, points]}
     <Line {category} {points} {fromX} {toX} {height} />
   {/each}
 </svg>
-<ul class="legend">
-  {#each data.keys() as pointCategory}
-    <li
-      data-catagory={pointCategory}
-      style="color: {colors[pointCategory] ?? 'red'}"
-    >
-      {pointCategory.replaceAll("-", " ")}
-    </li>
-  {/each}
-</ul>
-
-<style>
-  .legend {
-    text-transform: capitalize;
-  }
-</style>

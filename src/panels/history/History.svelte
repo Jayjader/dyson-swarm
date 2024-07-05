@@ -1,11 +1,13 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
+  import { type Simulation, SIMULATION_STORE } from "../../events";
   import type { EventsQueryAdapter } from "../../events/query";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
+  import colors from "./graph/colors";
+  import type { Readable } from "svelte/store";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -20,41 +22,37 @@
       case "supply":
         return [`supply-${e.resource}`, e.amount] as const;
       case "launch-satellite":
-        break;
+        return [e.tag, e.count ?? 1];
       case "satellite-flux-reflection":
         return [e.tag, e.flux] as const;
       case "construct-fabricated":
         return [`fabricated-${e.construct}`, 1] as const;
-      case "circuit-breaker-tripped":
-        break;
-      case "circuit-breaker-reset":
-        break;
-      case "working-count-set":
-        break;
-      case "fabricator-turned-on":
-        break;
-      case "fabricator-turned-off":
-        break;
       default:
         return undefined;
     }
   };
 
   export let eventsAdapter: EventsQueryAdapter;
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = (
+    getContext(SIMULATION_STORE) as { simulation: Readable<Simulation> }
+  ).simulation;
+
+  // todo: controls for window size
+  // todo: controls for window start/end
+  // todo(last?): timeslice
 
   let lastTick = 0;
   let slidingWindow = new Map<
-    string,
+    keyof typeof colors,
     [number, number][] | [number, bigint][]
   >();
-  let windowPromise: Promise<void>;
+  let windowPromise: Promise<void> | undefined;
   $: {
     if (windowPromise === undefined) {
       windowPromise = queryEvents();
     }
   }
-  const unsubFromSim = simulation.subscribe((sim) => {
+  const unsubFromSim = simulation.subscribe((sim: Simulation) => {
     const currentTick = getPrimitive(getClock(sim)).tick;
     if (currentTick !== lastTick) {
       lastTick = currentTick;
@@ -62,10 +60,10 @@
     }
   });
   onDestroy(unsubFromSim);
+  const windowSize = 300;
   function queryEvents() {
-    const windowSize = 100;
     return eventsAdapter
-      .getTickEventsRange(lastTick - 100, lastTick)
+      .getTickEventsRange(lastTick - windowSize, lastTick)
       .then((events) => {
         slidingWindow.clear();
         for (const [tick, event] of events) {
@@ -94,6 +92,8 @@
         }
       });
   }
+
+  let hidden = new Set();
 </script>
 
 <section>
@@ -105,6 +105,51 @@
     debug points
   </button>
   <div class="flex flex-row items-stretch gap-1">
-    <HistoryGraph data={slidingWindow} toX={lastTick} fromX={lastTick - 100} />
+    <HistoryGraph
+      data={[...slidingWindow.entries()].filter(([key]) => !hidden.has(key))}
+      toX={lastTick}
+      fromX={lastTick - windowSize}
+    />
+    <ul class="legend">
+      <li class="text-slate-200">
+        <button
+          class="border-gray-slate m-2 rounded border-2 p-2"
+          on:click={() => {
+            for (const key of slidingWindow.keys()) {
+              hidden.add(key);
+            }
+            hidden = hidden;
+          }}
+        >
+          Hide All
+        </button>
+      </li>
+      {#each [...slidingWindow.keys()].toSorted() as pointCategory}
+        <li
+          data-catagory={pointCategory}
+          style="color: {colors[pointCategory] ?? 'red'}"
+        >
+          <input
+            type="checkbox"
+            checked={!hidden.has(pointCategory)}
+            on:change={() => {
+              if (hidden.has(pointCategory)) {
+                hidden.delete(pointCategory);
+              } else {
+                hidden.add(pointCategory);
+              }
+              hidden = hidden;
+            }}
+          />
+          {pointCategory.replaceAll("-", " ")}
+        </li>
+      {/each}
+    </ul>
   </div>
 </section>
+
+<style>
+  .legend {
+    text-transform: capitalize;
+  }
+</style>

@@ -1,9 +1,25 @@
 const categoryColors = {
   "star-flux-emission": "#ffc803",
+  "satellite-flux-reflection": "#ffec7b",
   "produce-power": "#1382C5",
+  "draw-power": "#1382C5",
+  "supply-power": "#1382C5",
   "produce-ore": "#682315",
+  "draw-ore": "#682315",
+  "supply-ore": "#682315",
   "produce-metal": "#567783",
+  "draw-metal": "#567783",
+  "supply-metal": "#567783",
+  "produce-satellite": "#9fc6d3",
+  "draw-satellite": "#9fc6d3",
+  "supply-satellite": "#9fc6d3",
   "mine-planet-surface": "#238a22",
+  "fabricated-collector": "#6a62b3",
+  "fabricated-miner": "#6a62b3",
+  "fabricated-refiner": "#6a62b3",
+  "fabricated-factory": "#6a62b3",
+  "fabricated-launcher": "#6a62b3",
+  "launch-satellite": "#ffec7b",
 } as const;
 
 export default categoryColors;
