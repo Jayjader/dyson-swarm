@@ -1,13 +1,16 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import { type Simulation, SIMULATION_STORE } from "../../events";
+  import {
+    type Simulation,
+    SIMULATION_STORE,
+    type SimulationStore,
+  } from "../../events";
   import type { EventsQueryAdapter } from "../../events/query";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
-  import type { Readable } from "svelte/store";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -34,7 +37,7 @@
 
   export let eventsAdapter: EventsQueryAdapter;
   const simulation = (
-    getContext(SIMULATION_STORE) as { simulation: Readable<Simulation> }
+    getContext(SIMULATION_STORE) as { simulation: SimulationStore }
   ).simulation;
 
   // todo: controls for window size
