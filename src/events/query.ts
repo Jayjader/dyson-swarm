@@ -33,13 +33,10 @@ export function sqlEventsQueryAdapter(sqlWorker: SqlWorker) {
         startTick,
         endTick,
       );
-      const busEvents = [];
+      const busEvents: Array<[number, BusEvent]> = [];
       for (const element of rawEvents) {
         const [tick, rawEvent] = element;
-        busEvents.push([
-          tick,
-          JSON.parse(rawEvent, bigIntRestorer) as unknown as BusEvent,
-        ] as [number, BusEvent]);
+        busEvents.push([tick, JSON.parse(rawEvent, bigIntRestorer)]);
       }
       return busEvents;
     },
