@@ -15,6 +15,9 @@
   import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
   import { get } from "svelte/store";
+  import { sqlSnapshotsAdapter } from "../events/snapshots";
+  import { createSqlWorker } from "../events/sqlWorker";
+  import { sqlEventSourcesAdapter } from "../events/eventSources";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -195,7 +198,11 @@
             objTrackerStore = currentTrackerStore;
           } else {
             objTrackerStore = makeObjectiveTracker();
-            simStore = makeSimulationStore(objTrackerStore);
+            simStore = makeSimulationStore(
+              objTrackerStore,
+              sqlSnapshotsAdapter(createSqlWorker()),
+              sqlEventSourcesAdapter(createSqlWorker()),
+            );
           }
           simStore.loadSave(saveState);
 

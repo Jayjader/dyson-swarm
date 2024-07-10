@@ -36,6 +36,7 @@
   import History from "../panels/history/History.svelte";
   import { sqlEventsQueryAdapter } from "../events/query";
   import { createSqlWorker } from "../events/sqlWorker";
+  import { sqlEventSourcesAdapter } from "../events/eventSources";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   const readStoredResource = (
@@ -150,7 +151,10 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("history")}
-      <History eventsAdapter={sqlEventsQueryAdapter(createSqlWorker())} />
+      <History
+        eventsAdapter={sqlEventsQueryAdapter(createSqlWorker())}
+        sourcesAdapter={sqlEventSourcesAdapter(createSqlWorker())}
+      />
     {/if}
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview />

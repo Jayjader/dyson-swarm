@@ -11,6 +11,7 @@
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
+  import type { EventSourcesAdapter } from "../../events/eventSources";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -36,6 +37,7 @@
   };
 
   export let eventsAdapter: EventsQueryAdapter;
+  export let sourcesAdapter: EventSourcesAdapter;
   const simulation = (
     getContext(SIMULATION_STORE) as { simulation: SimulationStore }
   ).simulation;
@@ -103,7 +105,11 @@
   <h2>History</h2>
   <button
     class="m-2 rounded border-2 border-gray-900 px-2"
-    on:click={() => console.log({ slidingWindowMap: [...slidingWindow] })}
+    on:click={() => {
+      console.log({ slidingWindowMap: [...slidingWindow] });
+      sourcesAdapter.debugSources();
+      // snapshotsAdapter.debugSnapshots();
+    }}
   >
     debug points
   </button>

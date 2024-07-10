@@ -1,4 +1,4 @@
-import { type Readable, writable } from "svelte/store";
+import { type Readable, writable, get } from "svelte/store";
 import { Resource } from "../gameRules";
 import type { BusEvent, EventTag } from "./events";
 import type { Id, Processor } from "./processes";
@@ -30,6 +30,9 @@ import {
   sqlEventPersistenceAdapter,
 } from "./persistence";
 import { createSqlWorker } from "./sqlWorker";
+import type { SnapshotsAdapter } from "./snapshots";
+import type { EventSourcesAdapter } from "./eventSources";
+import type { EventsQueryAdapter } from "./query";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -39,7 +42,12 @@ export type Simulation = {
   processors: Map<Id, Processor & { id: Id }>;
 };
 
-export function insertProcessor(sim: Simulation, p: Processor) {
+export function insertProcessor(
+  sim: Simulation,
+  p: Processor,
+  sourcesAdapter: EventSourcesAdapter,
+) {
+  sourcesAdapter.insertSource(p.id);
   SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
     sim.bus.subscriptions.set(
       eventTag,
@@ -57,6 +65,7 @@ export function broadcastEvent(
   ),
 ): Simulation {
   eventPersistenceAdapter.persistEvent(event);
+  // todo: refactor the following into something that can be swapped out with an eventQueryAdapter(sqlWorker()) inside the individual processor type source files, and do so
   const processorIds = sim.bus.subscriptions.get(event.tag);
   if (processorIds) {
     for (let id of processorIds) {
@@ -70,14 +79,14 @@ export function broadcastEvent(
   return sim;
 }
 
-function process(p: Processor): [Processor, BusEvent[]] {
+function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
   switch (p.tag) {
     case "stream":
       return [memoryStreamProcess(p), []];
     case "clock":
       return clockProcess(p);
     case "star":
-      return starProcess(p);
+      return starProcess(p, inbox);
     case "planet":
       return planetProcess(p);
     case "collector":
@@ -113,13 +122,27 @@ function process(p: Processor): [Processor, BusEvent[]] {
   return [p, []];
 }
 
-export function processUntilSettled(sim: Simulation): Simulation {
-  while ([...sim.processors.values()].some((p) => p.incoming.length > 0)) {
+export async function processUntilSettled(
+  sim: Simulation,
+  snapshotsAdapter: SnapshotsAdapter,
+  eventsAdapter: EventsQueryAdapter,
+): Promise<Simulation> {
+  while ((await eventsAdapter.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
     for (let processor of sim.processors.values()) {
-      const [updatedProcessor, newEmitted] = process(processor);
-      sim.processors.set(updatedProcessor.id, updatedProcessor);
-      emitted.push(...newEmitted);
+      const inbox = await eventsAdapter.getInbox(processor.id);
+      if (inbox.length > 0) {
+        const [updatedProcessor, newEmitted] = process(processor, inbox);
+        // todo: refactor map manipulation out into a different adapter
+        sim.processors.set(updatedProcessor.id, updatedProcessor);
+        emitted.push(...newEmitted);
+        snapshotsAdapter.persistSnapshot(
+          updatedProcessor.lastTick,
+          updatedProcessor.id,
+          updatedProcessor.data,
+        );
+        break;
+      }
     }
     for (let event of emitted) {
       broadcastEvent(sim, event);
@@ -132,19 +155,32 @@ export const SIMULATION_STORE = Symbol();
 
 export function makeSimulationStore(
   objectives: ObjectiveTracker,
+  snapshotsAdapter: SnapshotsAdapter,
+  eventSourcesAdapter: EventSourcesAdapter,
+  eventsReadAdapter: EventsQueryAdapter,
+  eventsWriteAdapter: EventPersistenceAdapter,
 ): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
   loadSave: (s: SaveState) => SimulationStore;
   loadNew: (outsideTick: DOMHighResTimeStamp) => SimulationStore;
 } {
-  const { subscribe, update, set } = writable<Simulation>({
+  const baseData = writable<Simulation>({
     bus: { subscriptions: new Map() },
     processors: new Map(),
   });
+  const { subscribe, update, set } = baseData;
   const store = {
     subscribe,
-    processUntilSettled: () => update((sim) => processUntilSettled(sim)),
+    processUntilSettled: async () => {
+      const sim = get(baseData);
+      const settled = await processUntilSettled(
+        sim,
+        snapshotsAdapter,
+        eventsReadAdapter,
+      );
+      set(settled);
+    },
     broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
     loadSave: (s: SaveState) => {
       set(loadSave(s));
@@ -156,16 +192,18 @@ export function makeSimulationStore(
         processors: new Map(),
       };
       newGame().forEach((p) => {
-        insertProcessor(simulation, p);
+        insertProcessor(simulation, p, eventSourcesAdapter);
       });
       insertProcessor(
         simulation,
         createClock(outsideTick, "clock-0", { mode: "pause" }),
+        eventSourcesAdapter,
       );
-      insertProcessor(simulation, createMemoryStream());
+      insertProcessor(simulation, createMemoryStream(), eventSourcesAdapter);
       insertProcessor(
         simulation,
         createObjectiveTrackerProbe(objectives.handleTriggers),
+        eventSourcesAdapter,
       );
       set(simulation);
       return store;

@@ -17,10 +17,10 @@ export function createStar(
   return { id, incoming: [], tag: "star", data: { mass } };
 }
 
-export function starProcess(star: Star): [Star, BusEvent[]] {
+export function starProcess(star: Star, inbox: BusEvent[]): [Star, BusEvent[]] {
   let event;
-  const emitted = [] as BusEvent[];
-  while ((event = star.incoming.shift())) {
+  const emitted: BusEvent[] = [];
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "simulation-clock-tick":
         emitted.push({

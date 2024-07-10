@@ -1,7 +1,10 @@
 import { bigIntReplacer } from "../save/save";
 import type { BusEvent, TimeStamped } from "./events";
+import type { Processor } from "./processes";
 
-const events_table_creation = `CREATE TABLE IF NOT EXISTS events (
+const events_table_name = "events";
+const events_table_creation = `DROP TABLE IF EXISTS ${events_table_name};
+CREATE TABLE ${events_table_name} (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp INTEGER,
   tick INTEGER,
@@ -19,10 +22,35 @@ export type RawEvent = [
   string /*data*/,
 ];
 
-const event_sources_table_creation = `CREATE TABLE IF NOT EXISTS event_sources (
+const event_sources_table_name = "event_sources";
+const event_sources_table_creation = `DROP TABLE IF EXISTS ${event_sources_table_name};
+CREATE TABLE ${event_sources_table_name} (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT
 );`;
+const snapshots_table_name = "snapshots";
+const snapshots_table_creation = `DROP TABLE IF EXISTS ${snapshots_table_name};
+CREATE TABLE ${snapshots_table_name} (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ source_id INTEGER NOT NULL,
+ tick INTEGER NOT NULL,
+ data TEXT NOT NULL
+ );`;
+export type RawSnapshot = [
+  number /*id*/,
+  number /*source_id*/,
+  number /*tick*/,
+  string /*data*/,
+];
+const inboxes_table_name = "inboxes";
+const inboxes_table_creation = `DROP TABLE IF EXISTS ${inboxes_table_name};
+CREATE TABLE ${inboxes_table_name} (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_id INTEGER NOT NULL,
+  owner_id INTEGER NOT NULL,
+);`;
+// todo: different tables for different simulation savefiles
+// todo: handle generations
 
 export type SqlWorker = ReturnType<typeof createSqlWorker>;
 let messageId = 0;
@@ -32,25 +60,32 @@ export function createSqlWorker() {
     worker = new Worker("/worker.sql-wasm.js");
     worker.onerror = (event) => console.error("Worker error: ", event);
     worker.addEventListener("message", (event) => console.debug(event));
+    const statementId = ++messageId;
     function createTables(event: MessageEvent) {
-      if (event.data.ready) {
+      if (event.data.id === statementId && event.data.ready) {
         worker.removeEventListener("message", createTables);
-        worker.postMessage({
-          id: ++messageId,
-          action: "exec",
-          sql: events_table_creation,
-        });
-        worker.postMessage({
-          id: ++messageId,
-          action: "exec",
-          sql: event_sources_table_creation,
-        });
+        postSqlMessage(
+          ++messageId,
+          events_table_creation +
+            event_sources_table_creation +
+            snapshots_table_creation +
+            inboxes_table_creation,
+        );
       }
     }
     worker.addEventListener("message", createTables);
-    worker.postMessage({ id: ++messageId, action: "open" });
+    worker.postMessage({ id: statementId, action: "open" });
+  }
+  function postSqlMessage(
+    id: number,
+    sql: string,
+    params?: Record<string, any>,
+  ) {
+    console.debug({ sqlMessage: { id, sql, params } });
+    worker.postMessage({ id, action: "exec", sql, params });
   }
   return {
+    // events
     queryTickEvents(tick: number): Promise<RawEvent[]> {
       const queryId = ++messageId;
       return new Promise((resolve) => {
@@ -61,11 +96,8 @@ export function createSqlWorker() {
           }
         }
         worker.addEventListener("message", resolveOnQuery);
-        worker.postMessage({
-          id: queryId,
-          action: "exec",
-          sql: "SELECT * FROM events WHERE tick = $tick",
-          params: { $tick: tick },
+        postSqlMessage(queryId, "SELECT * FROM events WHERE tick = $tick", {
+          $tick: tick,
         });
       });
     },
@@ -86,52 +118,149 @@ export function createSqlWorker() {
           }
         }
         worker.addEventListener("message", resolveOnQuery);
-        worker.postMessage({
-          id: queryId,
-          action: "exec",
-          sql: "SELECT tick, data FROM events WHERE (tick >= $start AND ($end IS NULL OR tick < $end)) ORDER BY tick ASC",
-          params: {
-            $start: start,
-            $end: end,
-          },
-        });
+        postSqlMessage(
+          queryId,
+          "SELECT tick, data FROM events WHERE (tick >= $start AND ($end IS NULL OR tick < $end)) ORDER BY tick ASC",
+          { $start: start, $end: end },
+        );
       });
     },
     persistTickTimestampEvent(tick: number, event: BusEvent & TimeStamped) {
-      worker.postMessage({
-        id: ++messageId,
-        action: "exec",
-        sql: "INSERT INTO events (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)",
-        params: {
+      postSqlMessage(
+        ++messageId,
+        "INSERT INTO events (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)",
+        {
           $name: event.tag,
           $timestamp: event.timeStamp,
           $tick: tick,
           $data: JSON.stringify(event, bigIntReplacer),
         },
-      });
+      );
     },
     persistTimestampEvent(event: BusEvent & TimeStamped) {
-      worker.postMessage({
-        id: ++messageId,
-        action: "exec",
-        sql: "INSERT INTO events (name, timestamp, data) VALUES ($name, $timestamp, $data)",
-        params: {
+      postSqlMessage(
+        ++messageId,
+        "INSERT INTO events (name, timestamp, data) VALUES ($name, $timestamp, $data)",
+        {
           $name: event.tag,
           $timestamp: event.timeStamp,
           $data: JSON.stringify(event, bigIntReplacer),
         },
-      });
+      );
     },
     persistTickEvent(tick: number, event: BusEvent) {
-      worker.postMessage({
-        id: ++messageId,
-        action: "exec",
-        sql: "INSERT INTO events (name, tick, data) VALUES ($name, $tick, $data)",
-        params: {
+      postSqlMessage(
+        ++messageId,
+        "INSERT INTO events (name, tick, data) VALUES ($name, $tick, $data)",
+        {
           $name: event.tag,
           $tick: tick,
           $data: JSON.stringify(event, bigIntReplacer),
         },
+      );
+    },
+    // event sources
+    debugEventSources() {
+      const queryId = ++messageId;
+      function logQueryResult(event: MessageEvent) {
+        if (event.data.id === queryId) {
+          worker.removeEventListener("message", logQueryResult);
+          console.log(event.data.results);
+        }
+      }
+      worker.addEventListener("message", logQueryResult);
+      postSqlMessage(queryId, `SELECT * FROM ${event_sources_table_name}`);
+    },
+    insertEventSource(name: string) {
+      postSqlMessage(
+        ++messageId,
+        `INSERT INTO ${event_sources_table_name} (name) VALUES ($name)`,
+        { $name: name },
+      );
+    },
+    // snapshots
+    debugSnapshots() {
+      const queryId = ++messageId;
+      function query(event: MessageEvent) {
+        if (event.data.id === queryId) {
+          worker.removeEventListener("message", query);
+          console.log(event.data.results);
+        }
+      }
+      worker.addEventListener("message", query);
+      postSqlMessage(queryId, `SELECT * FROM snapshots`);
+    },
+    persistSnapshot(tick: number, id: string, data: Processor["data"]) {
+      postSqlMessage(
+        ++messageId,
+        `INSERT INTO ${snapshots_table_name} (source_id, tick, data) VALUES (
+        SELECT id FROM ${event_sources_table_name} WHERE name = $name,
+        $tick, $data)`,
+        {
+          $name: id,
+          $tick: tick,
+          $data: JSON.stringify(data, bigIntReplacer),
+        },
+      );
+    },
+    // inboxes
+    getTotalInboxSize() {
+      const queryId = ++messageId;
+      return new Promise<number>((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            resolve(event.data.results?.[0] ?? 0);
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(queryId, `SELECT COUNT() FROM ${inboxes_table_name}`);
+      });
+    },
+    getInboxSize(name: string): Promise<number> {
+      const queryId = ++messageId;
+      return new Promise((resolve) => {
+        function handleStatementResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleStatementResult);
+            resolve(event.data.results?.[0] ?? 0);
+          }
+        }
+        worker.addEventListener("message", handleStatementResult);
+        postSqlMessage(
+          queryId,
+          `SELECT COUNT(*) FROM ${inboxes_table_name} as inbox WHERE inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)`,
+          { $inboxOwner: name },
+        );
+      });
+    },
+    consumeInbox(sourceName: string): Promise<string[]> {
+      const queryId = ++messageId;
+      return new Promise((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            let results = event.data.results?.[0]?.values ?? [];
+            (results as unknown as [number, string][]).sort(
+              ([atick], [btick]) => atick - btick,
+            );
+            for (let i = 0; i < results.length; i++) {
+              results[i] = results[i][1];
+            }
+            resolve(results);
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `DELETE FROM ${inboxes_table_name} as inbox
+            JOIN ${events_table_name} as e
+            ON inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
+              AND inbox.event_id = e.id
+          RETURNING tick, data
+          ;`,
+          { $inboxOwner: sourceName },
+        );
       });
     },
   };

@@ -20,6 +20,9 @@
   } from "./objectiveTracker/store";
   import { makeSimulationStore } from "./events";
   import Introduction from "./Introduction.svelte";
+  import { createSqlWorker } from "./events/sqlWorker";
+  import { sqlSnapshotsAdapter } from "./events/snapshots";
+  import { sqlEventSourcesAdapter } from "./events/eventSources";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
@@ -48,9 +51,11 @@
           objectiveTracker = makeObjectiveTracker();
           objectiveTracker.setActive([0]); // Intro
           appStateStack.push(
-            makeSimulationStore(objectiveTracker).loadNew(
-              window.performance.now(),
-            ),
+            makeSimulationStore(
+              objectiveTracker,
+              sqlSnapshotsAdapter(createSqlWorker()),
+              sqlEventSourcesAdapter(createSqlWorker()),
+            ).loadNew(window.performance.now()),
             objectiveTracker,
           );
           showIntro = true;
