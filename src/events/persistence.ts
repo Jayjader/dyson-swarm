@@ -1,4 +1,4 @@
-import type { BusEvent } from "./events";
+import type { BusEvent, TimeStamped } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 
 export type EventPersistenceAdapter = {
@@ -18,11 +18,14 @@ export function sqlEventPersistenceAdapter(
           (event as any)?.afterTick ??
           (event as any)?.onTick ??
           (event as any)?.receivedTick;
-        if ((event as any)?.timeStamp !== undefined) {
+        if ((event as TimeStamped)?.timeStamp !== undefined) {
           if (tick !== undefined) {
-            sqlWorker.persistTickTimestampEvent(tick, event);
+            sqlWorker.persistTickTimestampEvent(
+              tick,
+              event as BusEvent & TimeStamped,
+            );
           } else {
-            sqlWorker.persistTimestampEvent(event);
+            sqlWorker.persistTimestampEvent(event as BusEvent & TimeStamped);
           }
         } else {
           sqlWorker.persistTickEvent(tick, event);
