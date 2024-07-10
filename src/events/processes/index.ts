@@ -20,10 +20,11 @@ type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
   id: `${Tag}-${number}`;
   incoming: Events<SubscriptionsFor<Tag>>[];
+  lastTick: number; // todo: investigate whether this + a new 'processed' field on events table could replace the inboxes table
 };
 export type EventProcessor<
   Tag extends string,
-  Data extends undefined | object = undefined
+  Data extends undefined | object = undefined,
 > = Tag extends keyof typeof SUBSCRIPTIONS
   ? Data extends undefined
     ? ProcessorCore<Tag>
