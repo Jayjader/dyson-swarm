@@ -16,8 +16,10 @@
   import { getClock } from "../events/processes/clock";
   import { get } from "svelte/store";
   import { sqlSnapshotsAdapter } from "../events/snapshots";
-  import { createSqlWorker } from "../events/sqlWorker";
+  import { getOrCreateSqlWorker } from "../events/sqlWorker";
   import { sqlEventSourcesAdapter } from "../events/eventSources";
+  import { sqlEventPersistenceAdapter } from "../events/persistence";
+  import { sqlEventsQueryAdapter } from "../events/query";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -186,7 +188,7 @@
     <Load
       name={selected.name}
       {simulationLoaded}
-      on:close={(event) => {
+      on:close={async (event) => {
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
           appStateStack.pop(2); // close menus
@@ -198,10 +200,13 @@
             objTrackerStore = currentTrackerStore;
           } else {
             objTrackerStore = makeObjectiveTracker();
+            const sqlWorker = await getOrCreateSqlWorker();
             simStore = makeSimulationStore(
               objTrackerStore,
-              sqlSnapshotsAdapter(createSqlWorker()),
-              sqlEventSourcesAdapter(createSqlWorker()),
+              sqlSnapshotsAdapter(sqlWorker),
+              sqlEventSourcesAdapter(sqlWorker),
+              sqlEventsQueryAdapter(sqlWorker),
+              sqlEventPersistenceAdapter(sqlWorker),
             );
           }
           simStore.loadSave(saveState);

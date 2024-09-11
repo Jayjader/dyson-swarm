@@ -1,4 +1,4 @@
-import { type Readable, writable, get } from "svelte/store";
+import { get, type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
 import type { BusEvent, EventTag } from "./events";
 import type { Id, Processor } from "./processes";
@@ -25,11 +25,7 @@ import {
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
 import type { ObjectiveTracker } from "../objectiveTracker/store";
-import {
-  type EventPersistenceAdapter,
-  sqlEventPersistenceAdapter,
-} from "./persistence";
-import { createSqlWorker } from "./sqlWorker";
+import { type EventPersistenceAdapter } from "./persistence";
 import type { SnapshotsAdapter } from "./snapshots";
 import type { EventSourcesAdapter } from "./eventSources";
 import type { EventsQueryAdapter } from "./query";
@@ -60,9 +56,7 @@ export function insertProcessor(
 export function broadcastEvent(
   sim: Simulation,
   event: BusEvent,
-  eventPersistenceAdapter: EventPersistenceAdapter = sqlEventPersistenceAdapter(
-    createSqlWorker(),
-  ),
+  eventPersistenceAdapter: EventPersistenceAdapter,
 ): Simulation {
   eventPersistenceAdapter.persistEvent(event);
   // todo: refactor the following into something that can be swapped out with an eventQueryAdapter(sqlWorker()) inside the individual processor type source files, and do so
@@ -126,6 +120,7 @@ export async function processUntilSettled(
   sim: Simulation,
   snapshotsAdapter: SnapshotsAdapter,
   eventsAdapter: EventsQueryAdapter,
+  eventsWriteAdapter: EventPersistenceAdapter,
 ): Promise<Simulation> {
   while ((await eventsAdapter.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
@@ -145,7 +140,7 @@ export async function processUntilSettled(
       }
     }
     for (let event of emitted) {
-      broadcastEvent(sim, event);
+      broadcastEvent(sim, event, eventsWriteAdapter);
     }
   }
   return sim;
@@ -178,10 +173,12 @@ export function makeSimulationStore(
         sim,
         snapshotsAdapter,
         eventsReadAdapter,
+        eventsWriteAdapter,
       );
       set(settled);
     },
-    broadcastEvent: (e: BusEvent) => update((sim) => broadcastEvent(sim, e)),
+    broadcastEvent: (e: BusEvent) =>
+      update((sim) => broadcastEvent(sim, e, eventsWriteAdapter)),
     loadSave: (s: SaveState) => {
       set(loadSave(s));
       return store;

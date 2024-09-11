@@ -35,7 +35,7 @@
   import Introduction from "../Introduction.svelte";
   import History from "../panels/history/History.svelte";
   import { sqlEventsQueryAdapter } from "../events/query";
-  import { createSqlWorker } from "../events/sqlWorker";
+  import { getOrCreateSqlWorker } from "../events/sqlWorker";
   import { sqlEventSourcesAdapter } from "../events/eventSources";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
@@ -68,7 +68,7 @@
   onDestroy(unsubFromSim);
 
   let clockFrame: number = 0;
-  function scheduleCallback(callback) {
+  function scheduleCallback(callback: FrameRequestCallback) {
     clockFrame = window.requestAnimationFrame(callback);
   }
   function cancelCallback() {
@@ -106,7 +106,7 @@
     guideOpen = open;
   }
 
-  scheduleCallback(outsideClockLoop);
+  //scheduleCallback(outsideClockLoop);
 </script>
 
 <main
@@ -151,10 +151,12 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("history")}
-      <History
-        eventsAdapter={sqlEventsQueryAdapter(createSqlWorker())}
-        sourcesAdapter={sqlEventSourcesAdapter(createSqlWorker())}
-      />
+      {#await getOrCreateSqlWorker() then sqlWorker}
+        <History
+          eventsAdapter={sqlEventsQueryAdapter(sqlWorker)}
+          sourcesAdapter={sqlEventSourcesAdapter(sqlWorker)}
+        />
+      {/await}
     {/if}
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview />

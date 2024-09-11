@@ -47,34 +47,44 @@ const inboxes_table_creation = `DROP TABLE IF EXISTS ${inboxes_table_name};
 CREATE TABLE ${inboxes_table_name} (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   event_id INTEGER NOT NULL,
-  owner_id INTEGER NOT NULL,
+  owner_id INTEGER NOT NULL
 );`;
 // todo: different tables for different simulation savefiles
 // todo: handle generations
 
-export type SqlWorker = ReturnType<typeof createSqlWorker>;
+export type SqlWorker =
+  ReturnType<typeof getOrCreateSqlWorker> extends Promise<infer U> ? U : never;
 let messageId = 0;
 let worker: Worker;
-export function createSqlWorker() {
+export async function getOrCreateSqlWorker() {
   if (worker === undefined) {
     worker = new Worker("/worker.sql-wasm.js");
     worker.onerror = (event) => console.error("Worker error: ", event);
     worker.addEventListener("message", (event) => console.debug(event));
     const statementId = ++messageId;
-    function createTables(event: MessageEvent) {
-      if (event.data.id === statementId && event.data.ready) {
-        worker.removeEventListener("message", createTables);
-        postSqlMessage(
-          ++messageId,
-          events_table_creation +
-            event_sources_table_creation +
-            snapshots_table_creation +
-            inboxes_table_creation,
-        );
+    await new Promise<void>((resolve) => {
+      function createTables(event: MessageEvent) {
+        if (event.data.id === statementId && event.data.ready) {
+          worker.removeEventListener("message", createTables);
+          const creationId = ++messageId;
+          function resolveOnCreation(event: MessageEvent) {
+            if (event.data.id === creationId) {
+              resolve();
+            }
+          }
+          worker.addEventListener("message", resolveOnCreation);
+          postSqlMessage(
+            creationId,
+            events_table_creation +
+              event_sources_table_creation +
+              snapshots_table_creation +
+              inboxes_table_creation,
+          );
+        }
       }
-    }
-    worker.addEventListener("message", createTables);
-    worker.postMessage({ id: statementId, action: "open" });
+      worker.addEventListener("message", createTables);
+      worker.postMessage({ id: statementId, action: "open" });
+    });
   }
   function postSqlMessage(
     id: number,

@@ -20,9 +20,11 @@
   } from "./objectiveTracker/store";
   import { makeSimulationStore } from "./events";
   import Introduction from "./Introduction.svelte";
-  import { createSqlWorker } from "./events/sqlWorker";
+  import { getOrCreateSqlWorker } from "./events/sqlWorker";
   import { sqlSnapshotsAdapter } from "./events/snapshots";
   import { sqlEventSourcesAdapter } from "./events/eventSources";
+  import { sqlEventsQueryAdapter } from "./events/query";
+  import { sqlEventPersistenceAdapter } from "./events/persistence";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
@@ -46,20 +48,23 @@
     <div class="flex flex-col gap-2 self-center">
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
-        on:click={() => {
-          appStateStack.pop();
-          objectiveTracker = makeObjectiveTracker();
-          objectiveTracker.setActive([0]); // Intro
-          appStateStack.push(
-            makeSimulationStore(
+        on:click={() =>
+          getOrCreateSqlWorker().then((sqlWorker) => {
+            appStateStack.pop();
+            objectiveTracker = makeObjectiveTracker();
+            objectiveTracker.setActive([0]); // Intro
+            appStateStack.push(
+              makeSimulationStore(
+                objectiveTracker,
+                sqlSnapshotsAdapter(sqlWorker),
+                sqlEventSourcesAdapter(sqlWorker),
+                sqlEventsQueryAdapter(sqlWorker),
+                sqlEventPersistenceAdapter(sqlWorker),
+              ).loadNew(window.performance.now()),
               objectiveTracker,
-              sqlSnapshotsAdapter(createSqlWorker()),
-              sqlEventSourcesAdapter(createSqlWorker()),
-            ).loadNew(window.performance.now()),
-            objectiveTracker,
-          );
-          showIntro = true;
-        }}>Start New Simulation</button
+            );
+            showIntro = true;
+          })}>Start New Simulation</button
       >
       <button
         class="self-stretch rounded border-2 border-slate-900 px-2"
