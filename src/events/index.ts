@@ -43,14 +43,15 @@ export function insertProcessor(
   p: Processor,
   sourcesAdapter: EventSourcesAdapter,
 ) {
-  sourcesAdapter.insertSource(p.id);
-  SUBSCRIPTIONS[p.tag].forEach((eventTag) =>
-    sim.bus.subscriptions.set(
-      eventTag,
-      (sim.bus.subscriptions.get(eventTag) ?? new Set()).add(p.id),
-    ),
-  );
-  sim.processors.set(p.id, p);
+  sourcesAdapter.insertSource(p.id, p);
+  for (let eventTag of SUBSCRIPTIONS[p.tag]) {
+    const subscribedSources = sim.bus.subscriptions.get(eventTag);
+    if (subscribedSources === undefined) {
+      sim.bus.subscriptions.set(eventTag, new Set([p.id]));
+    } else {
+      subscribedSources.add(p.id); // todo-longterm: check if this breaks svelte reactivity
+    }
+  }
 }
 
 export function broadcastEvent(
@@ -59,15 +60,10 @@ export function broadcastEvent(
   eventPersistenceAdapter: EventPersistenceAdapter,
 ): Simulation {
   eventPersistenceAdapter.persistEvent(event);
-  // todo: refactor the following into something that can be swapped out with an eventQueryAdapter(sqlWorker()) inside the individual processor type source files, and do so
-  const processorIds = sim.bus.subscriptions.get(event.tag);
-  if (processorIds) {
-    for (let id of processorIds) {
-      const processor = sim.processors.get(id) as Processor;
-      // we know this processor is subscribed to this event because we got its id from the event Tag's registered subscriptions
-      // @ts-ignore
-      processor.incoming.push(event);
-      sim.processors.set(id, processor);
+  const subscribedToEvent = sim.bus.subscriptions.get(event.tag);
+  if (subscribedToEvent) {
+    for (let id of subscribedToEvent) {
+      eventPersistenceAdapter.deliverEvent(event, id);
     }
   }
   return sim;
@@ -118,20 +114,20 @@ function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
 
 export async function processUntilSettled(
   sim: Simulation,
-  snapshotsAdapter: SnapshotsAdapter,
-  eventsAdapter: EventsQueryAdapter,
-  eventsWriteAdapter: EventPersistenceAdapter,
+  adapters: {
+    snapshotsAdapter: SnapshotsAdapter;
+    eventsReadAdapter: EventsQueryAdapter;
+    eventsWriteAdapter: EventPersistenceAdapter;
+  },
 ): Promise<Simulation> {
-  while ((await eventsAdapter.getTotalInboxSize()) > 0) {
+  while ((await adapters.eventsReadAdapter.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
     for (let processor of sim.processors.values()) {
-      const inbox = await eventsAdapter.getInbox(processor.id);
+      const inbox = await adapters.eventsReadAdapter.getInbox(processor.id);
       if (inbox.length > 0) {
         const [updatedProcessor, newEmitted] = process(processor, inbox);
-        // todo: refactor map manipulation out into a different adapter
-        sim.processors.set(updatedProcessor.id, updatedProcessor);
         emitted.push(...newEmitted);
-        snapshotsAdapter.persistSnapshot(
+        adapters.snapshotsAdapter.persistSnapshot(
           updatedProcessor.lastTick,
           updatedProcessor.id,
           updatedProcessor.data,
@@ -140,7 +136,7 @@ export async function processUntilSettled(
       }
     }
     for (let event of emitted) {
-      broadcastEvent(sim, event, eventsWriteAdapter);
+      broadcastEvent(sim, event, adapters.eventsWriteAdapter);
     }
   }
   return sim;
@@ -150,10 +146,12 @@ export const SIMULATION_STORE = Symbol();
 
 export function makeSimulationStore(
   objectives: ObjectiveTracker,
-  snapshotsAdapter: SnapshotsAdapter,
-  eventSourcesAdapter: EventSourcesAdapter,
-  eventsReadAdapter: EventsQueryAdapter,
-  eventsWriteAdapter: EventPersistenceAdapter,
+  adapters: {
+    snapshotsAdapter: SnapshotsAdapter;
+    eventSourcesAdapter: EventSourcesAdapter;
+    eventsReadAdapter: EventsQueryAdapter;
+    eventsWriteAdapter: EventPersistenceAdapter;
+  },
 ): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
@@ -169,16 +167,11 @@ export function makeSimulationStore(
     subscribe,
     processUntilSettled: async () => {
       const sim = get(baseData);
-      const settled = await processUntilSettled(
-        sim,
-        snapshotsAdapter,
-        eventsReadAdapter,
-        eventsWriteAdapter,
-      );
+      const settled = await processUntilSettled(sim, adapters);
       set(settled);
     },
     broadcastEvent: (e: BusEvent) =>
-      update((sim) => broadcastEvent(sim, e, eventsWriteAdapter)),
+      update((sim) => broadcastEvent(sim, e, adapters.eventsWriteAdapter)),
     loadSave: (s: SaveState) => {
       set(loadSave(s));
       return store;
@@ -188,19 +181,23 @@ export function makeSimulationStore(
         bus: { subscriptions: new Map() },
         processors: new Map(),
       };
-      newGame().forEach((p) => {
-        insertProcessor(simulation, p, eventSourcesAdapter);
-      });
+      for (let processor of newGame()) {
+        insertProcessor(simulation, processor, adapters.eventSourcesAdapter);
+      }
       insertProcessor(
         simulation,
         createClock(outsideTick, "clock-0", { mode: "pause" }),
-        eventSourcesAdapter,
+        adapters.eventSourcesAdapter,
       );
-      insertProcessor(simulation, createMemoryStream(), eventSourcesAdapter);
+      insertProcessor(
+        simulation,
+        createMemoryStream(),
+        adapters.eventSourcesAdapter,
+      );
       insertProcessor(
         simulation,
         createObjectiveTrackerProbe(objectives.handleTriggers),
-        eventSourcesAdapter,
+        adapters.eventSourcesAdapter,
       );
       set(simulation);
       return store;

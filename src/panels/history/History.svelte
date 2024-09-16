@@ -12,6 +12,7 @@
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
   import type { EventSourcesAdapter } from "../../events/eventSources";
+  import type { SnapshotsAdapter } from "../../events/snapshots";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -36,8 +37,11 @@
     }
   };
 
-  export let eventsAdapter: EventsQueryAdapter;
-  export let sourcesAdapter: EventSourcesAdapter;
+  export let adapters: {
+    eventsReadAdapter: EventsQueryAdapter;
+    eventSourcesAdapter: EventSourcesAdapter;
+    snapshotsAdapter: SnapshotsAdapter;
+  };
   const simulation = (
     getContext(SIMULATION_STORE) as { simulation: SimulationStore }
   ).simulation;
@@ -67,7 +71,7 @@
   onDestroy(unsubFromSim);
   const windowSize = 300;
   function queryEvents() {
-    return eventsAdapter
+    return adapters.eventsReadAdapter
       .getTickEventsRange(lastTick - windowSize, lastTick)
       .then((events) => {
         slidingWindow.clear();
@@ -93,8 +97,8 @@
               points[existingPointForTickIndex][1] += value as any;
             }
           }
-          slidingWindow = slidingWindow;
         }
+        slidingWindow = slidingWindow;
       });
   }
 
@@ -107,8 +111,8 @@
     class="m-2 rounded border-2 border-gray-900 px-2"
     on:click={() => {
       console.log({ slidingWindowMap: [...slidingWindow] });
-      sourcesAdapter.debugSources();
-      // snapshotsAdapter.debugSnapshots();
+      adapters.eventSourcesAdapter.debugSources();
+      adapters.snapshotsAdapter.debugSnapshots();
     }}
   >
     debug points

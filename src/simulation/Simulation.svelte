@@ -32,13 +32,17 @@
   } from "../objectiveTracker/store";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
-  import Introduction from "../Introduction.svelte";
   import History from "../panels/history/History.svelte";
-  import { sqlEventsQueryAdapter } from "../events/query";
-  import { getOrCreateSqlWorker } from "../events/sqlWorker";
-  import { sqlEventSourcesAdapter } from "../events/eventSources";
+  import { type EventsQueryAdapter } from "../events/query";
+  import { type EventSourcesAdapter } from "../events/eventSources";
+  import { type SnapshotsAdapter } from "../events/snapshots";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
+  export let adapters: {
+    eventsReadAdapter: EventsQueryAdapter;
+    eventSourcesAdapter: EventSourcesAdapter;
+    snapshotsAdapter: SnapshotsAdapter;
+  };
   const readStoredResource = (
     simulation: Simulation,
     resource: Resource,
@@ -151,12 +155,7 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("history")}
-      {#await getOrCreateSqlWorker() then sqlWorker}
-        <History
-          eventsAdapter={sqlEventsQueryAdapter(sqlWorker)}
-          sourcesAdapter={sqlEventSourcesAdapter(sqlWorker)}
-        />
-      {/await}
+      <History {adapters} />
     {/if}
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview />

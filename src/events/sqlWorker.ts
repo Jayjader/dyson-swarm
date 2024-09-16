@@ -1,5 +1,5 @@
 import { bigIntReplacer } from "../save/save";
-import type { BusEvent, TimeStamped } from "./events";
+import { type BusEvent, getTick, type TimeStamped } from "./events";
 import type { Processor } from "./processes";
 
 const events_table_name = "events";
@@ -138,7 +138,7 @@ export async function getOrCreateSqlWorker() {
     persistTickTimestampEvent(tick: number, event: BusEvent & TimeStamped) {
       postSqlMessage(
         ++messageId,
-        "INSERT INTO events (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)",
+        `INSERT INTO ${events_table_name} (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)`,
         {
           $name: event.tag,
           $timestamp: event.timeStamp,
@@ -150,7 +150,7 @@ export async function getOrCreateSqlWorker() {
     persistTimestampEvent(event: BusEvent & TimeStamped) {
       postSqlMessage(
         ++messageId,
-        "INSERT INTO events (name, timestamp, data) VALUES ($name, $timestamp, $data)",
+        `INSERT INTO ${events_table_name} (name, timestamp, data) VALUES ($name, $timestamp, $data)`,
         {
           $name: event.tag,
           $timestamp: event.timeStamp,
@@ -161,7 +161,7 @@ export async function getOrCreateSqlWorker() {
     persistTickEvent(tick: number, event: BusEvent) {
       postSqlMessage(
         ++messageId,
-        "INSERT INTO events (name, tick, data) VALUES ($name, $tick, $data)",
+        `INSERT INTO ${events_table_name} (name, tick, data) VALUES ($name, $tick, $data)`,
         {
           $name: event.tag,
           $tick: tick,
@@ -243,6 +243,40 @@ export async function getOrCreateSqlWorker() {
           { $inboxOwner: name },
         );
       });
+    },
+    deliverToInbox(busEvent: BusEvent, to: string) {
+      messageId = messageId + 1;
+      const firstQueryId = messageId;
+      messageId = messageId + 1;
+      const secondQueryId = messageId;
+      function handleFirstQuery(event: MessageEvent) {
+        if (event.data.id === firstQueryId) {
+          worker.removeEventListener("message", handleFirstQuery);
+          const results = event.data.results ?? [];
+          if (results.length > 0) {
+            const [eventId, inboxOwnerId] = results;
+            postSqlMessage(
+              secondQueryId,
+              `INSERT INTO ${inboxes_table_name} (event_id, owner_id) VALUES ($eventId, $ownerId)`,
+              { $eventId: eventId, $ownerId: inboxOwnerId },
+            );
+          } else {
+            // fail?
+          }
+        }
+      }
+      worker.addEventListener("message", handleFirstQuery);
+      postSqlMessage(
+        firstQueryId,
+        `SELECT event.id FROM ${events_table_name} as event WHERE event.name = $name AND event.tick = $tick AND event.data = $data` +
+          `UNION ALL SELECT source.id FROM ${event_sources_table_name} as source WHERE source.name = $owner`,
+        {
+          $name: busEvent.tag,
+          $tick: getTick(busEvent),
+          $data: JSON.stringify(busEvent, bigIntReplacer),
+          $owner: to,
+        },
+      );
     },
     consumeInbox(sourceName: string): Promise<string[]> {
       const queryId = ++messageId;

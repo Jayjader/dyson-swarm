@@ -18,13 +18,30 @@
     makeObjectiveTracker,
     type ObjectiveTracker,
   } from "./objectiveTracker/store";
-  import { makeSimulationStore } from "./events";
+  import {
+    makeSimulationStore,
+    type Simulation as MemorySimulation,
+  } from "./events";
   import Introduction from "./Introduction.svelte";
-  import { getOrCreateSqlWorker } from "./events/sqlWorker";
-  import { sqlSnapshotsAdapter } from "./events/snapshots";
-  import { sqlEventSourcesAdapter } from "./events/eventSources";
-  import { sqlEventsQueryAdapter } from "./events/query";
-  import { sqlEventPersistenceAdapter } from "./events/persistence";
+  import { getOrCreateSqlWorker, type SqlWorker } from "./events/sqlWorker";
+  import {
+    memorySnapshotsAdapter,
+    type SnapshotsAdapter,
+    sqlSnapshotsAdapter,
+  } from "./events/snapshots";
+  import {
+    type EventSourcesAdapter,
+    memoryEventSourcesAdapter,
+    sqlEventSourcesAdapter,
+  } from "./events/eventSources";
+  import {
+    type EventsQueryAdapter,
+    sqlEventsQueryAdapter,
+  } from "./events/query";
+  import {
+    type EventPersistenceAdapter,
+    sqlEventPersistenceAdapter,
+  } from "./events/persistence";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
@@ -33,6 +50,32 @@
   let objectiveTracker: ObjectiveTracker;
 
   let showIntro = false;
+
+  type Adapters = {
+    eventsReadAdapter: EventsQueryAdapter;
+    eventsWriteAdapter: EventPersistenceAdapter;
+    eventSourcesAdapter: EventSourcesAdapter;
+    snapshotsAdapter: SnapshotsAdapter;
+  };
+  let adapters: Adapters | undefined;
+  function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
+    return {
+      eventsReadAdapter: sqlEventsQueryAdapter(sqlWorker),
+      eventsWriteAdapter: sqlEventPersistenceAdapter(sqlWorker),
+      eventSourcesAdapter: sqlEventSourcesAdapter(sqlWorker),
+      snapshotsAdapter: sqlSnapshotsAdapter(sqlWorker),
+    };
+  }
+  function initInMemoryAdapters(
+    memory: MemorySimulation["processors"],
+  ): Adapters {
+    return {
+      eventSourcesAdapter: memoryEventSourcesAdapter(memory),
+      eventsReadAdapter: undefined,
+      eventsWriteAdapter: undefined,
+      snapshotsAdapter: memorySnapshotsAdapter(memory),
+    };
+  }
 </script>
 
 {#if $appStateStack.at(-1) === MainMenu}
@@ -53,14 +96,12 @@
             appStateStack.pop();
             objectiveTracker = makeObjectiveTracker();
             objectiveTracker.setActive([0]); // Intro
+            adapters = initSqlAdapters(sqlWorker);
+            // adapters = initInMemoryAdapters(new Map());
             appStateStack.push(
-              makeSimulationStore(
-                objectiveTracker,
-                sqlSnapshotsAdapter(sqlWorker),
-                sqlEventSourcesAdapter(sqlWorker),
-                sqlEventsQueryAdapter(sqlWorker),
-                sqlEventPersistenceAdapter(sqlWorker),
-              ).loadNew(window.performance.now()),
+              makeSimulationStore(objectiveTracker, adapters).loadNew(
+                window.performance.now(),
+              ),
               objectiveTracker,
             );
             showIntro = true;
@@ -108,11 +149,14 @@
       on:close={() => (showIntro = false)}
     />
   {/if}
-  <Simulation
-    simulation={$appStateStack[1]}
-    objectives={$appStateStack[2]}
-    on:open-menu={() => appStateStack.push(SimMenu)}
-  />
+  {#if adapters !== undefined}
+    <Simulation
+      {adapters}
+      simulation={$appStateStack[1]}
+      objectives={$appStateStack[2]}
+      on:open-menu={() => appStateStack.push(SimMenu)}
+    />
+  {/if}
 {/if}
 
 <style>
