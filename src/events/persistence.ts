@@ -1,4 +1,4 @@
-import type { BusEvent, TimeStamped } from "./events";
+import { getTick, type BusEvent, type TimeStamped } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 
 export type EventPersistenceAdapter = {
@@ -13,11 +13,7 @@ export function sqlEventPersistenceAdapter(
         "outside-clock-tick" !== event.tag &&
         "simulation-clock-tick" !== event.tag
       ) {
-        const tick =
-          (event as any)?.beforeTick ??
-          (event as any)?.afterTick ??
-          (event as any)?.onTick ??
-          (event as any)?.receivedTick;
+        const tick = getTick(event);
         if ((event as TimeStamped)?.timeStamp !== undefined) {
           if (tick !== undefined) {
             sqlWorker.persistTickTimestampEvent(

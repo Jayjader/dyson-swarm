@@ -1,11 +1,5 @@
 import type { Simulation } from "../index";
-import type {
-  AfterTick,
-  BeforeTick,
-  BusEvent,
-  Events,
-  ReceivedTick,
-} from "../events";
+import { type BusEvent, type Events, getTick } from "../events";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
 
@@ -31,7 +25,7 @@ export type SerializedStream = {
 };
 
 export function createMemoryStream(
-  id: EventStream["id"] = "stream-0"
+  id: EventStream["id"] = "stream-0",
 ): EventStream {
   return {
     id,
@@ -44,7 +38,7 @@ export function createMemoryStream(
 function pushEvent(
   stream: EventStream,
   event: EventStream["incoming"][number],
-  tick: number
+  tick: number,
 ): void {
   const received = stream.data.received.get(tick);
   if (received !== undefined) {
@@ -72,21 +66,12 @@ export function memoryStreamProcess(stream: EventStream): EventStream {
   // ) {
   //   console.debug({ eventStream: stream });
   // }
-  let event: typeof stream.incoming[number];
+  let event: (typeof stream.incoming)[number];
   while ((event = stream.incoming.shift()!)) {
     if (event.tag === "simulation-clock-tick") {
       stream.data.unfinishedTick = event.tick;
     }
-    const { afterTick, beforeTick, receivedTick, onTick } =
-      event as unknown as Partial<
-        AfterTick & BeforeTick & ReceivedTick & { onTick: number }
-      >;
-    const eventTick =
-      receivedTick ??
-      afterTick ??
-      beforeTick ??
-      onTick ??
-      stream.data.unfinishedTick;
+    const eventTick = getTick(event) ?? stream.data.unfinishedTick;
     pushEvent(stream, event, eventTick);
   }
   stream.incoming = [];
@@ -99,7 +84,7 @@ export function getEventStream(simulation: Simulation) {
 
 export function getTickEvents(
   stream: EventStream,
-  tick: number
+  tick: number,
 ): BusEvent[] | undefined {
   return stream.data.received.get(tick);
 }
