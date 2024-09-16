@@ -83,6 +83,15 @@ export type EventTag = BusEvent["tag"];
 // helper type to extract a subset of possible events based on just their tags
 export type Events<Tags extends EventTag> = BusEvent & { tag: Tags };
 
+export function getTick(event: BusEvent) {
+  return (
+    (event as any)?.beforeTick ??
+    (event as any)?.afterTick ??
+    (event as any)?.onTick ??
+    (event as any)?.receivedTick
+  );
+}
+
 export function indexOfFirstFutureEvent(
   events: (BusEvent & ReceivedTick)[],
   lastTick: number,
