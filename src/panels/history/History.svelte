@@ -27,7 +27,7 @@
       case "supply":
         return [`supply-${e.resource}`, e.amount] as const;
       case "launch-satellite":
-        return [e.tag, e.count ?? 1];
+        return [e.tag, e.count ?? 1] as const;
       case "satellite-flux-reflection":
         return [e.tag, e.flux] as const;
       case "construct-fabricated":
