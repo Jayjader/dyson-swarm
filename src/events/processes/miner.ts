@@ -16,13 +16,13 @@ export type MinerManager = EventProcessor<
 >;
 
 export function createMinerManager(
-  options: Partial<{ id: MinerManager["id"]; count: number }> = {}
+  options: Partial<{ id: MinerManager["id"]; count: number }> = {},
 ): MinerManager {
   const values = { id: "miner-0" as MinerManager["id"], count: 0, ...options };
   return {
     id: values.id,
     tag: "miner",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       working: values.count,
       count: values.count,
@@ -31,10 +31,13 @@ export function createMinerManager(
   };
 }
 
-export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
+export function minerProcess(
+  miner: MinerManager,
+  inbox: BusEvent[],
+): [MinerManager, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = miner.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.MINER) {
@@ -73,7 +76,7 @@ export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
             [Resource.ELECTRICITY]: 0n,
             fabricated: 0,
             working: null as null | number,
-          }
+          },
         );
         miner.data.count += received.fabricated;
         miner.data.working += received.fabricated;
@@ -115,7 +118,7 @@ export function minerProcess(miner: MinerManager): [MinerManager, BusEvent[]] {
                 tag: "mine-planet-surface",
                 minerCount: miner.data.working,
                 receivedTick: event.tick + 1,
-              }
+              },
             );
           }
         }

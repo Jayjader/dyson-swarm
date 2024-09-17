@@ -16,7 +16,7 @@ export type LauncherManager = EventProcessor<
   }
 >;
 export function createLauncherManager(
-  options: Partial<{ id: LauncherManager["id"]; count: number }> = {}
+  options: Partial<{ id: LauncherManager["id"]; count: number }> = {},
 ): LauncherManager {
   const values = {
     id: "launcher-0" as LauncherManager["id"],
@@ -26,7 +26,7 @@ export function createLauncherManager(
   return {
     id: values.id,
     tag: "launcher",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       working: values.count,
       count: values.count,
@@ -36,11 +36,12 @@ export function createLauncherManager(
   };
 }
 export function launcherProcess(
-  launcher: LauncherManager
+  launcher: LauncherManager,
+  inbox: BusEvent[],
 ): [LauncherManager, BusEvent[]] {
   let event: BusEvent;
   let emitted = [] as BusEvent[];
-  while ((event = launcher.incoming.shift()!)) {
+  while ((event = inbox.shift()!)) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.SATELLITE_LAUNCHER) {
@@ -82,7 +83,7 @@ export function launcherProcess(
             [Resource.PACKAGED_SATELLITE]: 0n,
             fabricated: 0,
             working: null as null | number,
-          }
+          },
         );
         launcher.data.received = [];
 
@@ -108,7 +109,7 @@ export function launcherProcess(
               amount: received[Resource.PACKAGED_SATELLITE],
               receivedTick: event.tick,
               toId: launcher.id,
-            }
+            },
           );
           break;
         }

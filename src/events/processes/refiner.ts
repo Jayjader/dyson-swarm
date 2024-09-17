@@ -27,7 +27,7 @@ export function createRefinerManager(
   options: Partial<{
     id: RefinerManager["id"];
     count: number;
-  }> = {}
+  }> = {},
 ): RefinerManager {
   const values = {
     id: "refiner-0" as RefinerManager["id"],
@@ -37,17 +37,18 @@ export function createRefinerManager(
   return {
     id: values.id,
     tag: "refiner",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: { working: values.count, count: values.count, received: [] },
   };
 }
 
 export function refinerProcess(
-  refiner: RefinerManager
+  refiner: RefinerManager,
+  inbox: BusEvent[],
 ): [RefinerManager, BusEvent[]] {
   let event: BusEvent;
   const emitted = [] as BusEvent[];
-  while ((event = refiner.incoming.shift()!)) {
+  while ((event = inbox.shift()!)) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.REFINER) {
@@ -92,7 +93,7 @@ export function refinerProcess(
             [Resource.ELECTRICITY]: 0n,
             [Resource.ORE]: 0n,
             fabricated: 0,
-          }
+          },
         );
         refiner.data.received = [];
 
@@ -115,7 +116,7 @@ export function refinerProcess(
               amount: received[Resource.ORE],
               receivedTick: event.tick,
               toId: refiner.id,
-            }
+            },
           );
           break;
         }

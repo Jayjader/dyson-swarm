@@ -10,12 +10,12 @@ export type ObjectiveTrackerProbe = EventProcessor<
 
 export function createObjectiveTrackerProbe(
   propagateTriggers: (triggers: Trigger[]) => void,
-  id: ObjectiveTrackerProbe["id"] = "probe-0"
+  id: ObjectiveTrackerProbe["id"] = "probe-0",
 ): ObjectiveTrackerProbe {
   return {
     id,
     tag: "probe",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       propagateTriggers,
     },
@@ -23,12 +23,13 @@ export function createObjectiveTrackerProbe(
 }
 
 export function objectiveTrackerProcess(
-  probe: ObjectiveTrackerProbe
+  probe: ObjectiveTrackerProbe,
+  inbox: BusEvent[],
 ): [ObjectiveTrackerProbe, BusEvent[]] {
   const emitted = [] as BusEvent[];
 
   let event;
-  while ((event = probe.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "command-set-fabricator-queue":
         probe.data.propagateTriggers([event.tag]);

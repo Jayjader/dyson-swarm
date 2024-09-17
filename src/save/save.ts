@@ -69,7 +69,7 @@ export function generateSave(sim: Simulation): SaveState {
       },
       tag: proc.tag,
       id: proc.id,
-      incoming: proc.incoming,
+      // incoming: proc.incoming, // todo: use events adapter's .peekInbox()
     };
   }
   console.debug({ saveStream: stream });
@@ -136,6 +136,9 @@ export function bigIntReplacer(key: string, value: any) {
 }
 export function parseProcessors(formatted: string): SaveState {
   const parsed = JSON.parse(formatted, bigIntRestorer) as SaveState;
+  // todo?: introduce saveAdapter(s)
+  // todo: find event stream and run it through event persistence adapter's .persistEvent()
+  // todo: use event persistence adapter's .deliverEvent() for all .incoming stuff
   parsed.stream.incoming = parsed.stream.incoming.map((e) =>
     e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
       ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
@@ -154,7 +157,7 @@ export function parseProcessors(formatted: string): SaveState {
   }
   const fabricatorIndex = parsed.processors.findIndex(
     (p) => p.tag === "fabricator",
-  )!;
+  );
   parsed.processors[fabricatorIndex].incoming = parsed.processors[
     fabricatorIndex
   ].incoming.map((e) =>

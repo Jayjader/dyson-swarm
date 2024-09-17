@@ -1,9 +1,9 @@
 import { MERCURY_MASS_KG, Resource, tickProduction } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
+import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
 import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
-import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
 
 export type Planet = EventProcessor<
   "planet",
@@ -16,7 +16,7 @@ export type Planet = EventProcessor<
 >;
 
 export function createPlanet(
-  options: Partial<{ id: Planet["id"]; mass: bigint }> = {}
+  options: Partial<{ id: Planet["id"]; mass: bigint }> = {},
 ): Planet {
   const values = {
     id: "planet-0" as Planet["id"],
@@ -26,20 +26,23 @@ export function createPlanet(
   return {
     id: values.id,
     tag: "planet",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: { mass: values.mass, received: [] },
   };
 }
 
-export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
+export function planetProcess(
+  planet: Planet,
+  inbox: BusEvent[],
+): [Planet, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = planet.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "mine-planet-surface":
         planet.data.received.push(event);
         break;
-      case "simulation-clock-tick":
+      case "simulation-clock-tick": {
         planet.data.received.sort(compareReceivedTicks);
 
         const { tick } = event;
@@ -69,6 +72,7 @@ export function planetProcess(planet: Planet): [Planet, BusEvent[]] {
             ? []
             : planet.data.received.slice(futureIndex);
         break;
+      }
     }
   }
   return [planet, emitted];

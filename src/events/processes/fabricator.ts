@@ -19,12 +19,12 @@ export type Fabricator = EventProcessor<
 
 export function createFabricator(
   id: Fabricator["id"] = "fabricator-0",
-  startingQueue: BuildOrder[] = []
+  startingQueue: BuildOrder[] = [],
 ): Fabricator {
   return {
     id,
     tag: "fabricator",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       working: true,
       job: null,
@@ -39,11 +39,12 @@ export function createFabricator(
 const EMPTY_ARRAY = [] as const;
 
 export function fabricatorProcess(
-  fabricator: Fabricator
+  fabricator: Fabricator,
+  inbox: BusEvent[],
 ): [Fabricator, BusEvent[]] {
   let event,
     emitted = [] as BusEvent[];
-  while ((event = fabricator.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "command-turn-on-fabricator":
         fabricator.data.working = true;
@@ -97,7 +98,7 @@ export function fabricatorProcess(
         // now that the array is sorted, we can scan from the front to find the edge of the (contiguous) present|past events
         const firstFutureEventIndex = indexOfFirstFutureEvent(
           fabricator.data.received,
-          tick
+          tick,
         );
 
         const suppliedAtThisTick = fabricator.data.received
@@ -105,7 +106,7 @@ export function fabricatorProcess(
           .reduce((supply, event) => {
             supply.set(
               event.resource,
-              event.amount + (supply.get(event.resource) ?? 0n)
+              event.amount + (supply.get(event.resource) ?? 0n),
             );
             return supply;
           }, new Map<Resource, bigint>());
@@ -144,12 +145,12 @@ export function fabricatorProcess(
                   supply - (constructionCosts[currentJob].get(resource) ?? 0n),
                 toId: fabricator.id,
                 receivedTick: tick,
-              } as Fabricator["data"]["received"][number])
+              }) as Fabricator["data"]["received"][number],
           )
           .concat(
             firstFutureEventIndex === undefined
               ? EMPTY_ARRAY
-              : fabricator.data.received.slice(firstFutureEventIndex)
+              : fabricator.data.received.slice(firstFutureEventIndex),
           );
         fabricator.data = {
           working: true,

@@ -1,42 +1,40 @@
 import type { Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
 import type { Simulation } from "../index";
-import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor, Id } from "./index";
 
 export type Storage<R extends string> = EventProcessor<
   `storage-${R}`,
   {
     stored: bigint;
-    received: Events<
-      Exclude<SubscriptionsFor<`storage-${R}`>, "simulation-clock-tick">
-    >[];
+    received: Events<"draw" | "produce">[];
   }
 >;
 
 export function createStorage<
-  R extends Exclude<Resource, Resource.ELECTRICITY>
+  R extends Exclude<Resource, Resource.ELECTRICITY>,
 >(
   resource: R,
-  options: Partial<{ id: Storage<R>["id"]; stored: bigint }> = {}
+  options: Partial<{ id: Storage<R>["id"]; stored: bigint }> = {},
 ): Storage<R> {
   const tag = `storage-${resource}`;
   const values = { id: `${tag}-0`, stored: 0n, ...options };
   return {
     id: values.id,
     tag,
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: { stored: values.stored, received: [] },
   } as unknown as Storage<R>;
 }
 
 export function storageProcess(
   resource: Exclude<Resource, Resource.ELECTRICITY>,
-  storage: Storage<typeof resource>
+  storage: Storage<typeof resource>,
+  inbox: BusEvent[],
 ): [typeof storage, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = storage.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "draw":
       case "produce":
@@ -49,8 +47,8 @@ export function storageProcess(
             break;
           }
           storage.data.received.push(event);
-          (storage.data.received as Events<"draw" | "supply">[]).sort(
-            (a, b) => a.receivedTick - b.receivedTick
+          (storage.data.received as Events<"draw" | "produce">[]).sort(
+            (a, b) => a.receivedTick - b.receivedTick,
           );
         }
         break;
@@ -92,7 +90,7 @@ export function readStored(simulation: Simulation, resource: Resource): bigint {
   return (
     (
       simulation.processors.get(
-        `storage-${resource}-0` as unknown as Id
+        `storage-${resource}-0` as unknown as Id,
       ) as Storage<Resource>
     )?.data.stored ?? 0n
   );

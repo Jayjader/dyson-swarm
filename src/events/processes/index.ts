@@ -1,6 +1,5 @@
 import type { Resource } from "../../gameRules";
-import type { Events } from "../events";
-import type { SUBSCRIPTIONS, SubscriptionsFor } from "../subscriptions";
+import type { SUBSCRIPTIONS } from "../subscriptions";
 import type { Clock } from "./clock";
 import type { CollectorManager } from "./collector";
 import type { EventStream } from "./eventStream";
@@ -19,7 +18,6 @@ import type { ObjectiveTrackerProbe } from "./objectiveTracker";
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
   id: `${Tag}-${number}`;
-  incoming: Events<SubscriptionsFor<Tag>>[];
   lastTick: number; // todo: investigate whether this + a new 'processed' field on events table could replace the inboxes table
 };
 export type EventProcessor<

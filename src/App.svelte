@@ -18,30 +18,10 @@
     makeObjectiveTracker,
     type ObjectiveTracker,
   } from "./objectiveTracker/store";
-  import {
-    makeSimulationStore,
-    type Simulation as MemorySimulation,
-  } from "./events";
+  import { makeSimulationStore } from "./events";
   import Introduction from "./Introduction.svelte";
-  import { getOrCreateSqlWorker, type SqlWorker } from "./events/sqlWorker";
-  import {
-    memorySnapshotsAdapter,
-    type SnapshotsAdapter,
-    sqlSnapshotsAdapter,
-  } from "./events/snapshots";
-  import {
-    type EventSourcesAdapter,
-    memoryEventSourcesAdapter,
-    sqlEventSourcesAdapter,
-  } from "./events/eventSources";
-  import {
-    type EventsQueryAdapter,
-    sqlEventsQueryAdapter,
-  } from "./events/query";
-  import {
-    type EventPersistenceAdapter,
-    sqlEventPersistenceAdapter,
-  } from "./events/persistence";
+  import { getOrCreateSqlWorker } from "./events/sqlWorker";
+  import { type Adapters, initSqlAdapters } from "./adapters";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
@@ -51,31 +31,7 @@
 
   let showIntro = false;
 
-  type Adapters = {
-    eventsReadAdapter: EventsQueryAdapter;
-    eventsWriteAdapter: EventPersistenceAdapter;
-    eventSourcesAdapter: EventSourcesAdapter;
-    snapshotsAdapter: SnapshotsAdapter;
-  };
-  let adapters: Adapters | undefined;
-  function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
-    return {
-      eventsReadAdapter: sqlEventsQueryAdapter(sqlWorker),
-      eventsWriteAdapter: sqlEventPersistenceAdapter(sqlWorker),
-      eventSourcesAdapter: sqlEventSourcesAdapter(sqlWorker),
-      snapshotsAdapter: sqlSnapshotsAdapter(sqlWorker),
-    };
-  }
-  function initInMemoryAdapters(
-    memory: MemorySimulation["processors"],
-  ): Adapters {
-    return {
-      eventSourcesAdapter: memoryEventSourcesAdapter(memory),
-      eventsReadAdapter: undefined,
-      eventsWriteAdapter: undefined,
-      snapshotsAdapter: memorySnapshotsAdapter(memory),
-    };
-  }
+  export let adapters: Adapters | undefined;
 </script>
 
 {#if $appStateStack.at(-1) === MainMenu}

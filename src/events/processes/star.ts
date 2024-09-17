@@ -16,7 +16,6 @@ export function createStar(
 ): Star {
   return {
     id,
-    incoming: [],
     tag: "star",
     data: { mass },
     lastTick: Number.NEGATIVE_INFINITY,

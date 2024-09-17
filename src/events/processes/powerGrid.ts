@@ -19,7 +19,7 @@ export type PowerGrid = EventProcessor<
 >;
 
 export function createPowerGrid(
-  options: Partial<{ id: PowerGrid["id"]; stored: bigint }> = {}
+  options: Partial<{ id: PowerGrid["id"]; stored: bigint }> = {},
 ): PowerGrid {
   const values = {
     id: "power grid-0" as PowerGrid["id"],
@@ -28,8 +28,8 @@ export function createPowerGrid(
   };
   return {
     id: values.id,
-    incoming: [],
     tag: "power grid",
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       stored: values.stored,
       breakerTripped: false,
@@ -38,10 +38,13 @@ export function createPowerGrid(
   };
 }
 
-export function powerGridProcess(grid: PowerGrid): [PowerGrid, BusEvent[]] {
+export function powerGridProcess(
+  grid: PowerGrid,
+  inbox: BusEvent[],
+): [PowerGrid, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = grid.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "produce":
       case "draw":
@@ -70,13 +73,13 @@ export function powerGridProcess(grid: PowerGrid): [PowerGrid, BusEvent[]] {
             next.tag === "produce"
               ? [accu[0] + next.amount, accu[1]]
               : [accu[0], accu[1].add(next)],
-          [0n, new Set<Events<"draw">>()]
+          [0n, new Set<Events<"draw">>()],
         );
         grid.data.stored += produced;
         grid.data.received = [];
         const totalRequestedSupply = Array.from(toSupply).reduce(
           (accu, next) => accu + next.amount,
-          0n
+          0n,
         );
         if (grid.data.breakerTripped) {
           break;

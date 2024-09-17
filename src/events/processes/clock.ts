@@ -38,7 +38,7 @@ export function createClock(
     speed: number;
     tick: number;
     mode: "play" | "pause" | "indirect-pause";
-  }> = {}
+  }> = {},
 ): Clock {
   const mode = options?.mode ?? clockDefaults.mode;
   const speed = options?.speed ?? clockDefaults.speed;
@@ -47,7 +47,7 @@ export function createClock(
   const state: ClockState = mode === "play" ? [primitive] : [primitive, mode];
   return {
     id,
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     tag: "clock",
     data: {
       state,
@@ -57,10 +57,14 @@ export function createClock(
   };
 }
 
-export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
+// todo: split "ticks to be simluated" from "player control state for which tick is being viewed"
+export function clockProcess(
+  clock: Clock,
+  inbox: BusEvent[],
+): [Clock, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = clock.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "command-simulation-clock-play":
         if (isPause(clock.data.state)) {
@@ -124,7 +128,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
           beforeTick: event.afterTick + 1,
         });
         break;
-      case "outside-clock-tick":
+      case "outside-clock-tick": {
         if (!isPlay(clock.data.state)) {
           // note: in the future we might want to replace this `break;` with something along the lines of
           // `clock.data.lastOutsideTickProvokingSimulationTick = event.timestamp;`
@@ -136,7 +140,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
         }
         const { speed, tick } = getPrimitive(clock.data.state);
         const timeElapsed = Math.floor(
-          event.timeStamp - clock.data.lastOutsideTickProvokingSimulationTick
+          event.timeStamp - clock.data.lastOutsideTickProvokingSimulationTick,
         );
         const timeStep = Math.floor(1000 / speed);
         const advanced = Math.floor(timeElapsed / timeStep);
@@ -155,6 +159,7 @@ export function clockProcess(clock: Clock): [Clock, BusEvent[]] {
             tick: tick + index,
           });
         break;
+      }
     }
   }
   return [clock, emitted];

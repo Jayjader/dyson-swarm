@@ -1,7 +1,7 @@
-import { getTick, type BusEvent, type TimeStamped } from "./events";
+import { type BusEvent, getTick, type TimeStamped } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 import type { Simulation } from "./index";
-import type { Processor } from "./processes";
+import type { Id } from "./processes";
 
 export type EventPersistenceAdapter = {
   persistEvent: (event: BusEvent) => void;
@@ -39,14 +39,12 @@ export function sqlEventPersistenceAdapter(
 
 export function memoryEventPersistenceAdapter(
   memory: Simulation["processors"],
+  inboxes: Map<Id, Array<BusEvent>>,
 ): EventPersistenceAdapter {
   return {
     deliverEvent(event: BusEvent, to: string): void {
-      const processor = memory.get(to as Processor["id"]) as Processor;
-      // we know this processor is subscribed to this event because we got its id from the event Tag's registered subscriptions
-      // @ts-ignore
-      processor.incoming.push(event);
-      memory.set(to as Processor["id"], processor);
+      const inbox = inboxes.get(to as Id)!;
+      inbox.push(event);
     },
     persistEvent(event: BusEvent): void {
       // todo: refactor memoryStream to happen here instead

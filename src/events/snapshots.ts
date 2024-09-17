@@ -5,6 +5,7 @@ import type { Processor } from "./processes";
 export type SnapshotsAdapter = {
   debugSnapshots(): void;
   persistSnapshot(tick: number, id: string, data: any): void;
+  getLastSnapshot(id: string): Promise<any>;
 };
 
 export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
@@ -14,6 +15,9 @@ export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
     },
     persistSnapshot(tick: number, id: string, data: any) {
       sqlWorker.persistSnapshot(tick, id, data);
+    },
+    getLastSnapshot(id: string): Promise<any> {
+      return sqlWorker.getLastSnapshot(id);
     },
   };
 }
@@ -30,6 +34,9 @@ export function memorySnapshotsAdapter(
       // proc.lastTick = tick;
       proc.data = data;
       memoryProcessors.set(id as Processor["id"], proc);
+    },
+    async getLastSnapshot(id: string): Promise<any> {
+      return memoryProcessors.get(id as Processor["id"])!;
     },
   };
 }

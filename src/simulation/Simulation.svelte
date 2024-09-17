@@ -33,16 +33,10 @@
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import History from "../panels/history/History.svelte";
-  import { type EventsQueryAdapter } from "../events/query";
-  import { type EventSourcesAdapter } from "../events/eventSources";
-  import { type SnapshotsAdapter } from "../events/snapshots";
+  import type { Adapters } from "../adapters";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
-  export let adapters: {
-    eventsReadAdapter: EventsQueryAdapter;
-    eventSourcesAdapter: EventSourcesAdapter;
-    snapshotsAdapter: SnapshotsAdapter;
-  };
+  export let adapters: Adapters;
   const readStoredResource = (
     simulation: Simulation,
     resource: Resource,

@@ -5,14 +5,12 @@
     SIMULATION_STORE,
     type SimulationStore,
   } from "../../events";
-  import type { EventsQueryAdapter } from "../../events/query";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
-  import type { EventSourcesAdapter } from "../../events/eventSources";
-  import type { SnapshotsAdapter } from "../../events/snapshots";
+  import type { Adapters } from "../../adapters";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -37,11 +35,7 @@
     }
   };
 
-  export let adapters: {
-    eventsReadAdapter: EventsQueryAdapter;
-    eventSourcesAdapter: EventSourcesAdapter;
-    snapshotsAdapter: SnapshotsAdapter;
-  };
+  export let adapters: Adapters;
   const simulation = (
     getContext(SIMULATION_STORE) as { simulation: SimulationStore }
   ).simulation;
@@ -70,36 +64,36 @@
   });
   onDestroy(unsubFromSim);
   const windowSize = 300;
-  function queryEvents() {
-    return adapters.eventsReadAdapter
-      .getTickEventsRange(lastTick - windowSize, lastTick)
-      .then((events) => {
-        slidingWindow.clear();
-        for (const [tick, event] of events) {
-          const data = getPointData(event);
-          if (data === undefined) {
-            continue;
-          }
-          const [category, value] = data;
-          const points = slidingWindow.get(category);
-          if (points === undefined) {
-            slidingWindow.set(category, [[tick, value as any]]);
-          } else {
-            if (points.length >= windowSize) {
-              points.shift();
-            }
-            const existingPointForTickIndex = points.findIndex(
-              ([existingTick]) => existingTick === tick,
-            );
-            if (existingPointForTickIndex === -1) {
-              points.push([tick, value] as any);
-            } else {
-              points[existingPointForTickIndex][1] += value as any;
-            }
-          }
+  async function queryEvents() {
+    const events = await adapters.events.read.getTickEventsRange(
+      lastTick - windowSize,
+      lastTick,
+    );
+    slidingWindow.clear();
+    for (const [tick, event] of events) {
+      const data = getPointData(event);
+      if (data === undefined) {
+        continue;
+      }
+      const [category, value] = data;
+      const points = slidingWindow.get(category);
+      if (points === undefined) {
+        slidingWindow.set(category, [[tick, value as any]]);
+      } else {
+        if (points.length >= windowSize) {
+          points.shift();
         }
-        slidingWindow = slidingWindow;
-      });
+        const existingPointForTickIndex = points.findIndex(
+          ([existingTick]) => existingTick === tick,
+        );
+        if (existingPointForTickIndex === -1) {
+          points.push([tick, value] as any);
+        } else {
+          points[existingPointForTickIndex][1] += value as any;
+        }
+      }
+    }
+    slidingWindow = slidingWindow;
   }
 
   let hidden = new Set();
@@ -111,8 +105,8 @@
     class="m-2 rounded border-2 border-gray-900 px-2"
     on:click={() => {
       console.log({ slidingWindowMap: [...slidingWindow] });
-      adapters.eventSourcesAdapter.debugSources();
-      adapters.snapshotsAdapter.debugSnapshots();
+      adapters.eventSources.debugSources();
+      adapters.snapshots.debugSnapshots();
     }}
   >
     debug points

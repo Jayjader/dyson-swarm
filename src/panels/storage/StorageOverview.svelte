@@ -46,7 +46,7 @@
             [Resource.ORE, { produce: 0n, supply: 0n }],
             [Resource.METAL, { produce: 0n, supply: 0n }],
             [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
-          ])
+          ]),
         );
         last.tick = currentTick;
         last.resources = receivedResources;

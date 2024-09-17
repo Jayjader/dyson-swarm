@@ -20,7 +20,7 @@ export type SatelliteFactoryManager = EventProcessor<
   }
 >;
 export function createFactoryManager(
-  options: Partial<{ id: SatelliteFactoryManager["id"]; count: number }> = {}
+  options: Partial<{ id: SatelliteFactoryManager["id"]; count: number }> = {},
 ): SatelliteFactoryManager {
   const values = {
     id: "factory-0" as SatelliteFactoryManager["id"],
@@ -30,16 +30,17 @@ export function createFactoryManager(
   return {
     id: values.id,
     tag: "factory",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: { count: values.count, working: values.count, received: [] },
   };
 }
 export function factoryProcess(
-  factory: SatelliteFactoryManager
+  factory: SatelliteFactoryManager,
+  inbox: BusEvent[],
 ): [SatelliteFactoryManager, BusEvent[]] {
   let event: BusEvent;
   const emitted = [] as BusEvent[];
-  while ((event = factory.incoming.shift()!)) {
+  while ((event = inbox.shift()!)) {
     switch (event.tag) {
       case "command-set-working-count":
         if (event.construct === Construct.SATELLITE_FACTORY) {
@@ -80,7 +81,7 @@ export function factoryProcess(
             [Resource.METAL]: 0n,
             fabricated: 0,
             working: null as null | number,
-          }
+          },
         );
         factory.data.received = [];
         if (received.fabricated > 0) {
@@ -105,7 +106,7 @@ export function factoryProcess(
               amount: received[Resource.METAL],
               receivedTick: event.tick,
               toId: factory.id,
-            }
+            },
           );
           break;
         }
@@ -151,7 +152,7 @@ export function factoryProcess(
                   receivedTick: (event as Events<"simulation-clock-tick">).tick,
                 });
               }
-            }
+            },
           );
           break;
         }

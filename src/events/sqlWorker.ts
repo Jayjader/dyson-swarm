@@ -188,6 +188,9 @@ export async function getOrCreateSqlWorker() {
         { $name: name },
       );
     },
+    getAllEventSourceIds() {
+      return Promise.resolve([]); // todo: complete implementation
+    },
     // snapshots
     debugSnapshots() {
       const queryId = ++messageId;
@@ -212,6 +215,9 @@ export async function getOrCreateSqlWorker() {
           $data: JSON.stringify(data, bigIntReplacer),
         },
       );
+    },
+    getLastSnapshot(id: string) {
+      return Promise.resolve(undefined); // todo: complete implementation
     },
     // inboxes
     getTotalInboxSize() {

@@ -25,10 +25,7 @@ import {
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
 import type { ObjectiveTracker } from "../objectiveTracker/store";
-import { type EventPersistenceAdapter } from "./persistence";
-import type { SnapshotsAdapter } from "./snapshots";
-import type { EventSourcesAdapter } from "./eventSources";
-import type { EventsQueryAdapter } from "./query";
+import type { Adapters } from "../adapters";
 
 type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
@@ -41,9 +38,9 @@ export type Simulation = {
 export function insertProcessor(
   sim: Simulation,
   p: Processor,
-  sourcesAdapter: EventSourcesAdapter,
+  adapters: Adapters,
 ) {
-  sourcesAdapter.insertSource(p.id, p);
+  adapters.eventSources.insertSource(p.id, p);
   for (let eventTag of SUBSCRIPTIONS[p.tag]) {
     const subscribedSources = sim.bus.subscriptions.get(eventTag);
     if (subscribedSources === undefined) {
@@ -57,13 +54,13 @@ export function insertProcessor(
 export function broadcastEvent(
   sim: Simulation,
   event: BusEvent,
-  eventPersistenceAdapter: EventPersistenceAdapter,
+  adapters: Adapters,
 ): Simulation {
-  eventPersistenceAdapter.persistEvent(event);
+  adapters.events.write.persistEvent(event);
   const subscribedToEvent = sim.bus.subscriptions.get(event.tag);
   if (subscribedToEvent) {
     for (let id of subscribedToEvent) {
-      eventPersistenceAdapter.deliverEvent(event, id);
+      adapters.events.write.deliverEvent(event, id);
     }
   }
   return sim;
@@ -72,37 +69,37 @@ export function broadcastEvent(
 function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
   switch (p.tag) {
     case "stream":
-      return [memoryStreamProcess(p), []];
+      return [memoryStreamProcess(p, inbox), []];
     case "clock":
-      return clockProcess(p);
+      return clockProcess(p, inbox);
     case "star":
       return starProcess(p, inbox);
     case "planet":
-      return planetProcess(p);
+      return planetProcess(p, inbox);
     case "collector":
-      return collectorProcess(p);
+      return collectorProcess(p, inbox);
     case "power grid":
-      return powerGridProcess(p);
+      return powerGridProcess(p, inbox);
     case "storage-ore":
-      return storageProcess(Resource.ORE, p);
+      return storageProcess(Resource.ORE, p, inbox);
     case "storage-metal":
-      return storageProcess(Resource.METAL, p);
+      return storageProcess(Resource.METAL, p, inbox);
     case "storage-satellite":
-      return storageProcess(Resource.PACKAGED_SATELLITE, p);
+      return storageProcess(Resource.PACKAGED_SATELLITE, p, inbox);
     case "miner":
-      return minerProcess(p);
+      return minerProcess(p, inbox);
     case "refiner":
-      return refinerProcess(p);
+      return refinerProcess(p, inbox);
     case "factory":
-      return factoryProcess(p);
+      return factoryProcess(p, inbox);
     case "launcher":
-      return launcherProcess(p);
+      return launcherProcess(p, inbox);
     case "swarm":
-      return swarmProcess(p);
+      return swarmProcess(p, inbox);
     case "fabricator":
-      return fabricatorProcess(p);
+      return fabricatorProcess(p, inbox);
     case "probe":
-      return objectiveTrackerProcess(p);
+      return objectiveTrackerProcess(p, inbox);
   }
   console.error({
     command: "process",
@@ -114,20 +111,17 @@ function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
 
 export async function processUntilSettled(
   sim: Simulation,
-  adapters: {
-    snapshotsAdapter: SnapshotsAdapter;
-    eventsReadAdapter: EventsQueryAdapter;
-    eventsWriteAdapter: EventPersistenceAdapter;
-  },
+  adapters: Adapters,
 ): Promise<Simulation> {
-  while ((await adapters.eventsReadAdapter.getTotalInboxSize()) > 0) {
+  while ((await adapters.events.read.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
-    for (let processor of sim.processors.values()) {
-      const inbox = await adapters.eventsReadAdapter.getInbox(processor.id);
+    for (let processorId of await adapters.eventSources.getAllSourceIds()) {
+      const inbox = await adapters.events.read.getInbox(processorId);
       if (inbox.length > 0) {
+        const processor = await adapters.snapshots.getLastSnapshot(processorId);
         const [updatedProcessor, newEmitted] = process(processor, inbox);
         emitted.push(...newEmitted);
-        adapters.snapshotsAdapter.persistSnapshot(
+        adapters.snapshots.persistSnapshot(
           updatedProcessor.lastTick,
           updatedProcessor.id,
           updatedProcessor.data,
@@ -136,7 +130,7 @@ export async function processUntilSettled(
       }
     }
     for (let event of emitted) {
-      broadcastEvent(sim, event, adapters.eventsWriteAdapter);
+      broadcastEvent(sim, event, adapters);
     }
   }
   return sim;
@@ -146,12 +140,7 @@ export const SIMULATION_STORE = Symbol();
 
 export function makeSimulationStore(
   objectives: ObjectiveTracker,
-  adapters: {
-    snapshotsAdapter: SnapshotsAdapter;
-    eventSourcesAdapter: EventSourcesAdapter;
-    eventsReadAdapter: EventsQueryAdapter;
-    eventsWriteAdapter: EventPersistenceAdapter;
-  },
+  adapters: Adapters,
 ): Readable<Simulation> & {
   processUntilSettled: () => void;
   broadcastEvent: (e: BusEvent) => void;
@@ -171,7 +160,7 @@ export function makeSimulationStore(
       set(settled);
     },
     broadcastEvent: (e: BusEvent) =>
-      update((sim) => broadcastEvent(sim, e, adapters.eventsWriteAdapter)),
+      update((sim) => broadcastEvent(sim, e, adapters)),
     loadSave: (s: SaveState) => {
       set(loadSave(s));
       return store;
@@ -182,22 +171,18 @@ export function makeSimulationStore(
         processors: new Map(),
       };
       for (let processor of newGame()) {
-        insertProcessor(simulation, processor, adapters.eventSourcesAdapter);
+        insertProcessor(simulation, processor, adapters);
       }
       insertProcessor(
         simulation,
         createClock(outsideTick, "clock-0", { mode: "pause" }),
-        adapters.eventSourcesAdapter,
+        adapters,
       );
-      insertProcessor(
-        simulation,
-        createMemoryStream(),
-        adapters.eventSourcesAdapter,
-      );
+      insertProcessor(simulation, createMemoryStream(), adapters);
       insertProcessor(
         simulation,
         createObjectiveTrackerProbe(objectives.handleTriggers),
-        adapters.eventSourcesAdapter,
+        adapters,
       );
       set(simulation);
       return store;

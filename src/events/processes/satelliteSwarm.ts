@@ -20,7 +20,7 @@ export function createSwarm(
     id: SatelliteSwarm["id"];
     count: number;
     averageDistanceFromStar: bigint;
-  }> = {}
+  }> = {},
 ): SatelliteSwarm {
   const values = {
     id: "swarm-0" as SatelliteSwarm["id"],
@@ -31,7 +31,7 @@ export function createSwarm(
   return {
     id: values.id,
     tag: "swarm",
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     data: {
       count: values.count,
       received: [],
@@ -43,7 +43,7 @@ export function createSwarm(
 export function fluxReflected(
   fluxEmitted: bigint,
   reflectionOrbitSurfaceRadius: bigint,
-  swarmCount: number
+  swarmCount: number,
 ): bigint {
   // inverse power square law
   return (
@@ -66,11 +66,12 @@ export function fluxReflected(
 }
 
 export function swarmProcess(
-  swarm: SatelliteSwarm
+  swarm: SatelliteSwarm,
+  inbox: BusEvent[],
 ): [SatelliteSwarm, BusEvent[]] {
   let event,
     emitted = [] as BusEvent[];
-  while ((event = swarm.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "star-flux-emission":
       case "launch-satellite":
@@ -99,12 +100,12 @@ export function swarmProcess(
                       e.flux,
                       swarm.data?.averageDistanceFromStar ??
                         MERCURY_SEMIMAJOR_AXIS_M,
-                      swarm.data.count
+                      swarm.data.count,
                     ),
                 ];
               }
             },
-            [0, 0n]
+            [0, 0n],
           );
 
         swarm.data.count += launched;

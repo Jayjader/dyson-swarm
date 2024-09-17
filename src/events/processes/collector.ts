@@ -19,7 +19,7 @@ export function createCollectorManager(
   options: Partial<{
     id: CollectorManager["id"];
     count: number;
-  }> = {}
+  }> = {},
 ): CollectorManager {
   const values = {
     id: "collector-0" as CollectorManager["id"],
@@ -28,7 +28,7 @@ export function createCollectorManager(
   };
   return {
     id: values.id,
-    incoming: [],
+    lastTick: Number.NEGATIVE_INFINITY,
     tag: "collector",
     data: { count: values.count, received: [] },
   };
@@ -42,7 +42,7 @@ export const SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY = {
 export function fluxReceived(
   fluxEmitted: bigint,
   absorptionSurfaceOrbitRadius: bigint,
-  collectorCount: number
+  collectorCount: number,
 ): bigint {
   return (
     // inverse square power law
@@ -65,17 +65,21 @@ export function fluxReceived(
 }
 
 export function collectorProcess(
-  c: CollectorManager
+  c: CollectorManager,
+  inbox: BusEvent[],
 ): [CollectorManager, BusEvent[]] {
   let event;
   const emitted = [] as BusEvent[];
-  while ((event = c.incoming.shift())) {
+  while ((event = inbox.shift())) {
     switch (event.tag) {
       case "construct-fabricated":
-        if (event.construct !== Construct.SOLAR_COLLECTOR) {
-          break;
+        if (event.construct === Construct.SOLAR_COLLECTOR) {
+          c.data.received.push(event);
         }
+        break;
       case "star-flux-emission":
+        c.data.received.push(event);
+        break;
       case "satellite-flux-reflection":
         c.data.received.push(event);
         break;
@@ -85,7 +89,7 @@ export function collectorProcess(
         const { tick } = event;
         const firstFutureEventIndex = indexOfFirstFutureEvent(
           c.data.received,
-          tick
+          tick,
         );
 
         const received = c.data.received.slice(0, firstFutureEventIndex).reduce(
@@ -100,20 +104,20 @@ export function collectorProcess(
                 sum.flux += fluxReceived(
                   e.flux,
                   MERCURY_SEMIMAJOR_AXIS_M, // collectors are on mercury's surface (for now)
-                  c.data.count
+                  c.data.count,
                 );
               }
             }
             return sum;
           },
-          { flux: 0n, fabricated: 0 }
+          { flux: 0n, fabricated: 0 },
         );
 
         c.data.count += received.fabricated;
 
         const produced = BigInt(
           (SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY.numerator * received.flux) /
-            SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY.denominator
+            SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY.denominator,
         );
         if (produced > 0) {
           emitted.push({

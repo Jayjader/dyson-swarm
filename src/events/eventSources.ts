@@ -1,9 +1,11 @@
 import type { SqlWorker } from "./sqlWorker";
 import type { Simulation } from "./index";
-import type { Processor } from "./processes";
+import type { Id, Processor } from "./processes";
+import type { BusEvent } from "./events";
 
 export type EventSourcesAdapter = {
   insertSource(name: string, value: Processor): void;
+  getAllSourceIds(): Promise<Array<string>>;
   debugSources(): void;
 };
 
@@ -17,11 +19,15 @@ export function sqlEventSourcesAdapter(
     insertSource(name: string) {
       sqlWorker.insertEventSource(name);
     },
+    getAllSourceIds(): Promise<Array<string>> {
+      return sqlWorker.getAllEventSourceIds();
+    },
   };
 }
 
 export function memoryEventSourcesAdapter(
   memory: Simulation["processors"],
+  inboxes: Map<Id, Array<BusEvent>>,
 ): EventSourcesAdapter {
   return {
     debugSources() {
@@ -29,6 +35,10 @@ export function memoryEventSourcesAdapter(
     },
     insertSource(_name: string, proc: Processor): void {
       memory.set(proc.id, proc);
+      inboxes.set(proc.id, []);
+    },
+    async getAllSourceIds(): Promise<Array<string>> {
+      return Array.from(memory.keys());
     },
   };
 }
