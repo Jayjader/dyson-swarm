@@ -17,19 +17,21 @@ export type CollectorManager = EventProcessor<
 
 export function createCollectorManager(
   options: Partial<{
-    id: CollectorManager["id"];
+    id: CollectorManager["core"]["id"];
     count: number;
   }> = {},
 ): CollectorManager {
   const values = {
-    id: "collector-0" as CollectorManager["id"],
+    id: "collector-0" as CollectorManager["core"]["id"],
     count: 0,
     ...options,
   };
   return {
-    id: values.id,
-    lastTick: Number.NEGATIVE_INFINITY,
-    tag: "collector",
+    core: {
+      id: values.id,
+      lastTick: Number.NEGATIVE_INFINITY,
+      tag: "collector",
+    },
     data: { count: values.count, received: [] },
   };
 }

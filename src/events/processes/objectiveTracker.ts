@@ -10,12 +10,14 @@ export type ObjectiveTrackerProbe = EventProcessor<
 
 export function createObjectiveTrackerProbe(
   propagateTriggers: (triggers: Trigger[]) => void,
-  id: ObjectiveTrackerProbe["id"] = "probe-0",
+  id: ObjectiveTrackerProbe["core"]["id"] = "probe-0",
 ): ObjectiveTrackerProbe {
   return {
-    id,
-    tag: "probe",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id,
+      tag: "probe",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       propagateTriggers,
     },

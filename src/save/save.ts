@@ -33,18 +33,24 @@ export function loadSave(save: SaveState): Simulation {
   const stream = parseStream(save.stream);
   const flatSubs = save.processors
     .flatMap((p) =>
-      [...SUBSCRIPTIONS[p.tag]].map<[EventTag, Id]>((tag) => [tag, p.id]),
+      [...SUBSCRIPTIONS[p.core.tag]].map<[EventTag, Id]>((tag) => [
+        tag,
+        p.core.id,
+      ]),
     )
     .concat(
-      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [tag, stream.id]),
+      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [
+        tag,
+        stream.core.id,
+      ]),
     );
   const subsByTag = flatSubs.reduce<Map<EventTag, Set<Id>>>(
     (accu, [tag, id]) => accu.set(tag, (accu.get(tag) ?? new Set()).add(id)),
     new Map(),
   );
   const processorsById = new Map([
-    [stream.id, stream],
-    ...save.processors.map<[Id, Processor]>((p) => [p.id, p]),
+    [stream.core.id, stream],
+    ...save.processors.map<[Id, Processor]>((p) => [p.core.id, p]),
   ]);
   return {
     bus: {
@@ -58,17 +64,20 @@ export function generateSave(sim: Simulation): SaveState {
   const processors = [];
   let stream!: SerializedStream;
   for (const proc of sim.processors.values()) {
-    if (proc.tag !== "stream") {
-      processors.push(proc);
+    if (proc.core.tag !== "stream") {
+      processors.push(proc as Exclude<Processor, EventStream>);
       continue;
     }
     stream = {
       data: {
-        unfinishedTick: proc.data.unfinishedTick,
-        received: [...proc.data.received],
+        unfinishedTick: (proc as EventStream).data.unfinishedTick,
+        received: [...(proc as EventStream).data.received],
       },
-      tag: proc.tag,
-      id: proc.id,
+      core: {
+        tag: proc.core.tag,
+        id: proc.core.id,
+        lastTick: proc.core.lastTick,
+      },
       // incoming: proc.incoming, // todo: use events adapter's .peekInbox()
     };
   }
@@ -156,7 +165,7 @@ export function parseProcessors(formatted: string): SaveState {
     );
   }
   const fabricatorIndex = parsed.processors.findIndex(
-    (p) => p.tag === "fabricator",
+    (p) => p.core.tag === "fabricator",
   );
   parsed.processors[fabricatorIndex].incoming = parsed.processors[
     fabricatorIndex

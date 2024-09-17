@@ -31,7 +31,7 @@
 
   let showIntro = false;
 
-  export let adapters: Adapters | undefined;
+  let adapters: Adapters | undefined;
 </script>
 
 {#if $appStateStack.at(-1) === MainMenu}

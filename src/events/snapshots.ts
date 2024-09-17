@@ -30,13 +30,13 @@ export function memorySnapshotsAdapter(
       console.debug("memory snapshots: ", memoryProcessors);
     },
     persistSnapshot(tick: number, id: string, data: any): void {
-      const proc = memoryProcessors.get(id as Processor["id"])!;
-      // proc.lastTick = tick;
+      const proc = memoryProcessors.get(id as Processor["core"]["id"])!;
+      proc.core.lastTick = tick;
       proc.data = data;
-      memoryProcessors.set(id as Processor["id"], proc);
+      memoryProcessors.set(id as Processor["core"]["id"], proc);
     },
     async getLastSnapshot(id: string): Promise<any> {
-      return memoryProcessors.get(id as Processor["id"])!;
+      return memoryProcessors.get(id as Processor["core"]["id"])!;
     },
   };
 }

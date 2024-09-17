@@ -16,17 +16,19 @@ export type Planet = EventProcessor<
 >;
 
 export function createPlanet(
-  options: Partial<{ id: Planet["id"]; mass: bigint }> = {},
+  options: Partial<{ id: Planet["core"]["id"]; mass: bigint }> = {},
 ): Planet {
   const values = {
-    id: "planet-0" as Planet["id"],
+    id: "planet-0" as Planet["core"]["id"],
     mass: MERCURY_MASS_KG,
     ...options,
   };
   return {
-    id: values.id,
-    tag: "planet",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "planet",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: { mass: values.mass, received: [] },
   };
 }

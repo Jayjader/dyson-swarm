@@ -33,7 +33,7 @@ const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
 
 export function createClock(
   lastOutsideTickProvokingSimulationTick: number,
-  id: Clock["id"] = "clock-0",
+  id: Clock["core"]["id"] = "clock-0",
   options: Partial<{
     speed: number;
     tick: number;
@@ -46,9 +46,11 @@ export function createClock(
   const primitive = { speed, tick };
   const state: ClockState = mode === "play" ? [primitive] : [primitive, mode];
   return {
-    id,
-    lastTick: Number.NEGATIVE_INFINITY,
-    tag: "clock",
+    core: {
+      id,
+      lastTick: Number.NEGATIVE_INFINITY,
+      tag: "clock",
+    },
     data: {
       state,
       lastOutsideTickProvokingSimulationTick,

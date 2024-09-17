@@ -17,21 +17,23 @@ export type SatelliteSwarm = EventProcessor<
 >;
 export function createSwarm(
   options: Partial<{
-    id: SatelliteSwarm["id"];
+    id: SatelliteSwarm["core"]["id"];
     count: number;
     averageDistanceFromStar: bigint;
   }> = {},
 ): SatelliteSwarm {
   const values = {
-    id: "swarm-0" as SatelliteSwarm["id"],
+    id: "swarm-0" as SatelliteSwarm["core"]["id"],
     count: 0,
     averageDistanceFromStar: MERCURY_SEMIMAJOR_AXIS_M, // satellites in orbit around mercury (for now?)
     ...options,
   };
   return {
-    id: values.id,
-    tag: "swarm",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "swarm",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       count: values.count,
       received: [],
@@ -77,7 +79,7 @@ export function swarmProcess(
       case "launch-satellite":
         swarm.data.received.push(event);
         break;
-      case "simulation-clock-tick":
+      case "simulation-clock-tick": {
         swarm.data.received.sort(compareReceivedTicks);
 
         const { tick } = event;
@@ -123,6 +125,7 @@ export function swarmProcess(
             ? []
             : swarm.data.received.slice(futureStart);
         break;
+      }
     }
   }
   return [swarm, emitted];

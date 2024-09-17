@@ -2,26 +2,31 @@ import { get, type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
 import type { BusEvent, EventTag } from "./events";
 import type { Id, Processor } from "./processes";
-import { clockProcess, createClock } from "./processes/clock";
-import { collectorProcess } from "./processes/collector";
+import { type Clock, clockProcess, createClock } from "./processes/clock";
+import { type CollectorManager, collectorProcess } from "./processes/collector";
 import {
   createMemoryStream,
+  type EventStream,
   memoryStreamProcess,
 } from "./processes/eventStream";
-import { fabricatorProcess } from "./processes/fabricator";
-import { launcherProcess } from "./processes/launcher";
-import { minerProcess } from "./processes/miner";
-import { planetProcess } from "./processes/planet";
-import { powerGridProcess } from "./processes/powerGrid";
-import { refinerProcess } from "./processes/refiner";
-import { swarmProcess } from "./processes/satelliteSwarm";
-import { factoryProcess } from "./processes/satFactory";
-import { starProcess } from "./processes/star";
-import { storageProcess } from "./processes/storage";
+import { type Fabricator, fabricatorProcess } from "./processes/fabricator";
+import { type LauncherManager, launcherProcess } from "./processes/launcher";
+import { type MinerManager, minerProcess } from "./processes/miner";
+import { type Planet, planetProcess } from "./processes/planet";
+import { type PowerGrid, powerGridProcess } from "./processes/powerGrid";
+import { type RefinerManager, refinerProcess } from "./processes/refiner";
+import { type SatelliteSwarm, swarmProcess } from "./processes/satelliteSwarm";
+import {
+  factoryProcess,
+  type SatelliteFactoryManager,
+} from "./processes/satFactory";
+import { type Star, starProcess } from "./processes/star";
+import { type Storage, storageProcess } from "./processes/storage";
 import { SUBSCRIPTIONS } from "./subscriptions";
 import { loadSave, newGame, type SaveState } from "../save/save";
 import {
   createObjectiveTrackerProbe,
+  type ObjectiveTrackerProbe,
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
 import type { ObjectiveTracker } from "../objectiveTracker/store";
@@ -32,7 +37,7 @@ type EventBus = {
 };
 export type Simulation = {
   bus: EventBus;
-  processors: Map<Id, Processor & { id: Id }>;
+  processors: Map<Id, Processor>;
 };
 
 export function insertProcessor(
@@ -40,13 +45,13 @@ export function insertProcessor(
   p: Processor,
   adapters: Adapters,
 ) {
-  adapters.eventSources.insertSource(p.id, p);
-  for (let eventTag of SUBSCRIPTIONS[p.tag]) {
+  adapters.eventSources.insertSource(p.core.id, p);
+  for (let eventTag of SUBSCRIPTIONS[p.core.tag]) {
     const subscribedSources = sim.bus.subscriptions.get(eventTag);
     if (subscribedSources === undefined) {
-      sim.bus.subscriptions.set(eventTag, new Set([p.id]));
+      sim.bus.subscriptions.set(eventTag, new Set([p.core.id]));
     } else {
-      subscribedSources.add(p.id); // todo-longterm: check if this breaks svelte reactivity
+      subscribedSources.add(p.core.id); // todo-longterm: check if this breaks svelte reactivity
     }
   }
 }
@@ -67,39 +72,43 @@ export function broadcastEvent(
 }
 
 function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
-  switch (p.tag) {
+  switch (p.core.tag) {
     case "stream":
-      return [memoryStreamProcess(p, inbox), []];
+      return [memoryStreamProcess(p as EventStream, inbox), []];
     case "clock":
-      return clockProcess(p, inbox);
+      return clockProcess(p as Clock, inbox);
     case "star":
-      return starProcess(p, inbox);
+      return starProcess(p as Star, inbox);
     case "planet":
-      return planetProcess(p, inbox);
+      return planetProcess(p as Planet, inbox);
     case "collector":
-      return collectorProcess(p, inbox);
+      return collectorProcess(p as CollectorManager, inbox);
     case "power grid":
-      return powerGridProcess(p, inbox);
+      return powerGridProcess(p as PowerGrid, inbox);
     case "storage-ore":
-      return storageProcess(Resource.ORE, p, inbox);
+      return storageProcess(Resource.ORE, p as Storage<"ore">, inbox);
     case "storage-metal":
-      return storageProcess(Resource.METAL, p, inbox);
+      return storageProcess(Resource.METAL, p as Storage<"metal">, inbox);
     case "storage-satellite":
-      return storageProcess(Resource.PACKAGED_SATELLITE, p, inbox);
+      return storageProcess(
+        Resource.PACKAGED_SATELLITE,
+        p as Storage<"satellite">,
+        inbox,
+      );
     case "miner":
-      return minerProcess(p, inbox);
+      return minerProcess(p as MinerManager, inbox);
     case "refiner":
-      return refinerProcess(p, inbox);
+      return refinerProcess(p as RefinerManager, inbox);
     case "factory":
-      return factoryProcess(p, inbox);
+      return factoryProcess(p as SatelliteFactoryManager, inbox);
     case "launcher":
-      return launcherProcess(p, inbox);
+      return launcherProcess(p as LauncherManager, inbox);
     case "swarm":
-      return swarmProcess(p, inbox);
+      return swarmProcess(p as SatelliteSwarm, inbox);
     case "fabricator":
-      return fabricatorProcess(p, inbox);
+      return fabricatorProcess(p as Fabricator, inbox);
     case "probe":
-      return objectiveTrackerProcess(p, inbox);
+      return objectiveTrackerProcess(p as ObjectiveTrackerProbe, inbox);
   }
   console.error({
     command: "process",
@@ -122,8 +131,8 @@ export async function processUntilSettled(
         const [updatedProcessor, newEmitted] = process(processor, inbox);
         emitted.push(...newEmitted);
         adapters.snapshots.persistSnapshot(
-          updatedProcessor.lastTick,
-          updatedProcessor.id,
+          updatedProcessor.core.lastTick,
+          updatedProcessor.core.id,
           updatedProcessor.data,
         );
         break;

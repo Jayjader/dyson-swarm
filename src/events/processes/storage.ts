@@ -15,14 +15,16 @@ export function createStorage<
   R extends Exclude<Resource, Resource.ELECTRICITY>,
 >(
   resource: R,
-  options: Partial<{ id: Storage<R>["id"]; stored: bigint }> = {},
+  options: Partial<{ id: Storage<R>["core"]["id"]; stored: bigint }> = {},
 ): Storage<R> {
   const tag = `storage-${resource}`;
   const values = { id: `${tag}-0`, stored: 0n, ...options };
   return {
-    id: values.id,
-    tag,
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag,
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: { stored: values.stored, received: [] },
   } as unknown as Storage<R>;
 }
@@ -47,12 +49,10 @@ export function storageProcess(
             break;
           }
           storage.data.received.push(event);
-          (storage.data.received as Events<"draw" | "produce">[]).sort(
-            (a, b) => a.receivedTick - b.receivedTick,
-          );
+          storage.data.received.sort((a, b) => a.receivedTick - b.receivedTick);
         }
         break;
-      case "simulation-clock-tick":
+      case "simulation-clock-tick": {
         let totalResourceReceived = 0n,
           toSupply = new Set<Events<"draw">>(),
           totalDrawn = 0n;
@@ -82,6 +82,7 @@ export function storageProcess(
           }
           storage.data.stored -= totalDrawn;
         }
+      }
     }
   }
   return [storage, emitted];

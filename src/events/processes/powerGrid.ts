@@ -19,17 +19,19 @@ export type PowerGrid = EventProcessor<
 >;
 
 export function createPowerGrid(
-  options: Partial<{ id: PowerGrid["id"]; stored: bigint }> = {},
+  options: Partial<{ id: PowerGrid["core"]["id"]; stored: bigint }> = {},
 ): PowerGrid {
   const values = {
-    id: "power grid-0" as PowerGrid["id"],
+    id: "power grid-0" as PowerGrid["core"]["id"],
     stored: 0n,
     ...options,
   };
   return {
-    id: values.id,
-    tag: "power grid",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "power grid",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       stored: values.stored,
       breakerTripped: false,
@@ -67,7 +69,7 @@ export function powerGridProcess(
           onTick: event.afterTick + 1,
         });
         break;
-      case "simulation-clock-tick":
+      case "simulation-clock-tick": {
         const [produced, toSupply] = grid.data.received.reduce(
           (accu, next) =>
             next.tag === "produce"
@@ -100,6 +102,7 @@ export function powerGridProcess(
         grid.data.breakerTripped = true;
         emitted.push({ tag: "circuit-breaker-tripped", onTick: event.tick });
         break;
+      }
     }
   }
   return [grid, emitted];

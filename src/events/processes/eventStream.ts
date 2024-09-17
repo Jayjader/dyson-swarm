@@ -25,12 +25,14 @@ export type SerializedStream = {
 };
 
 export function createMemoryStream(
-  id: EventStream["id"] = "stream-0",
+  id: EventStream["core"]["id"] = "stream-0",
 ): EventStream {
   return {
-    id,
-    lastTick: Number.NEGATIVE_INFINITY,
-    tag: "stream",
+    core: {
+      id,
+      lastTick: Number.NEGATIVE_INFINITY,
+      tag: "stream",
+    },
     data: { unfinishedTick: 0, received: new Map() },
   };
 }

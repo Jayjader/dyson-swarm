@@ -11,14 +11,16 @@ export type Star = EventProcessor<"star", { mass: bigint }>;
  */
 
 export function createStar(
-  id: Star["id"] = "star-0",
+  id: Star["core"]["id"] = "star-0",
   mass = SOL_MASS_KG,
 ): Star {
   return {
-    id,
-    tag: "star",
+    core: {
+      id,
+      tag: "star",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: { mass },
-    lastTick: Number.NEGATIVE_INFINITY,
   };
 }
 

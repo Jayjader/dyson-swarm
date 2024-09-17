@@ -34,8 +34,8 @@ export function memoryEventSourcesAdapter(
       console.debug(memory);
     },
     insertSource(_name: string, proc: Processor): void {
-      memory.set(proc.id, proc);
-      inboxes.set(proc.id, []);
+      memory.set(proc.core.id, proc);
+      inboxes.set(proc.core.id, []);
     },
     async getAllSourceIds(): Promise<Array<string>> {
       return Array.from(memory.keys());

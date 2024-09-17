@@ -16,17 +16,19 @@ export type LauncherManager = EventProcessor<
   }
 >;
 export function createLauncherManager(
-  options: Partial<{ id: LauncherManager["id"]; count: number }> = {},
+  options: Partial<{ id: LauncherManager["core"]["id"]; count: number }> = {},
 ): LauncherManager {
   const values = {
-    id: "launcher-0" as LauncherManager["id"],
+    id: "launcher-0" as LauncherManager["core"]["id"],
     count: 0,
     ...options,
   };
   return {
-    id: values.id,
-    tag: "launcher",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "launcher",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       working: values.count,
       count: values.count,
@@ -60,7 +62,7 @@ export function launcherProcess(
         }
         break;
       case "supply":
-        if (event.toId === launcher.id) {
+        if (event.toId === launcher.core.id) {
           launcher.data.received.push(event);
         }
         break;
@@ -101,14 +103,14 @@ export function launcherProcess(
               resource: Resource.ELECTRICITY,
               amount: received[Resource.ELECTRICITY],
               receivedTick: event.tick,
-              toId: launcher.id,
+              toId: launcher.core.id,
             },
             {
               tag: "supply",
               resource: Resource.PACKAGED_SATELLITE,
               amount: received[Resource.PACKAGED_SATELLITE],
               receivedTick: event.tick,
-              toId: launcher.id,
+              toId: launcher.core.id,
             },
           );
           break;
@@ -126,7 +128,7 @@ export function launcherProcess(
             tag: "draw",
             resource: Resource.ELECTRICITY,
             amount: powerNeeded - received[Resource.ELECTRICITY],
-            forId: launcher.id,
+            forId: launcher.core.id,
             receivedTick: event.tick + 1,
           });
         }
@@ -139,7 +141,7 @@ export function launcherProcess(
             tag: "draw",
             resource: Resource.PACKAGED_SATELLITE,
             amount: satellitesNeeded - received[Resource.PACKAGED_SATELLITE],
-            forId: launcher.id,
+            forId: launcher.core.id,
             receivedTick: event.tick + 1,
           });
         }
@@ -153,7 +155,7 @@ export function launcherProcess(
                 tag: "supply",
                 resource,
                 amount,
-                toId: launcher.id,
+                toId: launcher.core.id,
                 receivedTick: (event as Events<"simulation-clock-tick">).tick,
               });
             }

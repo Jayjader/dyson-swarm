@@ -18,13 +18,15 @@ export type Fabricator = EventProcessor<
 >;
 
 export function createFabricator(
-  id: Fabricator["id"] = "fabricator-0",
+  id: Fabricator["core"]["id"] = "fabricator-0",
   startingQueue: BuildOrder[] = [],
 ): Fabricator {
   return {
-    id,
-    tag: "fabricator",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id,
+      tag: "fabricator",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       working: true,
       job: null,
@@ -72,11 +74,11 @@ export function fabricatorProcess(
         fabricator.data.job = null;
         break;
       case "supply":
-        if (event.toId === fabricator.id) {
+        if (event.toId === fabricator.core.id) {
           fabricator.data.received.push(event);
         }
         break;
-      case "simulation-clock-tick":
+      case "simulation-clock-tick": {
         const { tick } = event;
         const currentJob = fabricator.data.job;
         if (!fabricator.data.working) {
@@ -120,7 +122,7 @@ export function fabricatorProcess(
               tag: "draw",
               resource,
               amount: lacking,
-              forId: fabricator.id,
+              forId: fabricator.core.id,
               receivedTick: tick + 1,
             });
           }
@@ -143,7 +145,7 @@ export function fabricatorProcess(
                 resource,
                 amount:
                   supply - (constructionCosts[currentJob].get(resource) ?? 0n),
-                toId: fabricator.id,
+                toId: fabricator.core.id,
                 receivedTick: tick,
               }) as Fabricator["data"]["received"][number],
           )
@@ -159,6 +161,7 @@ export function fabricatorProcess(
           queue: fabricator.data.queue,
         };
         break;
+      }
     }
   }
   return [fabricator, emitted];

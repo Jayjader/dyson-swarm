@@ -26,7 +26,7 @@ export type EventProcessor<
 > = Tag extends keyof typeof SUBSCRIPTIONS
   ? Data extends undefined
     ? ProcessorCore<Tag>
-    : { data: Data } & ProcessorCore<Tag>
+    : { data: Data } & { core: ProcessorCore<Tag> }
   : never;
 
 export type Processor =
@@ -44,4 +44,4 @@ export type Processor =
   | SatelliteSwarm
   | Fabricator
   | ObjectiveTrackerProbe;
-export type Id = Processor["id"];
+export type Id = Processor["core"]["id"];

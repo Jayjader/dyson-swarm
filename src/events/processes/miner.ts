@@ -16,13 +16,19 @@ export type MinerManager = EventProcessor<
 >;
 
 export function createMinerManager(
-  options: Partial<{ id: MinerManager["id"]; count: number }> = {},
+  options: Partial<{ id: MinerManager["core"]["id"]; count: number }> = {},
 ): MinerManager {
-  const values = { id: "miner-0" as MinerManager["id"], count: 0, ...options };
+  const values = {
+    id: "miner-0" as MinerManager["core"]["id"],
+    count: 0,
+    ...options,
+  };
   return {
-    id: values.id,
-    tag: "miner",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "miner",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: {
       working: values.count,
       count: values.count,
@@ -56,7 +62,7 @@ export function minerProcess(
         }
         break;
       case "supply":
-        if (event.toId === miner.id) {
+        if (event.toId === miner.core.id) {
           miner.data.received.push(event);
         }
         break;
@@ -93,7 +99,7 @@ export function minerProcess(
               tag: "draw",
               resource: Resource.ELECTRICITY,
               amount: powerNeeded - received[Resource.ELECTRICITY],
-              forId: miner.id,
+              forId: miner.core.id,
               receivedTick: event.tick + 1,
             });
             if (received[Resource.ELECTRICITY] > 0) {
@@ -101,7 +107,7 @@ export function minerProcess(
                 tag: "supply",
                 resource: Resource.ELECTRICITY,
                 amount: received[Resource.ELECTRICITY],
-                toId: miner.id,
+                toId: miner.core.id,
                 receivedTick: event.tick,
               });
             }
@@ -111,7 +117,7 @@ export function minerProcess(
                 tag: "draw",
                 resource: Resource.ELECTRICITY,
                 amount: powerNeeded,
-                forId: miner.id,
+                forId: miner.core.id,
                 receivedTick: event.tick + 1,
               },
               {

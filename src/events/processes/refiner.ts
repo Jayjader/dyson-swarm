@@ -25,19 +25,21 @@ export type RefinerManager = EventProcessor<
 
 export function createRefinerManager(
   options: Partial<{
-    id: RefinerManager["id"];
+    id: RefinerManager["core"]["id"];
     count: number;
   }> = {},
 ): RefinerManager {
   const values = {
-    id: "refiner-0" as RefinerManager["id"],
+    id: "refiner-0" as RefinerManager["core"]["id"],
     count: 0,
     ...options,
   };
   return {
-    id: values.id,
-    tag: "refiner",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "refiner",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: { working: values.count, count: values.count, received: [] },
   };
 }
@@ -67,7 +69,7 @@ export function refinerProcess(
         }
         break;
       case "supply":
-        if (event.toId === refiner.id) {
+        if (event.toId === refiner.core.id) {
           if (event.amount <= 0n) {
             console.warn({
               warning: "supply event with amount <= 0 detected",
@@ -108,14 +110,14 @@ export function refinerProcess(
               resource: Resource.ELECTRICITY,
               amount: received[Resource.ELECTRICITY],
               receivedTick: event.tick,
-              toId: refiner.id,
+              toId: refiner.core.id,
             },
             {
               tag: "supply",
               resource: Resource.ORE,
               amount: received[Resource.ORE],
               receivedTick: event.tick,
-              toId: refiner.id,
+              toId: refiner.core.id,
             },
           );
           break;
@@ -135,7 +137,7 @@ export function refinerProcess(
           tag: "draw",
           resource: Resource.ELECTRICITY,
           amount: powerDrawn,
-          forId: refiner.id,
+          forId: refiner.core.id,
           receivedTick: event.tick + 1,
         });
 
@@ -155,7 +157,7 @@ export function refinerProcess(
             tag: "draw",
             resource: Resource.ORE,
             amount: oreToDrawFromStorageForNextTick,
-            forId: refiner.id,
+            forId: refiner.core.id,
             receivedTick: event.tick + 1,
           });
         }
@@ -168,7 +170,7 @@ export function refinerProcess(
                 tag: "supply",
                 resource,
                 amount,
-                toId: refiner.id,
+                toId: refiner.core.id,
                 receivedTick: (event as Events<"simulation-clock-tick">).tick,
               });
             }
@@ -181,7 +183,7 @@ export function refinerProcess(
               tag: "supply",
               resource: Resource.ORE,
               amount: projectedOrePostProduction,
-              toId: refiner.id,
+              toId: refiner.core.id,
               receivedTick: event.tick,
             },
           ];

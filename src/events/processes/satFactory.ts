@@ -20,17 +20,22 @@ export type SatelliteFactoryManager = EventProcessor<
   }
 >;
 export function createFactoryManager(
-  options: Partial<{ id: SatelliteFactoryManager["id"]; count: number }> = {},
+  options: Partial<{
+    id: SatelliteFactoryManager["core"]["id"];
+    count: number;
+  }> = {},
 ): SatelliteFactoryManager {
   const values = {
-    id: "factory-0" as SatelliteFactoryManager["id"],
+    id: "factory-0" as SatelliteFactoryManager["core"]["id"],
     count: 0,
     ...options,
   };
   return {
-    id: values.id,
-    tag: "factory",
-    lastTick: Number.NEGATIVE_INFINITY,
+    core: {
+      id: values.id,
+      tag: "factory",
+      lastTick: Number.NEGATIVE_INFINITY,
+    },
     data: { count: values.count, working: values.count, received: [] },
   };
 }
@@ -59,7 +64,7 @@ export function factoryProcess(
         }
         break;
       case "supply":
-        if (event.toId === factory.id) {
+        if (event.toId === factory.core.id) {
           factory.data.received.push(event);
         }
         break;
@@ -98,14 +103,14 @@ export function factoryProcess(
               resource: Resource.ELECTRICITY,
               amount: received[Resource.ELECTRICITY],
               receivedTick: event.tick,
-              toId: factory.id,
+              toId: factory.core.id,
             },
             {
               tag: "supply",
               resource: Resource.METAL,
               amount: received[Resource.METAL],
               receivedTick: event.tick,
-              toId: factory.id,
+              toId: factory.core.id,
             },
           );
           break;
@@ -122,7 +127,7 @@ export function factoryProcess(
             tag: "draw",
             resource: Resource.ELECTRICITY,
             amount: powerNeeded - received[Resource.ELECTRICITY],
-            forId: factory.id,
+            forId: factory.core.id,
             receivedTick: event.tick + 1,
           });
         }
@@ -135,7 +140,7 @@ export function factoryProcess(
             tag: "draw",
             resource: Resource.METAL,
             amount: metalNeeded - received[Resource.METAL],
-            forId: factory.id,
+            forId: factory.core.id,
             receivedTick: event.tick + 1,
           });
         }
@@ -148,7 +153,7 @@ export function factoryProcess(
                   tag: "supply",
                   resource,
                   amount,
-                  toId: factory.id,
+                  toId: factory.core.id,
                   receivedTick: (event as Events<"simulation-clock-tick">).tick,
                 });
               }
@@ -163,7 +168,7 @@ export function factoryProcess(
               tag: "supply",
               resource: Resource.METAL,
               amount: metalLeftOver,
-              toId: factory.id,
+              toId: factory.core.id,
               receivedTick: event.tick,
             },
           ];
