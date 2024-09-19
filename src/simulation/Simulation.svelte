@@ -155,7 +155,7 @@
       <ConstructOverview />
     {/if}
     {#if $uiPanelsState.has("storage-overview")}
-      <StorageOverview {resources} />
+      <StorageOverview {resources} {adapters} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
       <Fabricator />

@@ -1,22 +1,28 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
-  import { getClock } from "../../events/processes/clock";
   import {
-    getEventStream,
-    getTickEvents,
-  } from "../../events/processes/eventStream";
+    makeSimulationStore,
+    type Simulation,
+    SIMULATION_STORE,
+  } from "../../events";
+  import { getClock } from "../../events/processes/clock";
   import { Resource } from "../../gameRules";
   import { getPrimitive } from "../../hud/types";
   import Storage from "./Storage.svelte";
+  import type { Adapters } from "../../adapters";
 
   const watt = "W";
   const wattTick = `${watt}t`;
   const kilogram = "kg";
 
   export let resources = new Map();
+  export let adapters: Adapters;
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = (
+    getContext(SIMULATION_STORE) as {
+      simulation: ReturnType<typeof makeSimulationStore>;
+    }
+  ).simulation;
 
   let last = {
     tick: 0,
@@ -27,12 +33,12 @@
       [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
     ]),
   };
-  const unsubSim = simulation.subscribe((sim) => {
-    const currentTick = getPrimitive(getClock(sim)).tick;
+  const unsubSim = simulation.subscribe(async (sim: Simulation) => {
+    const currentTick = getPrimitive(getClock(sim)).tick; // todo: don't forget this part in the upcoming refactor of clock vs simulation
     if (currentTick > last.tick) {
-      const stream = getTickEvents(getEventStream(sim), currentTick);
-      if (stream !== undefined) {
-        const receivedResources = stream.reduce(
+      const events = await adapters.events.read.getTickEvents(currentTick);
+      if (events) {
+        const receivedResources = events.reduce(
           (accu, e) => {
             if (e.tag !== "produce" && e.tag !== "supply") {
               return accu;
@@ -64,30 +70,30 @@
     icon="/electric.svg"
     unit={wattTick}
     stored={resources.get(Resource.ELECTRICITY)}
-    produced={last.resources.get(Resource.ELECTRICITY).produce}
-    consumed={last.resources.get(Resource.ELECTRICITY).supply}
+    produced={last.resources.get(Resource.ELECTRICITY)?.produce}
+    consumed={last.resources.get(Resource.ELECTRICITY)?.supply}
   />
   <Storage
     name="Ore"
     icon="/ore.svg"
     unit={kilogram}
     stored={resources.get(Resource.ORE)}
-    produced={last.resources.get(Resource.ORE).produce}
-    consumed={last.resources.get(Resource.ORE).supply}
+    produced={last.resources.get(Resource.ORE)?.produce}
+    consumed={last.resources.get(Resource.ORE)?.supply}
   />
   <Storage
     name="Metal"
     icon="/metal-bar.svg"
     unit={kilogram}
     stored={resources.get(Resource.METAL)}
-    produced={last.resources.get(Resource.METAL).produce}
-    consumed={last.resources.get(Resource.METAL).supply}
+    produced={last.resources.get(Resource.METAL)?.produce}
+    consumed={last.resources.get(Resource.METAL)?.supply}
   />
   <Storage
     name="Satellites"
     icon="/cardboard-box.svg"
     stored={resources.get(Resource.PACKAGED_SATELLITE)}
-    produced={last.resources.get(Resource.PACKAGED_SATELLITE).produce}
-    consumed={last.resources.get(Resource.PACKAGED_SATELLITE).supply}
+    produced={last.resources.get(Resource.PACKAGED_SATELLITE)?.produce}
+    consumed={last.resources.get(Resource.PACKAGED_SATELLITE)?.supply}
   />
 </section>

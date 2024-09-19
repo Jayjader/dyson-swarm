@@ -22,6 +22,7 @@ import {
 import type { SqlWorker } from "./events/sqlWorker";
 import type { Id } from "./events/processes";
 import type { BusEvent } from "./events/events";
+import type { EventStream } from "./events/processes/eventStream";
 
 export type Adapters = {
   events: {
@@ -46,10 +47,11 @@ export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
 function initInMemoryAdapters(
   memoryProcessors: MemorySimulation["processors"],
 ): Adapters {
+  const streamId: EventStream["core"]["id"] = "stream-0";
   const inboxes = new Map<Id, Array<BusEvent>>();
   return {
     events: {
-      read: memoryEventsQueryAdapter(memoryProcessors, inboxes),
+      read: memoryEventsQueryAdapter(streamId, memoryProcessors, inboxes),
       write: memoryEventPersistenceAdapter(memoryProcessors, inboxes),
     },
     eventSources: memoryEventSourcesAdapter(memoryProcessors, inboxes),
