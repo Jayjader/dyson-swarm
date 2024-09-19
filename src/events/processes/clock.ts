@@ -59,7 +59,7 @@ export function createClock(
   };
 }
 
-// todo: split "ticks to be simluated" from "player control state for which tick is being viewed"
+// todo: split "ticks to be simulated" from "state for player control of which tick is being viewed"
 export function clockProcess(
   clock: Clock,
   inbox: BusEvent[],
