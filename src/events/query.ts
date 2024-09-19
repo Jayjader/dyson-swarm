@@ -1,12 +1,24 @@
-import type { BusEvent } from "./events";
+import { type BusEvent, getTick } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 import { bigIntRestorer } from "../save/save";
 import type { Simulation } from "./index";
 import type { Id } from "./processes";
+import { type EventStream, getEventStream } from "./processes/eventStream";
 
-export type EventsQueryAdapter = ReturnType<typeof sqlEventsQueryAdapter>;
+export type EventsQueryAdapter = {
+  getTickEvents(tick: number): Promise<BusEvent[]>;
+  getTotalInboxSize(): Promise<number>;
+  getInboxSize(sourceId: string): Promise<number>;
+  getInbox(sourceId: string): Promise<BusEvent[]>;
+  getTickEventsRange(
+    startTick: number,
+    endTick?: number,
+  ): Promise<[number, BusEvent][]>;
+};
 
-export function sqlEventsQueryAdapter(sqlWorker: SqlWorker) {
+export function sqlEventsQueryAdapter(
+  sqlWorker: SqlWorker,
+): EventsQueryAdapter {
   return {
     async getTickEvents(tick: number) {
       let rawEvents = await sqlWorker.queryTickEvents(tick);
@@ -46,26 +58,38 @@ export function sqlEventsQueryAdapter(sqlWorker: SqlWorker) {
 }
 
 export function memoryEventsQueryAdapter(
+  streamId: EventStream["core"]["id"],
   memory: Simulation["processors"],
   inboxes: Map<Id, BusEvent[]>,
 ): EventsQueryAdapter {
   return {
-    async getInbox(sourceId: string): Promise<Array<BusEvent>> {
+    async getInbox(sourceId: string) {
       return inboxes.get(sourceId as Id)!;
     },
-    async getInboxSize(sourceId: string): Promise<number> {
+    async getInboxSize(sourceId: string) {
       return inboxes.get(sourceId as Id)!.length;
     },
-    async getTickEvents(tick: number): Promise<BusEvent[]> {
-      return undefined; // todo rely on event stream
+    async getTickEvents(tick: number) {
+      return getEventStream(streamId, memory).data.received.get(tick) ?? [];
     },
-    async getTickEventsRange(
-      startTick: number,
-      endTick: number | undefined,
-    ): Promise<Array<[number, BusEvent]>> {
-      return undefined; // todo rely on event stream
+    async getTickEventsRange(startTick: number, endTick: number | undefined) {
+      const stream = getEventStream(streamId, memory);
+      const events: [number, BusEvent][] = [];
+      for (
+        let i = startTick;
+        i <= (endTick ?? Math.max(...stream.data.received.keys()));
+        i++
+      ) {
+        const tickEvents = stream.data.received.get(i);
+        if (tickEvents) {
+          for (const event of tickEvents) {
+            events.push([getTick(event)!, event]);
+          }
+        }
+      }
+      return events;
     },
-    async getTotalInboxSize(): Promise<number> {
+    async getTotalInboxSize() {
       let sum = 0;
       for (let inbox of inboxes.values()) {
         sum += inbox.length;
