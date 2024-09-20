@@ -188,8 +188,19 @@ export async function getOrCreateSqlWorker() {
         { $name: name },
       );
     },
-    getAllEventSourceIds() {
-      return Promise.resolve([]); // todo: complete implementation
+    getAllEventSourceIds(): Promise<string[]> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            resolve(event.data.results?.[0]?.values ?? []);
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(queryId, `SELECT name FROM ${event_sources_table_name}`);
+      });
     },
     // snapshots
     debugSnapshots() {
@@ -216,8 +227,31 @@ export async function getOrCreateSqlWorker() {
         },
       );
     },
-    getLastSnapshot(id: string) {
-      return Promise.resolve(undefined); // todo: complete implementation
+    getLastSnapshot(id: string): Promise<Processor["data"]> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise((resolve, reject) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            const result = event.data.results?.[0]?.values?.[0];
+            if (result) {
+              resolve(JSON.parse(result) as Processor["data"]);
+            } else {
+              reject(new Error(`couldn't parse snapshot from db: ${result}`));
+            }
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `SELECT tick, data
+            FROM ${snapshots_table_name}
+            WHERE source_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $sourceName)
+          ORDER BY tick DESC LIMIT 1`,
+          { $sourceName: id },
+        );
+      });
     },
     // inboxes
     getTotalInboxSize() {
