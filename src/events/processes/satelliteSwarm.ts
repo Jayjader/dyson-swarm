@@ -1,9 +1,9 @@
 import type { BusEvent, Events } from "../events";
 import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
 import { MERCURY_SEMIMAJOR_AXIS_M } from "../../gameRules";
+import type { Adapters } from "../../adapters";
 
 export type SatelliteSwarm = EventProcessor<
   "swarm",
@@ -130,8 +130,9 @@ export function swarmProcess(
   }
   return [swarm, emitted];
 }
-export function swarmCount(simulation: Simulation): number {
+export async function getSwarmCount(adapters: Adapters): Promise<number> {
   return (
-    (simulation.processors?.get("swarm-0") as SatelliteSwarm)?.data.count ?? 0
+    ((await adapters.snapshots.getLastSnapshot("swarm-0")) as SatelliteSwarm)
+      ?.data.count ?? 0
   );
 }

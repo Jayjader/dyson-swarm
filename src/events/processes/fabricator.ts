@@ -4,8 +4,8 @@ import type { BuildChoice, BuildOrder } from "../../types";
 import { popNextConstruct } from "../../types";
 import type { BusEvent, Events } from "../events";
 import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
-import type { Simulation } from "../index";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type Fabricator = EventProcessor<
   "fabricator",
@@ -167,9 +167,13 @@ export function fabricatorProcess(
   return [fabricator, emitted];
 }
 
-export function getFabricator(simulation: Simulation) {
-  const { working, queue, job, received } = (
-    simulation.processors.get("fabricator-0") as Fabricator | undefined
-  )?.data ?? { working: false, job: null, queue: [], received: [] };
-  return { working, queue, job, received };
+export async function getFabricator(adapters: Adapters) {
+  return (
+    (await adapters.snapshots.getLastSnapshot("fabricator-0")) ?? {
+      working: false,
+      job: null,
+      queue: [],
+      received: [],
+    }
+  );
 }

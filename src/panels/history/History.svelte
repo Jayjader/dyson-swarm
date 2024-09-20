@@ -1,16 +1,11 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import {
-    type Simulation,
-    SIMULATION_STORE,
-    type SimulationStore,
-  } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
-  import type { Adapters } from "../../adapters";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -35,7 +30,6 @@
     }
   };
 
-  export let adapters: Adapters;
   const simulation = (
     getContext(SIMULATION_STORE) as { simulation: SimulationStore }
   ).simulation;
@@ -55,8 +49,8 @@
       windowPromise = queryEvents();
     }
   }
-  const unsubFromSim = simulation.subscribe((sim: Simulation) => {
-    const currentTick = getPrimitive(getClock(sim)).tick;
+  const unsubFromSim = simulation.subscribe(async () => {
+    const currentTick = getPrimitive(await getClock(simulation.adapters)).tick;
     if (currentTick !== lastTick) {
       lastTick = currentTick;
       windowPromise = undefined;
@@ -65,7 +59,7 @@
   onDestroy(unsubFromSim);
   const windowSize = 300;
   async function queryEvents() {
-    const events = await adapters.events.read.getTickEventsRange(
+    const events = await simulation.adapters.events.read.getTickEventsRange(
       lastTick - windowSize,
       lastTick,
     );
@@ -105,8 +99,8 @@
     class="m-2 rounded border-2 border-gray-900 px-2"
     on:click={() => {
       console.log({ slidingWindowMap: [...slidingWindow] });
-      adapters.eventSources.debugSources();
-      adapters.snapshots.debugSnapshots();
+      simulation.adapters.eventSources.debugSources();
+      simulation.adapters.snapshots.debugSnapshots();
     }}
   >
     debug points

@@ -1,28 +1,18 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
-  import {
-    makeSimulationStore,
-    type Simulation,
-    SIMULATION_STORE,
-  } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { Resource } from "../../gameRules";
   import { getPrimitive } from "../../hud/types";
   import Storage from "./Storage.svelte";
-  import type { Adapters } from "../../adapters";
 
   const watt = "W";
   const wattTick = `${watt}t`;
   const kilogram = "kg";
 
   export let resources = new Map();
-  export let adapters: Adapters;
 
-  const simulation = (
-    getContext(SIMULATION_STORE) as {
-      simulation: ReturnType<typeof makeSimulationStore>;
-    }
-  ).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   let last = {
     tick: 0,
@@ -33,10 +23,11 @@
       [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
     ]),
   };
-  const unsubSim = simulation.subscribe(async (sim: Simulation) => {
-    const currentTick = getPrimitive(getClock(sim)).tick; // todo: don't forget this part in the upcoming refactor of clock vs simulation
+  const unsubSim = simulation.subscribe(async (_sim) => {
+    const currentTick = getPrimitive(await getClock(simulation.adapters)).tick; // todo: don't forget this part in the upcoming refactor of clock vs simulation
     if (currentTick > last.tick) {
-      const events = await adapters.events.read.getTickEvents(currentTick);
+      const events =
+        await simulation.adapters.events.read.getTickEvents(currentTick);
       if (events) {
         const receivedResources = events.reduce(
           (accu, e) => {

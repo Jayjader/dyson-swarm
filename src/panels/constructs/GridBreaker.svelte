@@ -1,17 +1,17 @@
 <script lang="ts">
-  import { gridState } from "../../events/processes/powerGrid";
+  import { getGridState } from "../../events/processes/powerGrid";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
 
   let tripped = false,
     lastTick = 0;
-  const simulation = getContext(SIMULATION_STORE).simulation;
-  const unsubSim = simulation.subscribe((sim) => {
-    tripped = gridState(sim).breakerTripped;
-    lastTick = getPrimitive(getClock(sim)).tick;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const unsubSim = simulation.subscribe(async (sim) => {
+    tripped = (await getGridState(simulation.adapters)).breakerTripped;
+    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
   });
   onDestroy(unsubSim);
 

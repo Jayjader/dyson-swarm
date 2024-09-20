@@ -1,4 +1,3 @@
-import type { Simulation } from "../index";
 import { type BusEvent, type Events, getTick } from "../events";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
@@ -73,15 +72,4 @@ export function memoryStreamProcess(
     pushEvent(stream, event, eventTick);
   }
   return stream;
-}
-
-export function getEventStream(simulation: Simulation) {
-  return simulation.processors.get("stream-0") as EventStream;
-}
-
-export function getTickEvents(
-  stream: EventStream,
-  tick: number,
-): BusEvent[] | undefined {
-  return stream.data.received.get(tick);
 }

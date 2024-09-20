@@ -105,14 +105,11 @@
       on:close={() => (showIntro = false)}
     />
   {/if}
-  {#if adapters !== undefined}
-    <Simulation
-      {adapters}
-      simulation={$appStateStack[1]}
-      objectives={$appStateStack[2]}
-      on:open-menu={() => appStateStack.push(SimMenu)}
-    />
-  {/if}
+  <Simulation
+    simulation={$appStateStack[1]}
+    objectives={$appStateStack[2]}
+    on:open-menu={() => appStateStack.push(SimMenu)}
+  />
 {/if}
 
 <style>

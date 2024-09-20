@@ -8,7 +8,7 @@
     tickConsumption,
     tickProduction,
   } from "../../gameRules";
-  import { SIMULATION_STORE } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import Fabricator from "./Fabricator.svelte";
   import { kilogram, watt, wattsPerSquareMeter } from "../../units";
   import { energy, ICON, metal, ore, satellite } from "../../icons";
@@ -18,15 +18,15 @@
     getCollectorCount,
     SOLAR_COLLECTOR_PRODUCTION_EFFICIENCY,
   } from "../../events/processes/collector";
-  import { getMiners } from "../../events/processes/miner";
-  import { getRefiners } from "../../events/processes/refiner";
-  import { getFactories } from "../../events/processes/satFactory";
-  import { getLaunchers } from "../../events/processes/launcher";
+  import { getMinerStats } from "../../events/processes/miner";
+  import { getRefinerStats } from "../../events/processes/refiner";
+  import { getSatelliteFactoryStats } from "../../events/processes/satFactory";
+  import { getLauncherManagerStats } from "../../events/processes/launcher";
   import { getStarMass } from "../../events/processes/star";
   import { getPlanetMass } from "../../events/processes/planet";
   import {
     fluxReflected,
-    swarmCount,
+    getSwarmCount,
   } from "../../events/processes/satelliteSwarm";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
@@ -34,24 +34,36 @@
   import { getClock } from "../../events/processes/clock";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   let constructs = new Map();
   let fabricator = { working: false, job: null as Construct | null };
   let lastTick = 0;
 
-  const unsubscribe = simulation.subscribe((sim) => {
-    lastTick = getPrimitive(getClock(sim)).tick;
-    constructs.set(Construct.SOLAR_COLLECTOR, getCollectorCount(sim));
-    constructs.set(Construct.MINER, getMiners(sim));
-    constructs.set(Construct.REFINER, getRefiners(sim));
-    constructs.set(Construct.SATELLITE_FACTORY, getFactories(sim));
-    constructs.set(Construct.SATELLITE_LAUNCHER, getLaunchers(sim));
-    constructs.set("star", getStarMass(sim));
-    constructs.set("planet", getPlanetMass(sim));
-    constructs.set("swarm", swarmCount(sim));
+  const unsubscribeFromSim = simulation.subscribe(async (_sim) => {
+    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
+    constructs.set(
+      Construct.SOLAR_COLLECTOR,
+      await getCollectorCount(simulation.adapters),
+    );
+    constructs.set(Construct.MINER, await getMinerStats(simulation.adapters));
+    constructs.set(
+      Construct.REFINER,
+      await getRefinerStats(simulation.adapters),
+    );
+    constructs.set(
+      Construct.SATELLITE_FACTORY,
+      await getSatelliteFactoryStats(simulation.adapters),
+    );
+    constructs.set(
+      Construct.SATELLITE_LAUNCHER,
+      await getLauncherManagerStats(simulation.adapters),
+    );
+    constructs.set("star", await getStarMass(simulation.adapters));
+    constructs.set("planet", await getPlanetMass(simulation.adapters));
+    constructs.set("swarm", await getSwarmCount(simulation.adapters));
     constructs = constructs;
-    const fab = getFabricator(sim);
+    const fab = await getFabricator(simulation.adapters);
     fabricator.working = fab.working;
     fabricator.job = fab.job;
   });
@@ -70,13 +82,13 @@
     console.info(busEvent);
     simulation.broadcastEvent(busEvent);
   };
-  onDestroy(unsubscribe);
+  onDestroy(unsubscribeFromSim);
 
   function widthForNumberInput(value: number): number {
     // log base 10 gets us the number of characters, floor rounds down a whole number
     return (
       Math.floor(
-        Math.log(value) / Math.log(10) // log(x) / log(10) = log[base=10](x)
+        Math.log(value) / Math.log(10), // log(x) / log(10) = log[base=10](x)
       ) + 4 // room for the browser/user agent's input[type="number"] controls
     );
   }
@@ -158,7 +170,7 @@
               />
               <output
                 >{formatter.format(
-                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1),
                 )}
                 {@html wattsPerSquareMeter}</output
               >
@@ -175,14 +187,14 @@
       {
         name: "energy-flux",
         value: `${formatter.format(
-          fluxReceived(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+          fluxReceived(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1),
         )}`,
         unit: `${wattsPerSquareMeter}${
           constructs.get("swarm") === 0
             ? ""
             : ` (+ ${formatter.format(
                 BigInt(constructs.get("swarm")) *
-                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1)
+                  fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1),
               )} ${watt} reflected from satellites)`
         }`,
         icon: ICON["flux"],
@@ -263,7 +275,7 @@
               on:change={(e) =>
                 setCount(Construct.MINER, parseInt(e?.target?.value ?? 0, 10))}
               style="max-width: {widthForNumberInput(
-                working(constructs, Construct.MINER)
+                working(constructs, Construct.MINER),
               )}ch"
             />
             /
@@ -321,7 +333,7 @@
           on:change={(e) =>
             setCount(Construct.REFINER, parseInt(e.target.value, 10))}
           style="max-width: {widthForNumberInput(
-            working(constructs, Construct.REFINER)
+            working(constructs, Construct.REFINER),
           )}ch"
         />
         /
@@ -343,7 +355,7 @@
       {
         name: "energy",
         value: tickConsumption[Construct.SATELLITE_FACTORY].get(
-          Resource.ELECTRICITY
+          Resource.ELECTRICITY,
         ),
         unit: watt,
         icon: energy,
@@ -358,7 +370,7 @@
     produces={{
       name: "packaged satellite",
       value: tickProduction[Construct.SATELLITE_FACTORY].get(
-        Resource.PACKAGED_SATELLITE
+        Resource.PACKAGED_SATELLITE,
       ),
       unit: "(packaged)",
       icon: satellite,
@@ -380,13 +392,13 @@
           on:change={(e) =>
             setCount(Construct.SATELLITE_FACTORY, parseInt(e.target.value, 10))}
           style="max-width: {widthForNumberInput(
-            working(constructs, Construct.SATELLITE_FACTORY)
+            working(constructs, Construct.SATELLITE_FACTORY),
           )}ch"
         />
         /
         <output
           >{formatter.format(
-            count(constructs, Construct.SATELLITE_FACTORY)
+            count(constructs, Construct.SATELLITE_FACTORY),
           )}</output
         >
         <WorkingCountToggle
@@ -395,7 +407,7 @@
           on:click={() =>
             setCount(
               Construct.SATELLITE_FACTORY,
-              count(constructs, Construct.SATELLITE_FACTORY)
+              count(constructs, Construct.SATELLITE_FACTORY),
             )}>All</WorkingCountToggle
         >
       </span>
@@ -408,7 +420,7 @@
         name: "energy",
         value:
           tickConsumption[Construct.SATELLITE_LAUNCHER].get(
-            Resource.ELECTRICITY
+            Resource.ELECTRICITY,
           ) ?? 0,
         unit: watt,
         icon: energy,
@@ -417,7 +429,7 @@
         name: "packaged satellite",
         value:
           tickConsumption[Construct.SATELLITE_LAUNCHER].get(
-            Resource.PACKAGED_SATELLITE
+            Resource.PACKAGED_SATELLITE,
           ) ?? 0,
         unit: "(packaged)",
         icon: satellite,
@@ -446,16 +458,16 @@
           on:change={(e) =>
             setCount(
               Construct.SATELLITE_LAUNCHER,
-              parseInt(e.target.value, 10)
+              parseInt(e.target.value, 10),
             )}
           style="max-width: {widthForNumberInput(
-            working(constructs, Construct.SATELLITE_LAUNCHER)
+            working(constructs, Construct.SATELLITE_LAUNCHER),
           )}ch"
         />
         /
         <output
           >{formatter.format(
-            count(constructs, Construct.SATELLITE_LAUNCHER)
+            count(constructs, Construct.SATELLITE_LAUNCHER),
           )}</output
         >
         <WorkingCountToggle
@@ -464,7 +476,7 @@
           on:click={() =>
             setCount(
               Construct.SATELLITE_LAUNCHER,
-              count(constructs, Construct.SATELLITE_LAUNCHER)
+              count(constructs, Construct.SATELLITE_LAUNCHER),
             )}>All</WorkingCountToggle
         >
       </span>

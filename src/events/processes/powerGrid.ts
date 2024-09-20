@@ -1,8 +1,8 @@
 import { Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type PowerGrid = EventProcessor<
   "power grid",
@@ -107,9 +107,11 @@ export function powerGridProcess(
   }
   return [grid, emitted];
 }
-export function gridState(simulation: Simulation): PowerGrid["data"] {
+export async function getGridState(
+  adapters: Adapters,
+): Promise<PowerGrid["data"]> {
   return (
-    (simulation.processors.get("power grid-0") as PowerGrid | undefined)
+    ((await adapters.snapshots.getLastSnapshot("power grid-0")) as PowerGrid)
       ?.data ?? { stored: 0n, breakerTripped: false, received: [] }
   );
 }

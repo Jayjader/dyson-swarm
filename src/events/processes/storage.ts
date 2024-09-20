@@ -1,7 +1,7 @@
 import type { Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { EventProcessor, Id } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type Storage<R extends string> = EventProcessor<
   `storage-${R}`,
@@ -87,12 +87,15 @@ export function storageProcess(
   }
   return [storage, emitted];
 }
-export function readStored(simulation: Simulation, resource: Resource): bigint {
+export async function readStored(
+  adapters: Adapters,
+  resource: Resource,
+): Promise<bigint> {
   return (
     (
-      simulation.processors.get(
+      (await adapters.snapshots.getLastSnapshot(
         `storage-${resource}-0` as unknown as Id,
-      ) as Storage<Resource>
+      )) as Storage<Resource>
     )?.data.stored ?? 0n
   );
 }

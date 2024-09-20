@@ -14,12 +14,8 @@
   import { makeObjectiveTracker } from "../objectiveTracker/store";
   import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
-  import { get } from "svelte/store";
-  import { sqlSnapshotsAdapter } from "../events/snapshots";
   import { getOrCreateSqlWorker } from "../events/sqlWorker";
-  import { sqlEventSourcesAdapter } from "../events/eventSources";
-  import { sqlEventPersistenceAdapter } from "../events/persistence";
-  import { sqlEventsQueryAdapter } from "../events/query";
+  import { initSqlAdapters } from "../adapters";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -201,17 +197,14 @@
           } else {
             objTrackerStore = makeObjectiveTracker();
             const sqlWorker = await getOrCreateSqlWorker();
-            simStore = makeSimulationStore(
-              objTrackerStore,
-              sqlSnapshotsAdapter(sqlWorker),
-              sqlEventSourcesAdapter(sqlWorker),
-              sqlEventsQueryAdapter(sqlWorker),
-              sqlEventPersistenceAdapter(sqlWorker),
-            );
+            const adapters = initSqlAdapters(sqlWorker);
+            simStore = makeSimulationStore(objTrackerStore, adapters);
           }
           simStore.loadSave(saveState);
 
-          const currentTick = getPrimitive(getClock(get(simStore))).tick;
+          const currentTick = getPrimitive(
+            await getClock(simStore.adapters),
+          ).tick;
           const busEvent = {
             tag: "command-simulation-clock-indirect-resume",
             afterTick: currentTick,

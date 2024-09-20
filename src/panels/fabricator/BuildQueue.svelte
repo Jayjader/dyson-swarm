@@ -2,7 +2,7 @@
   import { getContext, onDestroy, setContext } from "svelte";
   import { scale } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { SIMULATION_STORE } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { getFabricator } from "../../events/processes/fabricator";
   import { Construct } from "../../gameRules";
@@ -25,16 +25,16 @@
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   let savedQueue: BuildOrder[] = [];
   let uiQueue: BuildOrder[] = [];
   let tick = 0;
   let showProcessorQueue = true;
 
-  const unsubSim = simulation.subscribe((sim) => {
+  const unsubSim = simulation.subscribe(async (sim) => {
     savedQueue = getFabricator(sim).queue;
-    tick = getPrimitive(getClock(sim)).tick;
+    tick = getPrimitive(await getClock(simulation.adapters)).tick;
   });
   const uiState = makeBuildQueueUiStore(objectives);
 
@@ -216,14 +216,14 @@
         text="Remove Repeat"
         on:click={uiState.enterRemoveRepeatOrder}
         disabled={!($uiState?.[0]?.present?.queue ?? []).some((buildOrder) =>
-          isRepeat(buildOrder)
+          isRepeat(buildOrder),
         )}
       />
       <MenuButton
         text="Unwrap Repeat"
         on:click={uiState.enterUnwrapRepeatOrder}
         disabled={!($uiState?.[0]?.present?.queue ?? []).some((buildOrder) =>
-          isRepeat(buildOrder)
+          isRepeat(buildOrder),
         )}
       />
       <MenuButton
@@ -333,7 +333,7 @@
                 setRepeatCount(
                   Number.isFinite(edited.repeatCount)
                     ? Infinity
-                    : previousFiniteValue
+                    : previousFiniteValue,
                 )}
             />Forever</label
           >

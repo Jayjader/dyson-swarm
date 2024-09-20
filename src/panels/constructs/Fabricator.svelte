@@ -2,7 +2,7 @@
   import { ICON } from "../../icons";
   import { UNIT } from "../../units";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
   import type { Construct } from "../../gameRules";
   import { constructionCosts } from "../../gameRules";
@@ -10,14 +10,14 @@
   import { getPrimitive } from "../../hud/types";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   let lastTick = 0;
   let on = true;
   let buildOrder: Construct | null;
   let consumes = [];
-  const unsubscribe = simulation.subscribe((sim) => {
-    lastTick = getPrimitive(getClock(sim)).tick;
+  const unsubscribe = simulation.subscribe(async (sim) => {
+    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
     on = getFabricator(sim).working;
     buildOrder = getFabricator(sim).job;
     if (buildOrder) {
@@ -27,7 +27,7 @@
           value: amount,
           unit: UNIT[resource],
           icon: ICON[resource],
-        })
+        }),
       );
     }
   });

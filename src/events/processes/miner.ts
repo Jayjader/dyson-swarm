@@ -1,8 +1,8 @@
 import { Construct, Resource, tickConsumption } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type MinerManager = EventProcessor<
   "miner",
@@ -133,9 +133,11 @@ export function minerProcess(
   return [miner, emitted];
 }
 
-export function getMiners(simulation: Simulation) {
+export async function getMinerStats(
+  adapters: Adapters,
+): Promise<Omit<MinerManager["data"], "received">> {
   const { count, working } = (
-    simulation.processors.get("miner-0") as MinerManager | undefined
+    (await adapters.snapshots.getLastSnapshot("miner-0")) as MinerManager
   )?.data ?? { count: 0, working: 0 };
   return { count, working };
 }

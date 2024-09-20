@@ -1,7 +1,7 @@
 import type { SqlWorker } from "./sqlWorker";
-import type { Simulation } from "./index";
 import type { Id, Processor } from "./processes";
 import type { BusEvent } from "./events";
+import type { MemoryProcessors } from "../adapters";
 
 export type EventSourcesAdapter = {
   insertSource(name: string, value: Processor): void;
@@ -26,7 +26,7 @@ export function sqlEventSourcesAdapter(
 }
 
 export function memoryEventSourcesAdapter(
-  memory: Simulation["processors"],
+  memory: MemoryProcessors,
   inboxes: Map<Id, Array<BusEvent>>,
 ): EventSourcesAdapter {
   return {

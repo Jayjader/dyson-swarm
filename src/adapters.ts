@@ -1,4 +1,4 @@
-import type { Simulation as MemorySimulation } from "./events";
+import { insertProcessor, type Simulation } from "./events";
 import {
   type EventSourcesAdapter,
   memoryEventSourcesAdapter,
@@ -20,9 +20,12 @@ import {
   sqlEventPersistenceAdapter,
 } from "./events/persistence";
 import type { SqlWorker } from "./events/sqlWorker";
-import type { Id } from "./events/processes";
+import type { Id, Processor } from "./events/processes";
 import type { BusEvent } from "./events/events";
-import type { EventStream } from "./events/processes/eventStream";
+import {
+  createMemoryStream,
+  type EventStream,
+} from "./events/processes/eventStream";
 
 export type Adapters = {
   events: {
@@ -31,6 +34,7 @@ export type Adapters = {
   };
   eventSources: EventSourcesAdapter;
   snapshots: SnapshotsAdapter;
+  setup(sim: Simulation): Simulation;
 };
 
 export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
@@ -41,20 +45,27 @@ export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
     },
     eventSources: sqlEventSourcesAdapter(sqlWorker),
     snapshots: sqlSnapshotsAdapter(sqlWorker),
+    setup(sim) {
+      return sim;
+    },
   };
 }
 
-function initInMemoryAdapters(
-  memoryProcessors: MemorySimulation["processors"],
-): Adapters {
+export type MemoryProcessors = Map<Id, Processor>;
+function initInMemoryAdapters(): Adapters {
   const streamId: EventStream["core"]["id"] = "stream-0";
+  const memory = new Map() as MemoryProcessors;
   const inboxes = new Map<Id, Array<BusEvent>>();
   return {
     events: {
-      read: memoryEventsQueryAdapter(streamId, memoryProcessors, inboxes),
-      write: memoryEventPersistenceAdapter(memoryProcessors, inboxes),
+      read: memoryEventsQueryAdapter(streamId, memory, inboxes),
+      write: memoryEventPersistenceAdapter(streamId, memory, inboxes),
     },
-    eventSources: memoryEventSourcesAdapter(memoryProcessors, inboxes),
-    snapshots: memorySnapshotsAdapter(memoryProcessors),
+    eventSources: memoryEventSourcesAdapter(memory, inboxes),
+    snapshots: memorySnapshotsAdapter(memory),
+    setup(sim) {
+      insertProcessor(sim, createMemoryStream(streamId), this);
+      return sim;
+    },
   };
 }

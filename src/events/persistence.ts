@@ -1,7 +1,8 @@
 import { type BusEvent, getTick, type TimeStamped } from "./events";
 import type { SqlWorker } from "./sqlWorker";
-import type { Simulation } from "./index";
 import type { Id } from "./processes";
+import type { EventStream } from "./processes/eventStream";
+import type { MemoryProcessors } from "../adapters";
 
 export type EventPersistenceAdapter = {
   persistEvent: (event: BusEvent) => void;
@@ -27,7 +28,9 @@ export function sqlEventPersistenceAdapter(
             sqlWorker.persistTimestampEvent(event as BusEvent & TimeStamped);
           }
         } else {
-          sqlWorker.persistTickEvent(tick, event);
+          if (tick !== undefined) {
+            sqlWorker.persistTickEvent(tick, event);
+          }
         }
       }
     },
@@ -38,7 +41,8 @@ export function sqlEventPersistenceAdapter(
 }
 
 export function memoryEventPersistenceAdapter(
-  memory: Simulation["processors"],
+  streamId: EventStream["core"]["id"],
+  memory: MemoryProcessors, // todo: remove this ?
   inboxes: Map<Id, Array<BusEvent>>,
 ): EventPersistenceAdapter {
   return {
@@ -47,7 +51,12 @@ export function memoryEventPersistenceAdapter(
       inbox.push(event);
     },
     persistEvent(event: BusEvent): void {
-      // todo: refactor memoryStream to happen here instead
+      if (
+        "outside-clock-tick" !== event.tag &&
+        "simulation-clock-tick" !== event.tag
+      ) {
+        this.deliverEvent(event, streamId);
+      }
     },
   };
 }

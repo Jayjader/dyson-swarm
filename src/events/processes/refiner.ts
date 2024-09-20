@@ -5,9 +5,9 @@ import {
   tickProduction,
 } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type RefinerManager = EventProcessor<
   "refiner",
@@ -202,9 +202,11 @@ export function refinerProcess(
   return [refiner, emitted];
 }
 
-export function getRefiners(simulation: Simulation) {
+export async function getRefinerStats(
+  adapters: Adapters,
+): Promise<Omit<RefinerManager["data"], "received">> {
   const { count, working } = (
-    simulation.processors.get("refiner-0") as RefinerManager | undefined
+    (await adapters.snapshots.getLastSnapshot("refiner-0")) as RefinerManager
   )?.data ?? { count: 0, working: 0 };
   return { count, working };
 }

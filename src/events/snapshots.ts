@@ -1,6 +1,6 @@
 import type { SqlWorker } from "./sqlWorker";
-import type { Simulation } from "./index";
 import type { Processor } from "./processes";
+import type { MemoryProcessors } from "../adapters";
 
 export type SnapshotsAdapter = {
   debugSnapshots(): void;
@@ -23,20 +23,20 @@ export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
 }
 
 export function memorySnapshotsAdapter(
-  memoryProcessors: Simulation["processors"],
+  memory: MemoryProcessors,
 ): SnapshotsAdapter {
   return {
     debugSnapshots(): void {
-      console.debug("memory snapshots: ", memoryProcessors);
+      console.debug("memory snapshots: ", memory);
     },
     persistSnapshot(tick: number, id: string, data: any): void {
-      const proc = memoryProcessors.get(id as Processor["core"]["id"])!;
+      const proc = memory.get(id as Processor["core"]["id"])!;
       proc.core.lastTick = tick;
       proc.data = data;
-      memoryProcessors.set(id as Processor["core"]["id"], proc);
+      memory.set(id as Processor["core"]["id"], proc);
     },
     async getLastSnapshot(id: string): Promise<any> {
-      return memoryProcessors.get(id as Processor["core"]["id"])!;
+      return memory.get(id as Processor["core"]["id"])!;
     },
   };
 }

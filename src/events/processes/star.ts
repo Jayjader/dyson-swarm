@@ -1,7 +1,7 @@
 import type { BusEvent } from "../events";
 import type { EventProcessor } from "./index";
-import type { Simulation } from "../index";
 import { SOL_LUMINOSITY_W, SOL_MASS_KG, SOL_RADIUS_M } from "../../gameRules";
+import type { Adapters } from "../../adapters";
 
 export type Star = EventProcessor<"star", { mass: bigint }>;
 
@@ -42,8 +42,9 @@ export function starProcess(star: Star, inbox: BusEvent[]): [Star, BusEvent[]] {
   return [star, emitted];
 }
 
-export function getStarMass(simulation: Simulation): bigint {
+export async function getStarMass(adapters: Adapters): Promise<bigint> {
   return (
-    (simulation.processors.get("star-0") as Star | undefined)?.data.mass ?? 0n
+    ((await adapters.snapshots.getLastSnapshot("star-0")) as Star)?.data.mass ??
+    0n
   );
 }

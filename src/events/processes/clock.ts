@@ -15,9 +15,9 @@ import {
   unPause,
 } from "../../hud/types";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type Clock = EventProcessor<
   "clock",
@@ -167,9 +167,9 @@ export function clockProcess(
   return [clock, emitted];
 }
 
-export function getClock(simulation: Simulation): ClockState {
+export async function getClock(adapters: Adapters): Promise<ClockState> {
   return (
-    (simulation.processors.get("clock-0") as Clock | undefined)?.data.state ??
-    ([{ tick: 0, speed: 1 }] as ClockState)
+    ((await adapters.snapshots.getLastSnapshot("clock-0")) as Clock["data"])
+      ?.state ?? ([{ tick: 0, speed: 1 }] as ClockState)
   );
 }

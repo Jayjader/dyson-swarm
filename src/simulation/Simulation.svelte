@@ -6,13 +6,9 @@
     setContext,
   } from "svelte";
   import "../app.css";
-  import {
-    makeSimulationStore,
-    type Simulation,
-    SIMULATION_STORE,
-  } from "../events";
-  import { gridState } from "../events/processes/powerGrid";
-  import { swarmCount } from "../events/processes/satelliteSwarm";
+  import { makeSimulationStore, SIMULATION_STORE } from "../events";
+  import { getGridState } from "../events/processes/powerGrid";
+  import { getSwarmCount } from "../events/processes/satelliteSwarm";
   import { readStored } from "../events/processes/storage";
   import { Resource } from "../gameRules";
   import ProgressOverview from "../hud/ProgressOverview.svelte";
@@ -36,14 +32,14 @@
   import type { Adapters } from "../adapters";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
-  export let adapters: Adapters;
-  const readStoredResource = (
-    simulation: Simulation,
+  async function readStoredResource(
+    adapters: Adapters,
     resource: Resource,
-  ): bigint =>
-    resource === Resource.ELECTRICITY
-      ? gridState(simulation).stored
-      : readStored(simulation, resource);
+  ): Promise<bigint> {
+    return resource === Resource.ELECTRICITY
+      ? (await getGridState(adapters)).stored
+      : await readStored(adapters, resource);
+  }
 
   setContext(SIMULATION_STORE, { simulation });
   const { settings } = getContext(SETTINGS_CONTEXT);
@@ -51,16 +47,19 @@
   let resources = new Map();
   let swarm = 0;
 
-  const unsubFromSim = simulation.subscribe((sim) => {
-    swarm = swarmCount(sim);
-    [
+  const unsubFromSim = simulation.subscribe(async (_sim) => {
+    swarm = await getSwarmCount(simulation.adapters);
+    for (const resource of [
       Resource.ELECTRICITY,
       Resource.ORE,
       Resource.METAL,
       Resource.PACKAGED_SATELLITE,
-    ].forEach((resource) =>
-      resources.set(resource, readStoredResource(sim, resource)),
-    );
+    ]) {
+      resources.set(
+        resource,
+        await readStoredResource(simulation.adapters, resource),
+      );
+    }
     resources = resources; // trigger svelte reactivity
   });
   onDestroy(unsubFromSim);
@@ -149,13 +148,13 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("history")}
-      <History {adapters} />
+      <History />
     {/if}
     {#if $uiPanelsState.has("construct-overview")}
       <ConstructOverview />
     {/if}
     {#if $uiPanelsState.has("storage-overview")}
-      <StorageOverview {resources} {adapters} />
+      <StorageOverview {resources} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
       <Fabricator />

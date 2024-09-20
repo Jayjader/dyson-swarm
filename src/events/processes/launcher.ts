@@ -1,8 +1,8 @@
 import { Construct, Resource, tickConsumption } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type LauncherManager = EventProcessor<
   "launcher",
@@ -174,9 +174,11 @@ export function launcherProcess(
   return [launcher, emitted];
 }
 
-export function getLaunchers(simulation: Simulation) {
-  const { count, working, charge } = (
-    simulation.processors.get("launcher-0") as LauncherManager | undefined
-  )?.data ?? { count: 0, working: 0, charge: 0n };
+export async function getLauncherManagerStats(
+  adapters: Adapters,
+): Promise<Omit<LauncherManager["data"], "received">> {
+  const { count, working, charge } = ((await adapters.snapshots.getLastSnapshot(
+    "launcher-0",
+  )) as LauncherManager["data"]) ?? { count: 0, working: 0, charge: 0n };
   return { count, working, charge };
 }

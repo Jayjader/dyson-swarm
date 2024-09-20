@@ -37,7 +37,6 @@ type EventBus = {
 };
 export type Simulation = {
   bus: EventBus;
-  processors: Map<Id, Processor>;
 };
 
 export function insertProcessor(
@@ -155,10 +154,10 @@ export function makeSimulationStore(
   broadcastEvent: (e: BusEvent) => void;
   loadSave: (s: SaveState) => SimulationStore;
   loadNew: (outsideTick: DOMHighResTimeStamp) => SimulationStore;
+  adapters: Adapters;
 } {
   const baseData = writable<Simulation>({
     bus: { subscriptions: new Map() },
-    processors: new Map(),
   });
   const { subscribe, update, set } = baseData;
   const store = {
@@ -168,6 +167,7 @@ export function makeSimulationStore(
       const settled = await processUntilSettled(sim, adapters);
       set(settled);
     },
+    // todo-long-term: investigate renaming as createDivergentTimeline / createUserIntervention / etc...
     broadcastEvent: (e: BusEvent) =>
       update((sim) => broadcastEvent(sim, e, adapters)),
     loadSave: (s: SaveState) => {
@@ -179,15 +179,17 @@ export function makeSimulationStore(
         bus: { subscriptions: new Map() },
         processors: new Map(),
       };
+      adapters.setup(simulation);
       for (let processor of newGame()) {
         insertProcessor(simulation, processor, adapters);
       }
+      // todo: remove this once the refactoring out of the clock processor type is finished
       insertProcessor(
         simulation,
         createClock(outsideTick, "clock-0", { mode: "pause" }),
         adapters,
       );
-      insertProcessor(simulation, createMemoryStream(), adapters);
+      // todo: remove this once the refactoring of the objectives is finished
       insertProcessor(
         simulation,
         createObjectiveTrackerProbe(objectives.handleTriggers),
@@ -196,6 +198,7 @@ export function makeSimulationStore(
       set(simulation);
       return store;
     },
+    adapters,
   };
   return store;
 }

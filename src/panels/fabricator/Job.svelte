@@ -8,7 +8,7 @@
     Resource,
   } from "../../gameRules";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getPrimitive } from "../../hud/types";
   import { getClock } from "../../events/processes/clock";
@@ -16,7 +16,7 @@
 
   type Job = [Construct, Input] | null;
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   const matsProgress = tweened<number>(0, {
     duration: 150,
@@ -30,17 +30,17 @@
   let job = null as Job,
     pastJob = null as Job;
   let snapshotOfFabricatorReceived = new Map([
-    [Resource.ELECTRICITY, 0n],
-    [Resource.METAL, 0n],
-  ]);
+    [Resource.ELECTRICITY, 0n as bigint],
+    [Resource.METAL, 0n as bigint],
+  ] as const);
   let elecPast = 0,
     elecTotal = 0n;
   let matsPast = 0,
     matsTotal = 0n;
   let lastTick = 0;
 
-  const unsubSim = simulation.subscribe((sim) => {
-    const simClockTick = getPrimitive(getClock(sim)).tick;
+  const unsubSim = simulation.subscribe(async (sim) => {
+    const simClockTick = getPrimitive(await getClock(simulation.adapters)).tick;
     if (lastTick === simClockTick) {
       return;
     }
@@ -73,14 +73,14 @@
     }
 
     const elecCurrent = Number(
-      snapshotOfFabricatorReceived.get(Resource.ELECTRICITY) ?? 0n
+      snapshotOfFabricatorReceived.get(Resource.ELECTRICITY) ?? 0n,
     );
     if (elecCurrent !== elecPast) {
       elecPast = elecCurrent;
       elecProgress.update(() => elecCurrent);
     }
     const matsCurrent = Number(
-      snapshotOfFabricatorReceived.get(Resource.METAL) ?? 0n
+      snapshotOfFabricatorReceived.get(Resource.METAL) ?? 0n,
     );
     if (matsCurrent !== matsPast) {
       matsPast = matsCurrent;
@@ -140,7 +140,7 @@
   >
     {#if job}
       Materials Need Satisfied: {Math.floor(
-        ($matsProgress * 100) / Number(matsTotal)
+        ($matsProgress * 100) / Number(matsTotal),
       )}%
     {:else}
       No job

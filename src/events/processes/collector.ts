@@ -1,9 +1,9 @@
 import { Construct, MERCURY_SEMIMAJOR_AXIS_M, Resource } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
 import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type CollectorManager = EventProcessor<
   "collector",
@@ -141,9 +141,10 @@ export function collectorProcess(
   return [c, emitted];
 }
 
-export function getCollectorCount(simulation: Simulation): number {
+export async function getCollectorCount(adapters: Adapters): Promise<number> {
   return (
-    (simulation.processors.get("collector-0") as CollectorManager | undefined)
-      ?.data.count ?? 0
-  );
+    (await adapters.snapshots.getLastSnapshot(
+      "collector-0",
+    )) as CollectorManager
+  ).data.count;
 }

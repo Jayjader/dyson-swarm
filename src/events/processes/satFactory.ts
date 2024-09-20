@@ -5,9 +5,9 @@ import {
   tickProduction,
 } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type SatelliteFactoryManager = EventProcessor<
   "factory",
@@ -187,11 +187,11 @@ export function factoryProcess(
   return [factory, emitted];
 }
 
-export function getFactories(simulation: Simulation) {
+export async function getSatelliteFactoryStats(adapters: Adapters) {
   const { count, working } = (
-    simulation.processors.get("factory-0") as
-      | SatelliteFactoryManager
-      | undefined
+    (await adapters.snapshots.getLastSnapshot(
+      "factory-0",
+    )) as SatelliteFactoryManager
   )?.data ?? { count: 0, working: 0 };
   return { count, working };
 }

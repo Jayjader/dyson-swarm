@@ -8,10 +8,10 @@
   } from "./types";
   import { getClock } from "../events/processes/clock";
   import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE } from "../events";
+  import { SIMULATION_STORE, type SimulationStore } from "../events";
   import type { BusEvent as BusEvent } from "../events/events";
 
-  const simulation = getContext(SIMULATION_STORE).simulation;
+  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
   let displayedSpeed = 1;
   let speedIsBeingEdited = false;
@@ -19,8 +19,9 @@
   let clock: ClockState = [{ tick: 0, speed: 1 }];
   let disabled = false;
 
-  const unsubscribe = simulation.subscribe((sim) => {
-    clock = getClock(sim);
+  // todo: between the adapters and the upcoming clock refactor, investigate if we even *need* to subscribe to the simulation store
+  const unsubscribe = simulation.subscribe(async (_sim) => {
+    clock = await getClock(simulation.adapters); // todo: find better way after clock refactor
     disabled = isIndirectPause(clock);
     if (isEditing(clock)) {
       /* nothing to do here, the rest of local state is piloted solely by ui in this case */
@@ -138,8 +139,8 @@
     on:mousemove={editSpeedFromMouseEvent}
     on:mouseup={stopEditingSpeed}
   />
-<!--  uncomment following line to debug clock state-->
-<!--  <div class="bg-slate-50 text-stone-900">{JSON.stringify(clock)}</div>-->
+  <!--  uncomment following line to debug clock state-->
+  <!--  <div class="bg-slate-50 text-stone-900">{JSON.stringify(clock)}</div>-->
   <fieldset class="flex flex-row justify-evenly gap-1">
     <label
       class="flex cursor-pointer flex-row justify-between gap-1"

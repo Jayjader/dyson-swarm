@@ -1,9 +1,9 @@
 import { MERCURY_MASS_KG, Resource, tickProduction } from "../../gameRules";
 import type { BusEvent, Events } from "../events";
 import { compareReceivedTicks, indexOfFirstFutureEvent } from "../events";
-import type { Simulation } from "../index";
 import type { SubscriptionsFor } from "../subscriptions";
 import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 
 export type Planet = EventProcessor<
   "planet",
@@ -80,9 +80,9 @@ export function planetProcess(
   return [planet, emitted];
 }
 
-export function getPlanetMass(simulation: Simulation): bigint {
+export async function getPlanetMass(adapters: Adapters): Promise<bigint> {
   return (
-    (simulation.processors.get("planet-0") as Planet | undefined)?.data.mass ??
-    0n
+    ((await adapters.snapshots.getLastSnapshot("planet-0")) as Planet)?.data
+      .mass ?? 0n
   );
 }
