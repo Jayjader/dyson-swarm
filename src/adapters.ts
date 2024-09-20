@@ -52,7 +52,7 @@ export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
 }
 
 export type MemoryProcessors = Map<Id, Processor>;
-function initInMemoryAdapters(): Adapters {
+export function initInMemoryAdapters(): Adapters {
   const streamId: EventStream["core"]["id"] = "stream-0";
   const memory = new Map() as MemoryProcessors;
   const inboxes = new Map<Id, Array<BusEvent>>();
