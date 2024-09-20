@@ -33,7 +33,7 @@
 </script>
 
 <label
-  class="basis-full rounded-xl border-8 {border} flex flex-col items-stretch justify-center pt-1 pb-2 text-center {text} cursor-pointer"
+  class="basis-full rounded-xl border-8 {border} flex flex-col items-stretch justify-center pb-2 pt-1 text-center {text} cursor-pointer"
 >
   Power Grid
   <input

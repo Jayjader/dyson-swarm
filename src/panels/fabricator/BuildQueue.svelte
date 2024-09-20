@@ -116,7 +116,7 @@
   class:border-indigo-400={mode.startsWith("add-build")}
   class:border-rose-600={mode === "remove-build-order"}
 >
-  <div class="col-start-2 row-start-1 flex flex-row justify-evenly ">
+  <div class="col-start-2 row-start-1 flex flex-row justify-evenly">
     <h3
       class="max-w-min break-normal font-bold"
       class:text-sky-500={mode === "read-only"}
