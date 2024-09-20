@@ -326,10 +326,10 @@ export async function getOrCreateSqlWorker() {
             worker.removeEventListener("message", handleQueryResult);
             let results = event.data.results?.[0]?.values ?? [];
             (results as unknown as [number, string][]).sort(
-              ([atick], [btick]) => atick - btick,
+              ([aTick], [bTick]) => aTick - bTick,
             );
             for (let i = 0; i < results.length; i++) {
-              results[i] = results[i][1];
+              results[i] = results[i][1]; // just return the event data (it includes the tick as an attribute)
             }
             resolve(results);
           }
