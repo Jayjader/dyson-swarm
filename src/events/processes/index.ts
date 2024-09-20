@@ -18,7 +18,7 @@ import type { ObjectiveTrackerProbe } from "./objectiveTracker";
 type ProcessorCore<Tag extends keyof typeof SUBSCRIPTIONS> = {
   tag: Tag;
   id: `${Tag}-${number}`;
-  lastTick: number; // todo: investigate whether this + a new 'processed' field on events table could replace the inboxes table
+  lastTick: number;
 };
 export type EventProcessor<
   Tag extends string,
