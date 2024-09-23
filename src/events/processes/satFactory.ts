@@ -188,10 +188,8 @@ export function factoryProcess(
 }
 
 export async function getSatelliteFactoryStats(adapters: Adapters) {
-  const { count, working } = (
-    (await adapters.snapshots.getLastSnapshot(
-      "factory-0",
-    )) as SatelliteFactoryManager
-  )?.data ?? { count: 0, working: 0 };
+  const { count, working } = ((
+    await adapters.snapshots.getLastSnapshot("factory-0")
+  )[1] as SatelliteFactoryManager["data"]) ?? { count: 0, working: 0 };
   return { count, working };
 }

@@ -82,7 +82,10 @@ export function planetProcess(
 
 export async function getPlanetMass(adapters: Adapters): Promise<bigint> {
   return (
-    ((await adapters.snapshots.getLastSnapshot("planet-0")) as Planet)?.data
-      .mass ?? 0n
+    (
+      (
+        await adapters.snapshots.getLastSnapshot("planet-0")
+      )[1] as Planet["data"]
+    )?.mass ?? 0n
   );
 }

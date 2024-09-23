@@ -177,8 +177,8 @@ export function launcherProcess(
 export async function getLauncherManagerStats(
   adapters: Adapters,
 ): Promise<Omit<LauncherManager["data"], "received">> {
-  const { count, working, charge } = ((await adapters.snapshots.getLastSnapshot(
-    "launcher-0",
-  )) as LauncherManager["data"]) ?? { count: 0, working: 0, charge: 0n };
+  const { count, working, charge } = ((
+    await adapters.snapshots.getLastSnapshot("launcher-0")
+  )[1] as LauncherManager["data"]) ?? { count: 0, working: 0, charge: 0n };
   return { count, working, charge };
 }

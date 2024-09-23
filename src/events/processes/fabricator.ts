@@ -169,7 +169,9 @@ export function fabricatorProcess(
 
 export async function getFabricator(adapters: Adapters) {
   return (
-    (await adapters.snapshots.getLastSnapshot("fabricator-0")) ?? {
+    ((
+      await adapters.snapshots.getLastSnapshot("fabricator-0")
+    )[1] as Fabricator["data"]) ?? {
       working: false,
       job: null,
       queue: [],

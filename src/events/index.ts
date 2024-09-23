@@ -1,6 +1,6 @@
 import { get, type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
-import type { BusEvent, EventTag } from "./events";
+import { type BusEvent, type EventTag, getTick } from "./events";
 import type { Id, Processor } from "./processes";
 import { type Clock, clockProcess, createClock } from "./processes/clock";
 import { type CollectorManager, collectorProcess } from "./processes/collector";
@@ -126,12 +126,22 @@ export async function processUntilSettled(
     for (let processorId of await adapters.eventSources.getAllSourceIds()) {
       const inbox = await adapters.events.read.getInbox(processorId);
       if (inbox.length > 0) {
-        const processor = await adapters.snapshots.getLastSnapshot(processorId);
-        const [updatedProcessor, newEmitted] = process(processor, inbox);
+        const inboxTick = getTick(inbox[0])!;
+        const [lastTick, data] =
+          await adapters.snapshots.getLastSnapshot(processorId);
+        const core = {
+          id: processorId,
+          tag: processorId.slice(0, processorId.lastIndexOf("-")),
+          lastTick,
+        };
+        const [updatedProcessor, newEmitted] = process(
+          { core, data } as Processor,
+          inbox,
+        );
         emitted.push(...newEmitted);
         adapters.snapshots.persistSnapshot(
-          updatedProcessor.core.lastTick,
-          updatedProcessor.core.id,
+          inboxTick,
+          processorId,
           updatedProcessor.data,
         );
         break;

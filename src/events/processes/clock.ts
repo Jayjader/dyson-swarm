@@ -169,7 +169,7 @@ export function clockProcess(
 
 export async function getClock(adapters: Adapters): Promise<ClockState> {
   return (
-    ((await adapters.snapshots.getLastSnapshot("clock-0")) as Clock["data"])
+    ((await adapters.snapshots.getLastSnapshot("clock-0"))[1] as Clock["data"])
       ?.state ?? ([{ tick: 0, speed: 1 }] as ClockState)
   );
 }

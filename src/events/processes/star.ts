@@ -44,7 +44,7 @@ export function starProcess(star: Star, inbox: BusEvent[]): [Star, BusEvent[]] {
 
 export async function getStarMass(adapters: Adapters): Promise<bigint> {
   return (
-    ((await adapters.snapshots.getLastSnapshot("star-0")) as Star)?.data.mass ??
-    0n
+    ((await adapters.snapshots.getLastSnapshot("star-0"))[1] as Star["data"])
+      ?.mass ?? 0n
   );
 }

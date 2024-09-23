@@ -205,8 +205,8 @@ export function refinerProcess(
 export async function getRefinerStats(
   adapters: Adapters,
 ): Promise<Omit<RefinerManager["data"], "received">> {
-  const { count, working } = (
-    (await adapters.snapshots.getLastSnapshot("refiner-0")) as RefinerManager
-  )?.data ?? { count: 0, working: 0 };
+  const { count, working } = ((
+    await adapters.snapshots.getLastSnapshot("refiner-0")
+  )[1] as RefinerManager["data"]) ?? { count: 0, working: 0 };
   return { count, working };
 }

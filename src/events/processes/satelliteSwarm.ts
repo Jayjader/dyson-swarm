@@ -132,7 +132,10 @@ export function swarmProcess(
 }
 export async function getSwarmCount(adapters: Adapters): Promise<number> {
   return (
-    ((await adapters.snapshots.getLastSnapshot("swarm-0")) as SatelliteSwarm)
-      ?.data.count ?? 0
+    (
+      (
+        await adapters.snapshots.getLastSnapshot("swarm-0")
+      )[1] as SatelliteSwarm["data"]
+    )?.count ?? 0
   );
 }

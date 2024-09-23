@@ -111,7 +111,12 @@ export async function getGridState(
   adapters: Adapters,
 ): Promise<PowerGrid["data"]> {
   return (
-    ((await adapters.snapshots.getLastSnapshot("power grid-0")) as PowerGrid)
-      ?.data ?? { stored: 0n, breakerTripped: false, received: [] }
+    ((
+      await adapters.snapshots.getLastSnapshot("power grid-0")
+    )[1] as PowerGrid["data"]) ?? {
+      stored: 0n,
+      breakerTripped: false,
+      received: [],
+    }
   );
 }

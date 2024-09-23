@@ -1,3 +1,4 @@
+import { describe, expect, test } from "vitest";
 import {
   areEqual,
   findAutoStartPositions,
@@ -15,7 +16,7 @@ describe("objective tracker", () => {
             { title: "", details: [""], steps: [] },
             { title: "", details: [""], steps: [] },
             { title: "", details: [""], steps: [] },
-          ])
+          ]),
         ).toEqual([[0], [1], [2]]);
       });
       test("works on nested list", () => {
@@ -30,7 +31,7 @@ describe("objective tracker", () => {
               ],
             },
             { title: "", details: [""], steps: [] },
-          ])
+          ]),
         ).toEqual([[0], [1], [1, 0], [1, 1], [2]]);
       });
       test("resume from position", () => {
@@ -47,8 +48,8 @@ describe("objective tracker", () => {
               },
               { title: "", details: [""], steps: [] },
             ],
-            [1, 0]
-          )
+            [1, 0],
+          ),
         ).toEqual([[1, 0], [1, 1], [2]]);
       });
     });
@@ -99,7 +100,7 @@ describe("objective tracker", () => {
             { title: "", details: [""], steps: [] },
             { title: "", details: [""], steps: [], autostart: true },
             { title: "", details: [""], steps: [] },
-          ])
+          ]),
         ).toEqual([[0], [3]]);
       });
       test("works on nested list", () => {
@@ -121,7 +122,7 @@ describe("objective tracker", () => {
               ],
             },
             { title: "", details: [""], steps: [] },
-          ])
+          ]),
         ).toEqual([[0], [2, 0, 0]]);
       });
     });
@@ -135,8 +136,8 @@ describe("objective tracker", () => {
               { title: "c", details: [""], steps: [] },
               { title: "d", details: [""], steps: [] },
             ],
-            [1]
-          )
+            [1],
+          ),
         ).toEqual([{ title: "c", details: [""], steps: [] }, [2]]);
       });
       test("nested objective list", () => {

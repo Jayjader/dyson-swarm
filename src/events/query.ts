@@ -9,7 +9,7 @@ export type EventsQueryAdapter = {
   getTickEvents(tick: number): Promise<BusEvent[]>;
   getTotalInboxSize(): Promise<number>;
   getInboxSize(sourceId: string): Promise<number>;
-  getInbox(sourceId: string): Promise<BusEvent[]>;
+  getInbox(sourceId: string): Promise<BusEvent[]>; // todo: turn this into getFirstInboxAggregate or something (i.e. only get the first event from the inbox, using Time Warp's notion of "event" (all events/messages received for the same tick))
   getTickEventsRange(
     startTick: number,
     endTick?: number,
@@ -64,7 +64,12 @@ export function memoryEventsQueryAdapter(
 ): EventsQueryAdapter {
   return {
     async getInbox(sourceId: string) {
-      return inboxes.get(sourceId as Id)!;
+      const inbox = inboxes.get(sourceId as Id);
+      if (inbox) {
+        return inbox.splice(0);
+      } else {
+        return [];
+      }
     },
     async getInboxSize(sourceId: string) {
       return inboxes.get(sourceId as Id)!.length;

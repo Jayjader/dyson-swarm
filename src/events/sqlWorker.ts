@@ -227,7 +227,7 @@ export async function getOrCreateSqlWorker() {
         },
       );
     },
-    getLastSnapshot(id: string): Promise<Processor["data"]> {
+    getLastSnapshot(id: string): Promise<[number, Processor["data"]]> {
       messageId = messageId + 1;
       const queryId = messageId;
       return new Promise((resolve, reject) => {
@@ -236,7 +236,9 @@ export async function getOrCreateSqlWorker() {
             worker.removeEventListener("message", handleQueryResult);
             const result = event.data.results?.[0]?.values?.[0];
             if (result) {
-              resolve(JSON.parse(result) as Processor["data"]);
+              const [lastTick, rawData] = result;
+              const data = JSON.parse(rawData) as Processor["data"];
+              resolve([lastTick, data]);
             } else {
               reject(new Error(`couldn't parse snapshot from db: ${result}`));
             }

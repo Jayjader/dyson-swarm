@@ -143,8 +143,8 @@ export function collectorProcess(
 
 export async function getCollectorCount(adapters: Adapters): Promise<number> {
   return (
-    (await adapters.snapshots.getLastSnapshot(
-      "collector-0",
-    )) as CollectorManager
-  ).data.count;
+    (
+      await adapters.snapshots.getLastSnapshot("collector-0")
+    )[1] as CollectorManager["data"]
+  ).count;
 }

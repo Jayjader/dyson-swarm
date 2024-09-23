@@ -93,9 +93,11 @@ export async function readStored(
 ): Promise<bigint> {
   return (
     (
-      (await adapters.snapshots.getLastSnapshot(
-        `storage-${resource}-0` as unknown as Id,
-      )) as Storage<Resource>
-    )?.data.stored ?? 0n
+      (
+        await adapters.snapshots.getLastSnapshot(
+          `storage-${resource}-0` as unknown as Id,
+        )
+      )[1] as Storage<Resource>["data"]
+    )?.stored ?? 0n
   );
 }

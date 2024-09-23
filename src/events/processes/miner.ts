@@ -136,8 +136,8 @@ export function minerProcess(
 export async function getMinerStats(
   adapters: Adapters,
 ): Promise<Omit<MinerManager["data"], "received">> {
-  const { count, working } = (
-    (await adapters.snapshots.getLastSnapshot("miner-0")) as MinerManager
-  )?.data ?? { count: 0, working: 0 };
+  const { count, working } = ((
+    await adapters.snapshots.getLastSnapshot("miner-0")
+  )[1] as MinerManager["data"]) ?? { count: 0, working: 0 };
   return { count, working };
 }
