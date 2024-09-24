@@ -227,7 +227,7 @@ export async function getOrCreateSqlWorker() {
         },
       );
     },
-    getLastSnapshot(id: string): Promise<[number, Processor["data"]]> {
+    getLastSnapshot(id: string): Promise<[number, string]> {
       messageId = messageId + 1;
       const queryId = messageId;
       return new Promise((resolve, reject) => {
@@ -236,9 +236,7 @@ export async function getOrCreateSqlWorker() {
             worker.removeEventListener("message", handleQueryResult);
             const result = event.data.results?.[0]?.values?.[0];
             if (result) {
-              const [lastTick, rawData] = result;
-              const data = JSON.parse(rawData) as Processor["data"];
-              resolve([lastTick, data]);
+              resolve(result);
             } else {
               reject(new Error(`couldn't parse snapshot from db: ${result}`));
             }
@@ -252,6 +250,27 @@ export async function getOrCreateSqlWorker() {
             WHERE source_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $sourceName)
           ORDER BY tick DESC LIMIT 1`,
           { $sourceName: id },
+        );
+      });
+    },
+    getAllRawSnapshots(): Promise<Array<[string, number, string]>> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            const result = event.data.results?.[0]?.values ?? [];
+            resolve(result);
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `SELECT sources.name, snapshots.tick, snapshots.data FROM ${snapshots_table_name} as snapshots
+            JOIN ${event_sources_table_name} as sources
+            ON snapshots.source_id = sources.id
+          ORDER BY snapshots.tick ASC`,
         );
       });
     },
@@ -319,6 +338,34 @@ export async function getOrCreateSqlWorker() {
           $owner: to,
         },
       );
+    },
+    peekInbox(sourceName: string): Promise<string[]> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            let results = event.data.results?.[0]?.values ?? [];
+            (results as unknown as [number, string][]).sort(
+              ([aTick], [bTick]) => aTick - bTick,
+            );
+            for (let i = 0; i < results.length; i++) {
+              results[i] = results[i][1]; // just return the event data (it includes the tick as an attribute)
+            }
+            resolve(results);
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `SELECT events.tick, events.data FROM ${events_table_name} as events
+        JOIN ${inboxes_table_name} as inboxes
+        ON inboxes.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
+        AND inboxes.event_id = events.id`,
+          { $inboxOwner: sourceName },
+        );
+      });
     },
     consumeInbox(sourceName: string): Promise<string[]> {
       const queryId = ++messageId;

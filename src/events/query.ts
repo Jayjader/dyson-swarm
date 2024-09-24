@@ -9,6 +9,7 @@ export type EventsQueryAdapter = {
   getTickEvents(tick: number): Promise<BusEvent[]>;
   getTotalInboxSize(): Promise<number>;
   getInboxSize(sourceId: string): Promise<number>;
+  peekInbox(sourceId: string): Promise<BusEvent[]>;
   getInbox(sourceId: string): Promise<BusEvent[]>; // todo: turn this into getFirstInboxAggregate or something (i.e. only get the first event from the inbox, using Time Warp's notion of "event" (all events/messages received for the same tick))
   getTickEventsRange(
     startTick: number,
@@ -34,8 +35,16 @@ export function sqlEventsQueryAdapter(
     async getTotalInboxSize() {
       return sqlWorker.getTotalInboxSize();
     },
+    async peekInbox(sourceId: string) {
+      const rawEvents = await sqlWorker.peekInbox(sourceId);
+      const busEvents: Array<BusEvent> = [];
+      for (const rawEvent of rawEvents) {
+        busEvents.push(JSON.parse(rawEvent, bigIntRestorer));
+      }
+      return busEvents;
+    },
     async getInbox(sourceId: string) {
-      let rawEvents = await sqlWorker.consumeInbox(sourceId);
+      const rawEvents = await sqlWorker.consumeInbox(sourceId);
       const busEvents: Array<BusEvent> = [];
       for (const rawEvent of rawEvents) {
         busEvents.push(JSON.parse(rawEvent, bigIntRestorer));
@@ -43,7 +52,7 @@ export function sqlEventsQueryAdapter(
       return busEvents;
     },
     async getTickEventsRange(startTick: number, endTick?: number) {
-      let rawEvents = await sqlWorker.queryEventDataTickRange(
+      const rawEvents = await sqlWorker.queryEventDataTickRange(
         startTick,
         endTick,
       );
@@ -67,6 +76,14 @@ export function memoryEventsQueryAdapter(
       const inbox = inboxes.get(sourceId as Id);
       if (inbox) {
         return inbox.splice(0);
+      } else {
+        return [];
+      }
+    },
+    async peekInbox(sourceId: string) {
+      const inbox = inboxes.get(sourceId as Id);
+      if (inbox) {
+        return inbox.slice(0);
       } else {
         return [];
       }

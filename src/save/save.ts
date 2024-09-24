@@ -1,11 +1,10 @@
 import {
   type EventStream,
-  parseStream,
   type SerializedStream,
 } from "../events/processes/eventStream";
 import type { Id, Processor } from "../events/processes";
 import { SUBSCRIPTIONS } from "../events/subscriptions";
-import type { EventTag } from "../events/events";
+import type { BusEvent, EventTag } from "../events/events";
 import { createPowerGrid } from "../events/processes/powerGrid";
 import { createStorage } from "../events/processes/storage";
 import { Construct, Resource } from "../gameRules";
@@ -25,42 +24,112 @@ import type { Simulation } from "../events";
 import { type Save, type SaveStub, Slot, slotStorageKey } from "./uiStore";
 import type { BuildOrder } from "../types";
 import { isRepeat } from "../types";
+import type { Adapters } from "../adapters";
 
+export const versions = ["initial-json", "adapters-rewrite"] as const;
 export type Others = Exclude<Processor, EventStream>;
-export type SaveState = { stream: SerializedStream; processors: Others[] };
+export type SaveState = {
+  // old
+  // stream: SerializedStream;
+  // processors: Others[];
 
-export function loadSave(save: SaveState): Simulation {
-  const stream = parseStream(save.stream);
-  const flatSubs = save.processors
-    .flatMap((p) =>
-      [...SUBSCRIPTIONS[p.core.tag]].map<[EventTag, Id]>((tag) => [
-        tag,
-        p.core.id,
-      ]),
-    )
-    .concat(
-      [...SUBSCRIPTIONS.stream].map<[EventTag, Id]>((tag) => [
-        tag,
-        stream.core.id,
-      ]),
-    );
-  const subsByTag = flatSubs.reduce<Map<EventTag, Set<Id>>>(
-    (accu, [tag, id]) => accu.set(tag, (accu.get(tag) ?? new Set()).add(id)),
-    new Map(),
-  );
-  const processorsById = new Map([
-    [stream.core.id, stream],
-    ...save.processors.map<[Id, Processor]>((p) => [p.core.id, p]),
-  ]);
-  return {
-    bus: {
-      subscriptions: subsByTag,
-    },
-    processors: processorsById,
-  };
+  // new
+  version: (typeof versions)[number];
+  sources: Array<{ id: string; tag: string }>;
+  snapshots: Array<{ id: string; tick: number; data: string }>;
+  events: Array<BusEvent>;
+  inboxes: Array<{ sourceId: string; events: BusEvent[] }>;
+};
+
+export function loadSave(save: SaveState, adapters: Adapters): Simulation {
+  if (save.version === "adapters-rewrite") {
+    const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
+    for (const { id, tag } of save.sources) {
+      if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
+        continue;
+      }
+      for (const eventTag of SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS]) {
+        const subsForEvent = sim.bus.subscriptions.get(eventTag);
+        if (subsForEvent !== undefined) {
+          subsForEvent.add(id as Id);
+        } else {
+          sim.bus.subscriptions.set(eventTag, new Set([id as Id]));
+        }
+      }
+      let lastTick = Number.NEGATIVE_INFINITY,
+        data;
+      for (const snapshot of save.snapshots) {
+        if (snapshot.id === id) {
+          if (snapshot.tick > lastTick) {
+            lastTick = snapshot.tick;
+            try {
+              data = JSON.parse(
+                snapshot.data,
+                bigIntRestorer,
+              ) as Processor["data"];
+            } catch (e) {
+              console.error(`json error for snapshot of ${id}/${tag}: `, e);
+            }
+          }
+        }
+      }
+      if (lastTick === Number.NEGATIVE_INFINITY || data === undefined) {
+        continue;
+      }
+      adapters.eventSources.insertSource(id, {
+        core: { id, tag, lastTick },
+        data,
+      } as Processor);
+    }
+    for (const event of save.events) {
+      adapters.events.write.persistEvent(event);
+    }
+    for (const { sourceId, events } of save.inboxes) {
+      for (const event of events) {
+        adapters.events.write.deliverEvent(event, sourceId);
+      }
+    }
+    return sim;
+  } else {
+    // todo: try to convert to the most current version
+    return { bus: { subscriptions: new Map() } };
+  }
 }
 
-export function generateSave(sim: Simulation): SaveState {
+export async function generateSave(
+  sim: Simulation,
+  adapters: Adapters,
+): Promise<SaveState> {
+  const sources = [];
+  for (const sourceId of await adapters.eventSources.getAllSourceIds()) {
+    sources.push({
+      id: sourceId,
+      tag: sourceId.slice(0, sourceId.lastIndexOf("-")),
+    });
+  }
+  const events = [];
+  for (const [_, event] of await adapters.events.read.getTickEventsRange(
+    Number.NEGATIVE_INFINITY,
+  )) {
+    events.push(event);
+  }
+  const inboxes = [];
+  for (const { id } of sources) {
+    inboxes.push({
+      sourceId: id,
+      events: await adapters.events.read.peekInbox(id),
+    });
+  }
+  const snapshots = [];
+  for (const [
+    sourceId,
+    tick,
+    rawSnapshot,
+  ] of await adapters.snapshots.getAllRawSnapshots()) {
+    snapshots.push({ id: sourceId, tick, data: rawSnapshot });
+  }
+  return { version: versions[1], sources, events, inboxes, snapshots };
+  /*
   const processors = [];
   let stream!: SerializedStream;
   for (const proc of sim.processors.values()) {
@@ -82,7 +151,7 @@ export function generateSave(sim: Simulation): SaveState {
     };
   }
   console.debug({ saveStream: stream });
-  return { processors, stream: stream };
+   */
 }
 
 export function newGame(): Processor[] {
@@ -145,9 +214,6 @@ export function bigIntReplacer(key: string, value: any) {
 }
 export function parseProcessors(formatted: string): SaveState {
   const parsed = JSON.parse(formatted, bigIntRestorer) as SaveState;
-  // todo?: introduce saveAdapter(s)
-  // todo: find event stream and run it through event persistence adapter's .persistEvent()
-  // todo: use event persistence adapter's .deliverEvent() for all .incoming stuff
   parsed.stream.incoming = parsed.stream.incoming.map((e) =>
     e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
       ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }

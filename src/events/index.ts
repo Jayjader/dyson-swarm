@@ -181,7 +181,7 @@ export function makeSimulationStore(
     broadcastEvent: (e: BusEvent) =>
       update((sim) => broadcastEvent(sim, e, adapters)),
     loadSave: (s: SaveState) => {
-      set(loadSave(s));
+      set(loadSave(s, adapters));
       return store;
     },
     loadNew: (outsideTick: DOMHighResTimeStamp) => {

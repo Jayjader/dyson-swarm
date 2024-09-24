@@ -6,6 +6,7 @@ export type SnapshotsAdapter = {
   debugSnapshots(): void;
   persistSnapshot(tick: number, id: string, data: any): void;
   getLastSnapshot(id: string): Promise<[number, Processor["data"]]>;
+  getAllRawSnapshots(): Promise<Array<[string, number, string]>>;
 };
 
 export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
@@ -16,8 +17,12 @@ export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
     persistSnapshot(tick: number, id: string, data: any) {
       sqlWorker.persistSnapshot(tick, id, data);
     },
-    getLastSnapshot(id: string) {
-      return sqlWorker.getLastSnapshot(id);
+    async getLastSnapshot(id: string) {
+      const [lastTick, rawData] = await sqlWorker.getLastSnapshot(id);
+      return [lastTick, JSON.parse(rawData) as Processor["data"]];
+    },
+    async getAllRawSnapshots() {
+      return sqlWorker.getAllRawSnapshots();
     },
   };
 }
