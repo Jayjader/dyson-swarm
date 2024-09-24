@@ -25,7 +25,7 @@ export type EventProcessor<
   Data extends undefined | object = undefined,
 > = Tag extends keyof typeof SUBSCRIPTIONS
   ? Data extends undefined
-    ? ProcessorCore<Tag>
+    ? { core: ProcessorCore<Tag> }
     : { data: Data } & { core: ProcessorCore<Tag> }
   : never;
 
