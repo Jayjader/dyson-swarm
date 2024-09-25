@@ -1,7 +1,3 @@
-import {
-  type EventStream,
-  type SerializedStream,
-} from "../events/processes/eventStream";
 import type { Id, Processor } from "../events/processes";
 import { SUBSCRIPTIONS } from "../events/subscriptions";
 import type { BusEvent, EventTag } from "../events/events";
@@ -27,13 +23,7 @@ import { isRepeat } from "../types";
 import type { Adapters } from "../adapters";
 
 export const versions = ["initial-json", "adapters-rewrite"] as const;
-export type Others = Exclude<Processor, EventStream>;
 export type SaveState = {
-  // old
-  // stream: SerializedStream;
-  // processors: Others[];
-
-  // new
   version: (typeof versions)[number];
   sources: Array<{ id: string; tag: string }>;
   snapshots: Array<{ id: string; tick: number; data: string }>;
@@ -41,7 +31,10 @@ export type SaveState = {
   inboxes: Array<{ sourceId: string; events: BusEvent[] }>;
 };
 
-export function loadSave(save: SaveState, adapters: Adapters): Simulation {
+export async function loadSave(
+  save: SaveState,
+  adapters: Adapters,
+): Promise<Simulation> {
   if (save.version === "adapters-rewrite") {
     const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
     for (const { id, tag } of save.sources) {
@@ -82,11 +75,11 @@ export function loadSave(save: SaveState, adapters: Adapters): Simulation {
       } as Processor);
     }
     for (const event of save.events) {
-      adapters.events.write.persistEvent(event);
+      await adapters.events.write.persistEvent(event);
     }
     for (const { sourceId, events } of save.inboxes) {
       for (const event of events) {
-        adapters.events.write.deliverEvent(event, sourceId);
+        await adapters.events.write.deliverEvent(event, sourceId);
       }
     }
     return sim;

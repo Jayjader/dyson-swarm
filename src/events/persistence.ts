@@ -1,12 +1,10 @@
 import { type BusEvent, getTick, type TimeStamped } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 import type { Id } from "./processes";
-import type { EventStream } from "./processes/eventStream";
-import type { MemoryProcessors } from "../adapters";
 
 export type EventPersistenceAdapter = {
-  persistEvent: (event: BusEvent) => void;
-  deliverEvent: (event: BusEvent, to: string) => void;
+  persistEvent: (event: BusEvent) => Promise<void>;
+  deliverEvent: (event: BusEvent, to: string) => Promise<void>;
 };
 export function sqlEventPersistenceAdapter(
   sqlWorker: SqlWorker,
@@ -20,42 +18,51 @@ export function sqlEventPersistenceAdapter(
         const tick = getTick(event);
         if ((event as TimeStamped)?.timeStamp !== undefined) {
           if (tick !== undefined) {
-            sqlWorker.persistTickTimestampEvent(
+            return sqlWorker.persistTickTimestampEvent(
               tick,
               event as BusEvent & TimeStamped,
             );
           } else {
-            sqlWorker.persistTimestampEvent(event as BusEvent & TimeStamped);
+            return sqlWorker.persistTimestampEvent(
+              event as BusEvent & TimeStamped,
+            );
           }
-        } else {
-          if (tick !== undefined) {
-            sqlWorker.persistTickEvent(tick, event);
-          }
+        } else if (tick !== undefined) {
+          return sqlWorker.persistTickEvent(tick, event);
         }
       }
+      return Promise.resolve();
     },
     deliverEvent(event: BusEvent, to: string) {
-      sqlWorker.deliverToInbox(event, to);
+      return sqlWorker.deliverToInbox(event, to);
     },
   };
 }
 
 export function memoryEventPersistenceAdapter(
-  streamId: EventStream["core"]["id"],
-  memory: MemoryProcessors, // todo: remove this ?
+  streamMemory: Map<number, Array<BusEvent>>,
   inboxes: Map<Id, Array<BusEvent>>,
 ): EventPersistenceAdapter {
   return {
-    deliverEvent(event: BusEvent, to: string): void {
+    async deliverEvent(event: BusEvent, to: string) {
       const inbox = inboxes.get(to as Id)!;
       inbox.push(event);
     },
-    persistEvent(event: BusEvent): void {
-      if (
-        "outside-clock-tick" !== event.tag &&
-        "simulation-clock-tick" !== event.tag
-      ) {
-        this.deliverEvent(event, streamId);
+    async persistEvent(event: BusEvent) {
+      // todo: cleanup after clock refactor (outside clock ticks might no longer be simulation events)
+      if ("outside-clock-tick" === event.tag) {
+        return;
+      }
+      const eventTick = getTick(event);
+      if (eventTick !== undefined) {
+        const eventsForTick = streamMemory.get(eventTick);
+        if (eventsForTick !== undefined) {
+          eventsForTick.push(event);
+        } else {
+          streamMemory.set(eventTick, [event]);
+        }
+      } else {
+        console.warn("no tick found to persist event in memory: ", event);
       }
     },
   };

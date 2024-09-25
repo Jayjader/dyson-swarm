@@ -5,7 +5,7 @@ import type { MemoryProcessors } from "../adapters";
 
 export type EventSourcesAdapter = {
   insertSource(name: string, value: Processor): void;
-  getAllSourceIds(): Promise<Array<string>>;
+  getAllSourceIds(): Promise<Array<Id>>;
   debugSources(): void;
 };
 
@@ -19,8 +19,8 @@ export function sqlEventSourcesAdapter(
     insertSource(name: string) {
       sqlWorker.insertEventSource(name);
     },
-    getAllSourceIds(): Promise<Array<string>> {
-      return sqlWorker.getAllEventSourceIds();
+    getAllSourceIds() {
+      return sqlWorker.getAllEventSourceIds() as Promise<Array<Id>>;
     },
   };
 }
@@ -37,7 +37,7 @@ export function memoryEventSourcesAdapter(
       memory.set(proc.core.id, proc);
       inboxes.set(proc.core.id, []);
     },
-    async getAllSourceIds(): Promise<Array<string>> {
+    async getAllSourceIds() {
       return Array.from(memory.keys());
     },
   };

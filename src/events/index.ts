@@ -1,14 +1,9 @@
 import { get, type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
 import { type BusEvent, type EventTag, getTick } from "./events";
-import type { Id, Processor } from "./processes";
+import { type Id, type Processor, tagFromId } from "./processes";
 import { type Clock, clockProcess, createClock } from "./processes/clock";
 import { type CollectorManager, collectorProcess } from "./processes/collector";
-import {
-  createMemoryStream,
-  type EventStream,
-  memoryStreamProcess,
-} from "./processes/eventStream";
 import { type Fabricator, fabricatorProcess } from "./processes/fabricator";
 import { type LauncherManager, launcherProcess } from "./processes/launcher";
 import { type MinerManager, minerProcess } from "./processes/miner";
@@ -25,7 +20,6 @@ import { type Storage, storageProcess } from "./processes/storage";
 import { SUBSCRIPTIONS } from "./subscriptions";
 import { loadSave, newGame, type SaveState } from "../save/save";
 import {
-  createObjectiveTrackerProbe,
   type ObjectiveTrackerProbe,
   objectiveTrackerProcess,
 } from "./processes/objectiveTracker";
@@ -55,25 +49,38 @@ export function insertProcessor(
   }
 }
 
-export function broadcastEvent(
+export async function broadcastEvent(
   sim: Simulation,
   event: BusEvent,
   adapters: Adapters,
-): Simulation {
-  adapters.events.write.persistEvent(event);
+): Promise<Simulation> {
+  await adapters.events.write.persistEvent(event);
   const subscribedToEvent = sim.bus.subscriptions.get(event.tag);
   if (subscribedToEvent) {
     for (let id of subscribedToEvent) {
-      adapters.events.write.deliverEvent(event, id);
+      await adapters.events.write.deliverEvent(event, id);
     }
   }
   return sim;
 }
+export async function tickClock(
+  tick: number,
+  simulation: Simulation,
+  adapters: Adapters,
+): Promise<Simulation> {
+  await broadcastEvent(
+    simulation,
+    {
+      tag: "simulation-clock-tick",
+      tick,
+    },
+    adapters,
+  );
+  return simulation;
+}
 
 function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
   switch (p.core.tag) {
-    case "stream":
-      return [memoryStreamProcess(p as EventStream, inbox), []];
     case "clock":
       return clockProcess(p as Clock, inbox);
     case "star":
@@ -131,7 +138,7 @@ export async function processUntilSettled(
           await adapters.snapshots.getLastSnapshot(processorId);
         const core = {
           id: processorId,
-          tag: processorId.slice(0, processorId.lastIndexOf("-")),
+          tag: tagFromId(processorId),
           lastTick,
         };
         const [updatedProcessor, newEmitted] = process(
@@ -140,7 +147,7 @@ export async function processUntilSettled(
         );
         emitted.push(...newEmitted);
         adapters.snapshots.persistSnapshot(
-          inboxTick,
+          inboxTick ?? lastTick,
           processorId,
           updatedProcessor.data,
         );
@@ -148,7 +155,7 @@ export async function processUntilSettled(
       }
     }
     for (let event of emitted) {
-      broadcastEvent(sim, event, adapters);
+      await broadcastEvent(sim, event, adapters);
     }
   }
   return sim;
@@ -165,6 +172,7 @@ export function makeSimulationStore(
   loadSave: (s: SaveState) => SimulationStore;
   loadNew: (outsideTick: DOMHighResTimeStamp) => SimulationStore;
   adapters: Adapters;
+  objectives: ObjectiveTracker;
 } {
   const baseData = writable<Simulation>({
     bus: { subscriptions: new Map() },
@@ -178,8 +186,11 @@ export function makeSimulationStore(
       set(settled);
     },
     // todo-long-term: investigate renaming as createDivergentTimeline / createUserIntervention / etc...
-    broadcastEvent: (e: BusEvent) =>
-      update((sim) => broadcastEvent(sim, e, adapters)),
+    broadcastEvent: async (e: BusEvent) => {
+      const sim = get(baseData);
+      const broadcasted = await broadcastEvent(sim, e, adapters);
+      set(broadcasted);
+    },
     loadSave: (s: SaveState) => {
       set(loadSave(s, adapters));
       return store;
@@ -199,16 +210,19 @@ export function makeSimulationStore(
         createClock(outsideTick, "clock-0", { mode: "pause" }),
         adapters,
       );
+      /*
       // todo: remove this once the refactoring of the objectives is finished
       insertProcessor(
         simulation,
         createObjectiveTrackerProbe(objectives.handleTriggers),
         adapters,
       );
+*/
       set(simulation);
       return store;
     },
     adapters,
+    objectives,
   };
   return store;
 }

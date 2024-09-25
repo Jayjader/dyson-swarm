@@ -1,4 +1,4 @@
-import { insertProcessor, type Simulation } from "./events";
+import { type Simulation } from "./events";
 import {
   type EventSourcesAdapter,
   memoryEventSourcesAdapter,
@@ -22,10 +22,6 @@ import {
 import type { SqlWorker } from "./events/sqlWorker";
 import type { Id, Processor } from "./events/processes";
 import type { BusEvent } from "./events/events";
-import {
-  createMemoryStream,
-  type EventStream,
-} from "./events/processes/eventStream";
 
 export type Adapters = {
   events: {
@@ -53,18 +49,17 @@ export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
 
 export type MemoryProcessors = Map<Id, Processor>;
 export function initInMemoryAdapters(): Adapters {
-  const streamId: EventStream["core"]["id"] = "stream-0";
   const memory = new Map() as MemoryProcessors;
+  const streamMemory = new Map<number, Array<BusEvent>>();
   const inboxes = new Map<Id, Array<BusEvent>>();
   return {
     events: {
-      read: memoryEventsQueryAdapter(streamId, memory, inboxes),
-      write: memoryEventPersistenceAdapter(streamId, memory, inboxes),
+      read: memoryEventsQueryAdapter(streamMemory, inboxes),
+      write: memoryEventPersistenceAdapter(streamMemory, inboxes),
     },
     eventSources: memoryEventSourcesAdapter(memory, inboxes),
     snapshots: memorySnapshotsAdapter(memory),
     setup(sim) {
-      insertProcessor(sim, createMemoryStream(streamId), this);
       return sim;
     },
   };

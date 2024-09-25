@@ -85,6 +85,7 @@ export type Events<Tags extends EventTag> = BusEvent & { tag: Tags };
 
 export function getTick(event: BusEvent): number | undefined {
   return (
+    (event as any)?.tick ??
     (event as any)?.beforeTick ??
     (event as any)?.afterTick ??
     (event as any)?.onTick ??

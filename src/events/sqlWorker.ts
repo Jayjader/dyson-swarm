@@ -86,6 +86,7 @@ export async function getOrCreateSqlWorker() {
       worker.postMessage({ id: statementId, action: "open" });
     });
   }
+  // todo: introduce optional "callback" argument to allow moving the promise construction inside this function
   function postSqlMessage(
     id: number,
     sql: string,
@@ -136,38 +137,73 @@ export async function getOrCreateSqlWorker() {
       });
     },
     persistTickTimestampEvent(tick: number, event: BusEvent & TimeStamped) {
-      postSqlMessage(
-        ++messageId,
-        `INSERT INTO ${events_table_name} (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)`,
-        {
-          $name: event.tag,
-          $timestamp: event.timeStamp,
-          $tick: tick,
-          $data: JSON.stringify(event, bigIntReplacer),
-        },
-      );
+      messageId = ++messageId;
+      const queryId = ++messageId;
+      return new Promise<void>((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            resolve();
+          }
+        }
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `INSERT INTO ${events_table_name} (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)`,
+          {
+            $name: event.tag,
+            $timestamp: event.timeStamp,
+            $tick: tick,
+            $data: JSON.stringify(event, bigIntReplacer),
+          },
+        );
+      });
     },
     persistTimestampEvent(event: BusEvent & TimeStamped) {
-      postSqlMessage(
-        ++messageId,
-        `INSERT INTO ${events_table_name} (name, timestamp, data) VALUES ($name, $timestamp, $data)`,
-        {
-          $name: event.tag,
-          $timestamp: event.timeStamp,
-          $data: JSON.stringify(event, bigIntReplacer),
-        },
-      );
+      messageId = ++messageId;
+      const queryId = ++messageId;
+      return new Promise<void>((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            resolve();
+          }
+        }
+
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `INSERT INTO ${events_table_name} (name, timestamp, data) VALUES ($name, $timestamp, $data)`,
+          {
+            $name: event.tag,
+            $timestamp: event.timeStamp,
+            $data: JSON.stringify(event, bigIntReplacer),
+          },
+        );
+      });
     },
     persistTickEvent(tick: number, event: BusEvent) {
-      postSqlMessage(
-        ++messageId,
-        `INSERT INTO ${events_table_name} (name, tick, data) VALUES ($name, $tick, $data)`,
-        {
-          $name: event.tag,
-          $tick: tick,
-          $data: JSON.stringify(event, bigIntReplacer),
-        },
-      );
+      messageId = ++messageId;
+      const queryId = ++messageId;
+      return new Promise<void>((resolve) => {
+        function handleQueryResult(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", handleQueryResult);
+            resolve();
+          }
+        }
+
+        worker.addEventListener("message", handleQueryResult);
+        postSqlMessage(
+          queryId,
+          `INSERT INTO ${events_table_name} (name, tick, data) VALUES ($name, $tick, $data)`,
+          {
+            $name: event.tag,
+            $tick: tick,
+            $data: JSON.stringify(event, bigIntReplacer),
+          },
+        );
+      });
     },
     // event sources
     debugEventSources() {
@@ -310,34 +346,43 @@ export async function getOrCreateSqlWorker() {
       const firstQueryId = messageId;
       messageId = messageId + 1;
       const secondQueryId = messageId;
-      function handleFirstQuery(event: MessageEvent) {
-        if (event.data.id === firstQueryId) {
-          worker.removeEventListener("message", handleFirstQuery);
-          const results = event.data.results ?? [];
-          if (results.length > 0) {
-            const [eventId, inboxOwnerId] = results;
-            postSqlMessage(
-              secondQueryId,
-              `INSERT INTO ${inboxes_table_name} (event_id, owner_id) VALUES ($eventId, $ownerId)`,
-              { $eventId: eventId, $ownerId: inboxOwnerId },
-            );
-          } else {
-            // fail?
+      return new Promise<void>((resolve, reject) => {
+        function handleFirstQuery(event: MessageEvent) {
+          if (event.data.id === firstQueryId) {
+            worker.removeEventListener("message", handleFirstQuery);
+            const results = event.data.results ?? [];
+            if (results.length > 0) {
+              function handleSecondQuery(event: MessageEvent) {
+                if (event.data.id === secondQueryId) {
+                  worker.removeEventListener("message", handleSecondQuery);
+                  resolve();
+                }
+              }
+              worker.addEventListener("message", handleSecondQuery);
+              const [eventId, inboxOwnerId] = results;
+              postSqlMessage(
+                secondQueryId,
+                `INSERT INTO ${inboxes_table_name} (event_id, owner_id) VALUES ($eventId, $ownerId)`,
+                { $eventId: eventId, $ownerId: inboxOwnerId },
+              );
+            } else {
+              reject(`error in looking up eventId+inboxOwnerId: ${event.data}`);
+            }
           }
         }
-      }
-      worker.addEventListener("message", handleFirstQuery);
-      postSqlMessage(
-        firstQueryId,
-        `SELECT event.id FROM ${events_table_name} as event WHERE event.name = $name AND event.tick = $tick AND event.data = $data` +
-          `UNION ALL SELECT source.id FROM ${event_sources_table_name} as source WHERE source.name = $owner`,
-        {
-          $name: busEvent.tag,
-          $tick: getTick(busEvent),
-          $data: JSON.stringify(busEvent, bigIntReplacer),
-          $owner: to,
-        },
-      );
+        worker.addEventListener("message", handleFirstQuery);
+        postSqlMessage(
+          firstQueryId,
+          `SELECT event.id FROM ${events_table_name} as event WHERE event.name = $name AND event.tick = $tick AND event.data = $data` +
+            `UNION ALL SELECT source.id FROM ${event_sources_table_name} as source WHERE source.name = $owner`,
+          {
+            $name: busEvent.tag,
+            $tick: getTick(busEvent),
+            $data: JSON.stringify(busEvent, bigIntReplacer),
+            $owner: to,
+          },
+        );
+      });
     },
     peekInbox(sourceName: string): Promise<string[]> {
       messageId = messageId + 1;

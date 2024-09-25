@@ -2,8 +2,6 @@ import { type BusEvent, getTick } from "./events";
 import type { SqlWorker } from "./sqlWorker";
 import { bigIntRestorer } from "../save/save";
 import type { Id } from "./processes";
-import { type EventStream } from "./processes/eventStream";
-import type { MemoryProcessors } from "../adapters";
 
 export type EventsQueryAdapter = {
   getTickEvents(tick: number): Promise<BusEvent[]>;
@@ -67,8 +65,7 @@ export function sqlEventsQueryAdapter(
 }
 
 export function memoryEventsQueryAdapter(
-  streamId: EventStream["core"]["id"],
-  memory: MemoryProcessors,
+  streamMemory: Map<number, Array<BusEvent>>,
   inboxes: Map<Id, BusEvent[]>,
 ): EventsQueryAdapter {
   return {
@@ -92,19 +89,16 @@ export function memoryEventsQueryAdapter(
       return inboxes.get(sourceId as Id)!.length;
     },
     async getTickEvents(tick: number) {
-      return (
-        (memory.get(streamId) as EventStream).data.received.get(tick) ?? []
-      );
+      return streamMemory.get(tick) ?? [];
     },
     async getTickEventsRange(startTick: number, endTick: number | undefined) {
-      const stream = memory.get(streamId) as EventStream;
       const events: [number, BusEvent][] = [];
       for (
         let i = startTick;
-        i <= (endTick ?? Math.max(...stream.data.received.keys()));
+        i <= (endTick ?? Math.max(...streamMemory.keys()));
         i++
       ) {
-        const tickEvents = stream.data.received.get(i);
+        const tickEvents = streamMemory.get(i);
         if (tickEvents) {
           for (const event of tickEvents) {
             events.push([getTick(event)!, event]);

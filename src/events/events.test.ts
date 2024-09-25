@@ -8,14 +8,18 @@ import {
 } from "../gameRules";
 import { isEditing, type Pause } from "../hud/types";
 import type { BusEvent as BusEvent, Events } from "./events";
-import { broadcastEvent, insertProcessor, processUntilSettled } from "./index";
+import {
+  broadcastEvent,
+  insertProcessor,
+  processUntilSettled,
+  tickClock,
+} from "./index";
 import type { Id } from "./processes";
 import { type Clock, createClock } from "./processes/clock";
 import {
   type CollectorManager,
   createCollectorManager,
 } from "./processes/collector";
-import { createMemoryStream } from "./processes/eventStream";
 import { createFabricator, type Fabricator } from "./processes/fabricator";
 import {
   createLauncherManager,
@@ -77,7 +81,7 @@ describe("event bus", () => {
       );
       for (const event of events) {
         simulation = await processUntilSettled(
-          broadcastEvent(simulation, event, adapters),
+          await broadcastEvent(simulation, event, adapters),
           adapters,
         );
       }
@@ -100,7 +104,7 @@ describe("event bus", () => {
       );
       for (const event of events) {
         simulation = await processUntilSettled(
-          broadcastEvent(simulation, event, adapters),
+          await broadcastEvent(simulation, event, adapters),
           adapters,
         );
       }
@@ -122,7 +126,7 @@ describe("event bus", () => {
       adapters,
     );
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-simulation-clock-pause",
@@ -150,7 +154,7 @@ describe("event bus", () => {
       adapters,
     );
     simulation = await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-simulation-clock-indirect-pause",
@@ -178,7 +182,7 @@ describe("event bus", () => {
       adapters,
     );
     simulation = await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-simulation-clock-indirect-resume",
@@ -222,7 +226,7 @@ describe("event bus", () => {
         adapters,
       );
       await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
       expect(await adapters.events.read.getTickEvents(0)).not.toContainEqual(
@@ -252,7 +256,7 @@ describe("event bus", () => {
         adapters,
       );
       await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
       debugger;
@@ -286,7 +290,7 @@ describe("event bus", () => {
     });
     insertProcessor(simulation, clock, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-simulation-clock-start-editing-speed",
@@ -325,7 +329,7 @@ describe("event bus", () => {
     });
     insertProcessor(simulation, clock, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-simulation-clock-set-speed",
@@ -362,7 +366,7 @@ describe("event bus", () => {
     });
     insertProcessor(simulation, clock, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "outside-clock-tick",
@@ -415,6 +419,17 @@ describe("event bus", () => {
   });
 
   describe("clock in play should emit simulation tick events when outside clock has advanced one or more entire time steps", () => {
+    test("tickClock()", async () => {
+      const adapters = initInMemoryAdapters();
+      let simulation = loadSave(emptySave(), adapters);
+      simulation = adapters.setup(simulation);
+      await tickClock(1, simulation, adapters);
+      expect(await adapters.events.read.getTickEvents(1)).toContainEqual({
+        tag: "simulation-clock-tick",
+        tick: 1,
+      });
+    });
+    // todo: move these tests to a separate test file? and rewrite to not need to instantiate an entire simulation?
     test.each([
       [
         [
@@ -437,9 +452,16 @@ describe("event bus", () => {
       [
         [
           { tag: "outside-clock-tick", timeStamp: 0 },
-          { tag: "outside-clock-tick", timeStamp: 1 },
+          { tag: "outside-clock-tick", timeStamp: 1001 },
           { tag: "outside-clock-tick", timeStamp: 1002 },
-          { tag: "outside-clock-tick", timeStamp: 1003 },
+        ],
+        { 1: [{ tag: "simulation-clock-tick", tick: 1 }] },
+      ],
+      [
+        [
+          { tag: "outside-clock-tick", timeStamp: 0 },
+          { tag: "outside-clock-tick", timeStamp: 1 },
+          { tag: "outside-clock-tick", timeStamp: 1001 },
         ],
         { 1: [{ tag: "simulation-clock-tick", tick: 1 }] },
       ],
@@ -455,7 +477,7 @@ describe("event bus", () => {
 
       for (const event of events) {
         simulation = await processUntilSettled(
-          broadcastEvent(simulation, event, adapters),
+          await broadcastEvent(simulation, event, adapters),
           adapters,
         );
       }
@@ -474,7 +496,7 @@ describe("event bus", () => {
     simulation = adapters.setup(simulation);
     insertProcessor(simulation, createStar(), adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 1 },
         adapters,
@@ -497,7 +519,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 2 },
     ] as const) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -521,7 +543,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 2 }, // collector receives flux and produces power
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -550,7 +572,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 3 }, // grid stores power received
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -572,8 +594,8 @@ describe("event bus", () => {
     powerGrid.data.stored = 10n;
     insertProcessor(simulation, powerGrid, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "draw",
@@ -613,7 +635,7 @@ describe("event bus", () => {
     const miner = createMinerManager({ count: 1 });
     insertProcessor(simulation, miner, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 1 },
         adapters,
@@ -636,8 +658,8 @@ describe("event bus", () => {
     const miner = createMinerManager({ count: 1 });
     insertProcessor(simulation, miner, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "supply",
@@ -676,7 +698,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 4 }, // miner mines planet
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -694,8 +716,8 @@ describe("event bus", () => {
     const planet = createPlanet();
     insertProcessor(simulation, planet, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "mine-planet-surface",
@@ -729,8 +751,8 @@ describe("event bus", () => {
       const storage = createStorage(resource);
       insertProcessor(simulation, storage, adapters);
       await processUntilSettled(
-        broadcastEvent(
-          broadcastEvent(
+        await broadcastEvent(
+          await broadcastEvent(
             simulation,
             {
               tag: "produce",
@@ -768,8 +790,8 @@ describe("event bus", () => {
       storage.data.stored += 20n;
       insertProcessor(simulation, storage, adapters);
       await processUntilSettled(
-        broadcastEvent(
-          broadcastEvent(
+        await broadcastEvent(
+          await broadcastEvent(
             simulation,
             {
               tag: "draw",
@@ -809,7 +831,7 @@ describe("event bus", () => {
     const refiner = createRefinerManager({ count: 1 });
     insertProcessor(simulation, refiner, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 1 },
         adapters,
@@ -856,7 +878,7 @@ describe("event bus", () => {
       },
       { tag: "simulation-clock-tick", tick: 15 },
     ] as const) {
-      simulation = broadcastEvent(simulation, event, adapters);
+      simulation = await broadcastEvent(simulation, event, adapters);
     }
     await processUntilSettled(simulation, adapters);
 
@@ -898,7 +920,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 6 }, // to make refiner produce metal (ie receive power & ore)
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -917,7 +939,7 @@ describe("event bus", () => {
     const factory = createFactoryManager({ count: 1 });
     insertProcessor(simulation, factory, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 2 },
         adapters,
@@ -946,8 +968,8 @@ describe("event bus", () => {
     simulation = adapters.setup(simulation);
     const factory = createFactoryManager({ count: 1 });
     insertProcessor(simulation, factory, adapters);
-    simulation = broadcastEvent(
-      broadcastEvent(
+    simulation = await broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "supply",
@@ -967,8 +989,8 @@ describe("event bus", () => {
       },
       adapters,
     );
-    simulation = await processUntilSettled(
-      broadcastEvent(
+    await processUntilSettled(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 2 },
         adapters,
@@ -1002,7 +1024,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 3 }, // to make factory produce packaged satellite
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -1023,7 +1045,7 @@ describe("event bus", () => {
     launcher.data.charge = 0n;
     insertProcessor(simulation, launcher, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 2 },
         adapters,
@@ -1042,12 +1064,11 @@ describe("event bus", () => {
     const adapters = initInMemoryAdapters();
     let simulation = loadSave(emptySave(), adapters);
     simulation = adapters.setup(simulation);
-    insertProcessor(simulation, createMemoryStream(), adapters);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, launcher, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 2 },
         adapters,
@@ -1070,8 +1091,8 @@ describe("event bus", () => {
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, launcher, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "supply",
@@ -1097,13 +1118,12 @@ describe("event bus", () => {
     const adapters = initInMemoryAdapters();
     let simulation = loadSave(emptySave(), adapters);
     simulation = adapters.setup(simulation);
-    insertProcessor(simulation, createMemoryStream(), adapters);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     insertProcessor(simulation, launcher, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "supply",
@@ -1135,8 +1155,8 @@ describe("event bus", () => {
     const swarm = createSwarm({ count: 0 });
     insertProcessor(simulation, swarm, adapters);
     await processUntilSettled(
-      broadcastEvent(
-        broadcastEvent(
+      await broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "launch-satellite",
@@ -1165,7 +1185,7 @@ describe("event bus", () => {
     const count = 3;
     insertProcessor(simulation, createSwarm({ count }), adapters);
     simulation = await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 2 },
         adapters,
@@ -1173,7 +1193,7 @@ describe("event bus", () => {
       adapters,
     );
     simulation = await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 3 },
         adapters,
@@ -1209,7 +1229,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 2 },
     ] as const) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -1238,7 +1258,7 @@ describe("event bus", () => {
       { tag: "simulation-clock-tick", tick: 4 }, // grid stores power produced during previous tick
     ] as BusEvent[]) {
       simulation = await processUntilSettled(
-        broadcastEvent(simulation, event, adapters),
+        await broadcastEvent(simulation, event, adapters),
         adapters,
       );
     }
@@ -1262,7 +1282,7 @@ describe("event bus", () => {
         fabricator.data.job = construct;
         insertProcessor(simulation, fabricator, adapters);
         await processUntilSettled(
-          broadcastEvent(
+          await broadcastEvent(
             simulation,
             { tag: "simulation-clock-tick", tick: 5 },
             adapters,
@@ -1292,8 +1312,10 @@ describe("event bus", () => {
         fabricator.data.job = construct;
         insertProcessor(simulation, fabricator, adapters);
 
-        constructionCosts[construct].forEach((amount, resource) => {
-          simulation = broadcastEvent(
+        for (const [resource, amount] of constructionCosts[
+          construct
+        ].entries()) {
+          simulation = await broadcastEvent(
             simulation,
             {
               tag: "supply",
@@ -1304,9 +1326,9 @@ describe("event bus", () => {
             },
             adapters,
           );
-        });
-        simulation = await processUntilSettled(
-          broadcastEvent(
+        }
+        await processUntilSettled(
+          await broadcastEvent(
             simulation,
             { tag: "simulation-clock-tick", tick: 5 },
             adapters,
@@ -1343,8 +1365,8 @@ describe("event bus", () => {
         insertProcessor(simulation, createManager({ count: 0 }), adapters);
       }
       await processUntilSettled(
-        broadcastEvent(
-          broadcastEvent(
+        await broadcastEvent(
+          await broadcastEvent(
             simulation,
             {
               tag: "construct-fabricated",
@@ -1379,7 +1401,7 @@ describe("event bus", () => {
     insertProcessor(simulation, fabricator, adapters);
     // act
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-clear-fabricator-job",
@@ -1407,7 +1429,7 @@ describe("event bus", () => {
     grid.data.stored = 0n;
     grid.data.breakerTripped = false;
     insertProcessor(simulation, grid, adapters);
-    simulation = broadcastEvent(
+    simulation = await broadcastEvent(
       simulation,
       {
         tag: "draw",
@@ -1419,7 +1441,7 @@ describe("event bus", () => {
       adapters,
     );
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 48 },
         adapters,
@@ -1444,8 +1466,8 @@ describe("event bus", () => {
     grid.data.breakerTripped = true;
     grid.data.stored = 100n;
     insertProcessor(simulation, grid, adapters);
-    simulation = broadcastEvent(
-      broadcastEvent(
+    simulation = await broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "draw",
@@ -1465,7 +1487,7 @@ describe("event bus", () => {
       adapters,
     );
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         { tag: "simulation-clock-tick", tick: 48 },
         adapters,
@@ -1492,7 +1514,7 @@ describe("event bus", () => {
     grid.data.breakerTripped = true;
     insertProcessor(simulation, grid, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-reset-circuit-breaker",
@@ -1523,7 +1545,7 @@ describe("event bus", () => {
     grid.data.breakerTripped = false;
     insertProcessor(simulation, grid, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-trip-circuit-breaker",
@@ -1566,7 +1588,7 @@ describe("event bus", () => {
         insertProcessor(simulation, createManager({ count: 1 }), adapters);
       }
       await processUntilSettled(
-        broadcastEvent(
+        await broadcastEvent(
           simulation,
           {
             tag: "command-set-working-count",
@@ -1604,7 +1626,7 @@ describe("event bus", () => {
     const fabricator = createFabricator();
     insertProcessor(simulation, fabricator, adapters);
     await processUntilSettled(
-      broadcastEvent(
+      await broadcastEvent(
         simulation,
         {
           tag: "command-set-fabricator-queue",

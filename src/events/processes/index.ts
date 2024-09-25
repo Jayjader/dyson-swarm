@@ -2,7 +2,6 @@ import type { Resource } from "../../gameRules";
 import type { SUBSCRIPTIONS } from "../subscriptions";
 import type { Clock } from "./clock";
 import type { CollectorManager } from "./collector";
-import type { EventStream } from "./eventStream";
 import type { Fabricator } from "./fabricator";
 import type { LauncherManager } from "./launcher";
 import type { MinerManager } from "./miner";
@@ -30,7 +29,6 @@ export type EventProcessor<
   : never;
 
 export type Processor =
-  | EventStream
   | Clock
   | Star
   | Planet
@@ -45,3 +43,6 @@ export type Processor =
   | Fabricator
   | ObjectiveTrackerProbe;
 export type Id = Processor["core"]["id"];
+export function tagFromId(id: Id) {
+  return id.slice(0, id.lastIndexOf("-")) as keyof typeof SUBSCRIPTIONS;
+}
