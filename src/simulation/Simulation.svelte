@@ -21,15 +21,13 @@
   import Fabricator from "../panels/fabricator/Fabricator.svelte";
   import StorageOverview from "../panels/storage/StorageOverview.svelte";
   import RenderedView from "./3DSimulationView.svelte";
-  import { SETTINGS_CONTEXT } from "../settings/store";
-  import type {
-    ObjectiveTracker,
-    TrackedObjectives,
-  } from "../objectiveTracker/store";
+  import { SETTINGS_CONTEXT, type SettingsStore } from "../settings/store";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../objectiveTracker/store";
   import Guide from "../objectiveTracker/Guide.svelte";
   import History from "../panels/history/History.svelte";
   import type { Adapters } from "../adapters";
+  import Introduction from "../Introduction.svelte";
+  import type { LeafObjective } from "../objectiveTracker/objectives";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   async function readStoredResource(
@@ -42,7 +40,9 @@
   }
 
   setContext(SIMULATION_STORE, { simulation });
-  const { settings } = getContext(SETTINGS_CONTEXT);
+  const { settings } = getContext(SETTINGS_CONTEXT) as {
+    settings: SettingsStore;
+  };
 
   let resources = new Map();
   let swarm = 0;
@@ -93,19 +93,27 @@
 
   const dispatchEvent = createEventDispatcher();
 
-  export let objectives: ObjectiveTracker;
   let tracked = [],
     guideOpen = false;
-  setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives });
-  $: {
-    const { active, open }: TrackedObjectives = $objectives;
-    tracked = active;
-    guideOpen = open;
-  }
+  setContext(OBJECTIVE_TRACKER_CONTEXT, { objectives: simulation.objectives });
+  const unsubFromObjectives = simulation.objectives.subscribe(
+    ({ active, open }) => {
+      tracked = active;
+      guideOpen = open;
+    },
+  );
+  onDestroy(unsubFromObjectives);
+  let showIntro = true;
+
+  const introDetails = (simulation.objectives.objectives[0] as LeafObjective)
+    .details;
 
   //scheduleCallback(outsideClockLoop);
 </script>
 
+{#if showIntro}
+  <Introduction fragments={introDetails} on:close={() => (showIntro = false)} />
+{/if}
 <main
   class="m-0 flex flex-col flex-nowrap items-stretch justify-between gap-2 p-0"
 >
@@ -127,7 +135,7 @@
 
         <button
           disabled={guideOpen}
-          on:click={objectives.open}
+          on:click={simulation.objectives.open}
           class={"max-w-min flex-grow break-normal rounded border-2 border-slate-100 px-2 " +
             (guideOpen ? "bg-slate-100 text-slate-900" : "text-slate-100")}
         >

@@ -1,8 +1,9 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
+  import type { LeafObjective } from "./objectiveTracker/objectives";
 
-  export let fragments;
+  export let fragments: LeafObjective["details"];
 
   let introDialog: HTMLDialogElement;
   let step = 0;
@@ -21,7 +22,7 @@
 </script>
 
 <dialog
-  class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 transition-all p-2 bg-slate-100"
+  class="max-w-2xl flex-col justify-between gap-2 overflow-x-hidden rounded border-2 border-slate-900 bg-slate-100 p-2 transition-all"
   bind:this={introDialog}
   on:close
 >

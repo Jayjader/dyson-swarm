@@ -39,13 +39,13 @@
     matsTotal = 0n;
   let lastTick = 0;
 
-  const unsubSim = simulation.subscribe(async (sim) => {
+  const unsubSim = simulation.subscribe(async () => {
     const simClockTick = getPrimitive(await getClock(simulation.adapters)).tick;
     if (lastTick === simClockTick) {
       return;
     }
     lastTick = simClockTick;
-    const fab = getFabricator(sim);
+    const fab = await getFabricator(simulation.adapters);
     snapshotOfFabricatorReceived.clear();
     snapshotOfFabricatorReceived = (
       fab.received as {
@@ -77,17 +77,27 @@
     );
     if (elecCurrent !== elecPast) {
       elecPast = elecCurrent;
-      elecProgress.update(() => elecCurrent);
+      await elecProgress.update(() => elecCurrent);
     }
     const matsCurrent = Number(
       snapshotOfFabricatorReceived.get(Resource.METAL) ?? 0n,
     );
     if (matsCurrent !== matsPast) {
       matsPast = matsCurrent;
-      matsProgress.update(() => matsCurrent);
+      await matsProgress.update(() => matsCurrent);
     }
   });
   onDestroy(unsubSim);
+
+  function clearJob() {
+    const busEvent = {
+      tag: "command-clear-fabricator-job",
+      afterTick: lastTick,
+      timeStamp: performance.now(),
+    } as const;
+    console.info(busEvent);
+    simulation.broadcastEvent(busEvent);
+  }
 </script>
 
 <section
@@ -96,15 +106,7 @@
   <div class="flex flex-row justify-evenly gap-2 self-stretch">
     <button
       class="my-1 ml-1 rounded border-2 border-stone-400 p-2 disabled:text-stone-600"
-      on:click={() => {
-        const busEvent = {
-          tag: "command-clear-fabricator-job",
-          afterTick: lastTick,
-          timeStamp: performance.now(),
-        };
-        console.info(busEvent);
-        simulation.broadcastEvent(busEvent);
-      }}
+      on:click={clearJob}
       disabled={job === null}>Clear Job</button
     >
     <h3>Current Job</h3>
@@ -112,9 +114,9 @@
   <div class="inline-block" style="width: 8rem">
     <figure class="flex flex-row flex-wrap items-center justify-between gap-1">
       <img
-        src={job === undefined ? "./empty.png" : ICON[job?.at(0)]}
-        alt={job?.at(0) ?? "Empty slot"}
-        title={job?.at(0) ?? "None"}
+        src={job === null ? "./empty.png" : ICON[job[0]]}
+        alt={job === null ? "Empty slot" : job[0]}
+        title={job === null ? "None" : job[0]}
         class="m-auto h-16 w-16 rounded border-2 border-slate-900 text-center"
       />
       <figcaption class="m-auto p-1">{job?.at(0) ?? "None"}</figcaption>

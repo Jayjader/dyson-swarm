@@ -10,8 +10,11 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../events";
   import type { BusEvent as BusEvent } from "../events/events";
+  import type { FormEventHandler, MouseEventHandler } from "svelte/elements";
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
 
   let displayedSpeed = 1;
   let speedIsBeingEdited = false;
@@ -52,7 +55,7 @@
     simulation.broadcastEvent(pauseEvent);
     simulation.processUntilSettled();
   }
-  function setSpeed(event) {
+  const setSpeed: FormEventHandler<HTMLInputElement> = (event) => {
     if (!isEditing(clock)) {
       simulation.broadcastEvent({
         tag: "command-simulation-clock-start-editing-speed",
@@ -60,7 +63,7 @@
         afterTick: currentTick,
       });
     }
-    const newSpeed = Number.parseInt(event.target.value);
+    const newSpeed = Number.parseInt((event.target! as HTMLInputElement).value);
     displayedSpeed = newSpeed;
     if (!speedIsBeingEdited) {
       const setSpeedEvent = {
@@ -73,7 +76,7 @@
       simulation.broadcastEvent(setSpeedEvent);
       simulation.processUntilSettled();
     }
-  }
+  };
   function startEditingSpeed() {
     const startSpeedEvent: BusEvent = {
       tag: "command-simulation-clock-start-editing-speed",
@@ -85,10 +88,14 @@
     simulation.processUntilSettled();
     speedIsBeingEdited = true;
   }
-  function editSpeedFromMouseEvent(event) {
+  const editSpeedFromMouseEvent: MouseEventHandler<HTMLInputElement> = (
+    event,
+  ) => {
     // we need this guard or else this will fire whenever the mouse moves over the input element
     if (speedIsBeingEdited) {
-      const newSpeed = Number.parseInt(event.target.value);
+      const newSpeed = Number.parseInt(
+        (event.target! as HTMLInputElement).value,
+      );
       if (newSpeed !== displayedSpeed) {
         console.info({
           command: "setting-speed-from-mouse",
@@ -97,7 +104,7 @@
         displayedSpeed = newSpeed;
       }
     }
-  }
+  };
   function stopEditingSpeed() {
     const stopEditingEvent: BusEvent = {
       tag: "command-simulation-clock-set-speed",

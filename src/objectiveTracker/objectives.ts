@@ -5,7 +5,7 @@ import { matchesTrigger } from "./triggers";
 
 type ObjectiveCore = { title: string } & { autostart?: true | Trigger };
 type NodeObjective = ObjectiveCore & { subObjectives: Objective[] };
-type LeafObjective = ObjectiveCore & {
+export type LeafObjective = ObjectiveCore & {
   details: { main: string; asides?: Aside[] }[];
   steps: Step[];
 };

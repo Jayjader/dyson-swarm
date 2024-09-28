@@ -1,8 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, getContext } from "svelte";
-  import { SETTINGS_CONTEXT } from "./store";
+  import { SETTINGS_CONTEXT, type SettingsStore } from "./store";
 
-  const { settings } = getContext(SETTINGS_CONTEXT);
+  const { settings } = getContext(SETTINGS_CONTEXT) as {
+    settings: SettingsStore;
+  };
   let cleared = false;
 
   const dispatchEvent = createEventDispatcher();
