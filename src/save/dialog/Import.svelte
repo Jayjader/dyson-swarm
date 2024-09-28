@@ -3,6 +3,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { deleteSave, parseProcessors, writeSlotToStorage } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
+  import { SaveJSON } from "../save.js";
 
   const dispatch = createEventDispatcher();
 
@@ -29,8 +30,11 @@
         const fileData = element.firstChild.elements["fileName"].files[0];
         return actions.confirm(
           fileData.text().then((data) => {
-            return { name: fileData.name, ...parseProcessors(data) };
-          })
+            return {
+              name: fileData.name,
+              ...(SaveJSON.parse(data) as SaveState),
+            };
+          }),
         );
       });
     } else {

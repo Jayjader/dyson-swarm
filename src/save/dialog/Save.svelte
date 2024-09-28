@@ -2,7 +2,7 @@
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeSaveDialogStore } from "./saveDialog";
   import { deleteSave, generateSave, writeSlotToStorage } from "../save";
-  import type { Simulation } from "../../events";
+  import type { SimulationStore } from "../../events";
   import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
@@ -12,7 +12,7 @@
     element.showModal();
   });
 
-  export let simulationState: Simulation;
+  export let simulationStore: SimulationStore;
   export let overWrittenName: undefined | string;
   const store = makeSaveDialogStore(overWrittenName !== undefined);
   let current;
@@ -41,15 +41,14 @@
       confirm = store.act.bind(this, (...args) =>
         actions.confirm(
           saveName,
-          new Promise((resolve) => {
+          generateSave(simulationStore.adapters).then((save) => {
             writeSlotToStorage(
-              { ...generateSave(simulationState), name: saveName },
-              window.localStorage
+              { ...save, name: saveName },
+              window.localStorage,
             );
-            resolve();
           }),
-          ...args
-        )
+          ...args,
+        ),
       );
       cancel = store.act.bind(this, actions.cancel);
     } else {

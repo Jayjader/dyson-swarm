@@ -1,4 +1,4 @@
-import { bigIntReplacer } from "../save/save";
+import { SaveJSON } from "../save/save";
 import { type BusEvent, getTick, type TimeStamped } from "./events";
 import type { Processor } from "./processes";
 
@@ -154,7 +154,7 @@ export async function getOrCreateSqlWorker() {
             $name: event.tag,
             $timestamp: event.timeStamp,
             $tick: tick,
-            $data: JSON.stringify(event, bigIntReplacer),
+            $data: SaveJSON.stringify(event),
           },
         );
       });
@@ -177,7 +177,7 @@ export async function getOrCreateSqlWorker() {
           {
             $name: event.tag,
             $timestamp: event.timeStamp,
-            $data: JSON.stringify(event, bigIntReplacer),
+            $data: SaveJSON.stringify(event),
           },
         );
       });
@@ -200,7 +200,7 @@ export async function getOrCreateSqlWorker() {
           {
             $name: event.tag,
             $tick: tick,
-            $data: JSON.stringify(event, bigIntReplacer),
+            $data: SaveJSON.stringify(event),
           },
         );
       });
@@ -280,7 +280,7 @@ export async function getOrCreateSqlWorker() {
           {
             $name: id,
             $tick: tick,
-            $data: JSON.stringify(data, bigIntReplacer),
+            $data: SaveJSON.stringify(data),
           },
         );
       });
@@ -404,7 +404,7 @@ export async function getOrCreateSqlWorker() {
           {
             $name: busEvent.tag,
             $tick: getTick(busEvent),
-            $data: JSON.stringify(busEvent, bigIntReplacer),
+            $data: SaveJSON.stringify(busEvent),
             $owner: to,
           },
         );

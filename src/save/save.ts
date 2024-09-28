@@ -1,6 +1,6 @@
 import type { Id, Processor } from "../events/processes";
 import { SUBSCRIPTIONS } from "../events/subscriptions";
-import type { BusEvent, EventTag } from "../events/events";
+import { type BusEvent, type EventTag, getTick } from "../events/events";
 import { createPowerGrid } from "../events/processes/powerGrid";
 import { createStorage } from "../events/processes/storage";
 import { Construct, Resource } from "../gameRules";
@@ -12,10 +12,7 @@ import { createRefinerManager } from "../events/processes/refiner";
 import { createFactoryManager } from "../events/processes/satFactory";
 import { createLauncherManager } from "../events/processes/launcher";
 import { createSwarm } from "../events/processes/satelliteSwarm";
-import {
-  createFabricator,
-  type Fabricator,
-} from "../events/processes/fabricator";
+import { createFabricator } from "../events/processes/fabricator";
 import type { Simulation } from "../events";
 import { type Save, type SaveStub, Slot, slotStorageKey } from "./uiStore";
 import type { BuildOrder } from "../types";
@@ -50,21 +47,23 @@ export async function loadSave(
         }
       }
       let lastTick = Number.NEGATIVE_INFINITY,
-        data;
-      for (const snapshot of save.snapshots) {
+        indexOfLastTick = 0;
+      for (let i = 0; i < save.snapshots.length; i++) {
+        const snapshot = save.snapshots[i];
         if (snapshot.id === id) {
           if (snapshot.tick > lastTick) {
             lastTick = snapshot.tick;
-            try {
-              data = JSON.parse(
-                snapshot.data,
-                bigIntRestorer,
-              ) as Processor["data"];
-            } catch (e) {
-              console.error(`json error for snapshot of ${id}/${tag}: `, e);
-            }
+            indexOfLastTick = i;
           }
         }
+      }
+      let data;
+      try {
+        data = SaveJSON.parse(
+          save.snapshots[indexOfLastTick].data,
+        ) as Processor["data"];
+      } catch (e) {
+        console.error(`json error for snapshot of ${id}/${tag}: `, e);
       }
       if (lastTick === Number.NEGATIVE_INFINITY || data === undefined) {
         continue;
@@ -87,10 +86,7 @@ export async function loadSave(
   }
 }
 
-export async function generateSave(
-  sim: Simulation,
-  adapters: Adapters,
-): Promise<SaveState> {
+export async function generateSave(adapters: Adapters): Promise<SaveState> {
   const sources = [];
   for (const sourceId of await adapters.eventSources.getAllSourceIds()) {
     sources.push({
@@ -168,11 +164,14 @@ export function newGame(): Processor[] {
 
 export function readSave(name: string, storage: Storage): null | SaveState {
   const data = storage.getItem(slotStorageKey(Slot.NAME)(name));
-  return data === null ? null : parseProcessors(data);
+  if (data === null) {
+    return null;
+  }
+  return SaveJSON.parse(data) as SaveState;
 }
 
 /**
- * Reverses effects of `JSON.stringify` serializing `Infinity` as `null`.
+ * `JSON.stringify` serializes `Infinity`s as `null`. This recurses over a BuildOrder array and replaces all `null` counts with Infinity
  * @param queue
  */
 function convertNullBuildOrderCountsToInfinity(
@@ -186,15 +185,21 @@ function convertNullBuildOrderCountsToInfinity(
             BuildOrder,
             ...BuildOrder[],
           ],
-          count: order.count ?? Infinity,
+          count: order.count ?? Number.POSITIVE_INFINITY,
         },
   );
 }
 const BIG_INT_PROPERTY_KEYS = ["charge", "flux", "amount", "stored", "mass"];
-export function bigIntRestorer(key: string, value: any) {
-  return BIG_INT_PROPERTY_KEYS.includes(key) ? BigInt(value) : value;
+function saveFileFromJsonRestorer(key: string, value: any) {
+  if (BIG_INT_PROPERTY_KEYS.includes(key)) {
+    return BigInt(value);
+  }
+  if (key === "queue") {
+    return convertNullBuildOrderCountsToInfinity(JSON.parse(value));
+  }
+  return value;
 }
-export function bigIntReplacer(key: string, value: any) {
+function saveFileToJsonReplacer(key: string, value: any) {
   if (key.startsWith("probe")) {
     return undefined;
   }
@@ -203,75 +208,40 @@ export function bigIntReplacer(key: string, value: any) {
   }
   return value;
 }
-export function parseProcessors(formatted: string): SaveState {
-  const parsed = JSON.parse(formatted, bigIntRestorer) as SaveState;
-  parsed.stream.incoming = parsed.stream.incoming.map((e) =>
-    e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
-      ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-      : e,
-  );
-  console.log({ parsedStream: parsed.stream });
-  for (const [index, [_tick, events]] of parsed.stream.data.received.map(
-    (value, index) => [index, value] as const,
-  )) {
-    parsed.stream.data.received[index][1] = events.map((e) =>
-      e.tag === "command-set-fabricator-queue" ||
-      e.tag === "fabricator-queue-set"
-        ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-        : e,
-    );
-  }
-  const fabricatorIndex = parsed.processors.findIndex(
-    (p) => p.core.tag === "fabricator",
-  );
-  parsed.processors[fabricatorIndex].incoming = parsed.processors[
-    fabricatorIndex
-  ].incoming.map((e) =>
-    e.tag === "command-set-fabricator-queue" || e.tag === "fabricator-queue-set"
-      ? { ...e, queue: convertNullBuildOrderCountsToInfinity(e.queue) }
-      : e,
-  );
-  (parsed.processors[fabricatorIndex] as Fabricator).data.queue =
-    convertNullBuildOrderCountsToInfinity(
-      (parsed.processors[fabricatorIndex] as Fabricator).data.queue,
-    );
-  return parsed;
-}
+type Savable = BusEvent | Processor["data"] | SaveState;
+export const SaveJSON = {
+  parse(formatted: string): Savable {
+    return JSON.parse(formatted, saveFileFromJsonRestorer) as SaveState;
+  },
 
-export function formatProcessors(procs: SaveState): string {
-  return JSON.stringify(procs, bigIntReplacer);
-}
+  stringify(gameObject: Savable): string {
+    return JSON.stringify(gameObject, saveFileToJsonReplacer);
+  },
+};
 
 function stripNonCommandsInTicksOlderThan(
   ticksIntoThePast: number,
-  stream: SerializedStream,
-): SerializedStream {
-  return {
-    ...stream,
-    data: {
-      ...stream.data,
-      received: stream.data.received
-        .map(
-          ([tick, events]) =>
-            [
-              tick,
-              tick >= stream.data.unfinishedTick - ticksIntoThePast
-                ? events
-                : events.filter((e) => e.tag.startsWith("command")),
-            ] as SerializedStream["data"]["received"][number],
-        )
-        .filter(([_tick, events]) => events.length > 0),
-    },
-  };
+  events: BusEvent[],
+): BusEvent[] {
+  let oldestTick = Number.NEGATIVE_INFINITY;
+  for (const event of events) {
+    const tick = getTick(event);
+    if (tick !== undefined && tick > oldestTick) {
+      oldestTick = tick;
+    }
+  }
+  return events.filter(
+    (event) =>
+      (getTick(event) ?? Number.POSITIVE_INFINITY) >=
+        oldestTick - ticksIntoThePast && event.tag.startsWith("command"),
+  );
 }
 export function writeSlotToStorage(save: Save, storage: Storage) {
+  const { name, events, ...saveState } = save;
   const longEnoughToRebuildState = 5 * 60; // grab at least the last 5 seconds of all events (if at max clock speed)
-  const formattedSave = formatProcessors({
-    stream: stripNonCommandsInTicksOlderThan(
-      longEnoughToRebuildState,
-      save.stream,
-    ),
-    processors: save.processors,
+  const formattedSave = SaveJSON.stringify({
+    ...saveState,
+    events: stripNonCommandsInTicksOlderThan(longEnoughToRebuildState, events),
   });
   const saveKey = slotStorageKey(
     save.name === "AUTOSAVE" ? Slot.AUTO : Slot.NAME,
@@ -282,21 +252,19 @@ export function writeSlotToStorage(save: Save, storage: Storage) {
     // presume quota exceeded
     try {
       const hopefullyEnoughToDebugAnyErrors = 10; // 5 seconds (at 60t/s) is too big, so just grab 10 ticks
-      const stream = stripNonCommandsInTicksOlderThan(
-        hopefullyEnoughToDebugAnyErrors,
-        save.stream,
-      );
-      const formattedSave = formatProcessors({
-        stream,
-        processors: save.processors,
+      const formattedSave = SaveJSON.stringify({
+        ...saveState,
+        events: stripNonCommandsInTicksOlderThan(
+          hopefullyEnoughToDebugAnyErrors,
+          events,
+        ),
       });
       storage.setItem(saveKey, formattedSave);
     } catch (e) {
       // still too big for non-commands, but maybe we can still fit in *just* the commands
-      const stream = stripNonCommandsInTicksOlderThan(0, save.stream);
-      const formattedSave = formatProcessors({
-        stream,
-        processors: save.processors,
+      const formattedSave = SaveJSON.stringify({
+        ...saveState,
+        events: stripNonCommandsInTicksOlderThan(0, events),
       });
       storage.setItem(saveKey, formattedSave);
     }
@@ -317,10 +285,8 @@ export function writeSaveDataToBlob(
 ): void {
   // todo: move link creation out of function; directly take link as argument
   const machineDrivenLink = root.createElement("a");
-  const formattedSave = formatProcessors({
-    stream: save.stream,
-    processors: save.processors,
-  });
+  const { name, ...data } = save;
+  const formattedSave = SaveJSON.stringify(data);
   const blobData = encodeURIComponent(formattedSave);
   machineDrivenLink.setAttribute(
     "href",

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { getContext, onDestroy, onMount } from "svelte";
-  import { APP_UI_CONTEXT } from "../appStateStore";
+  import { APP_UI_CONTEXT, type AppStateStore } from "../appStateStore";
   import NavButton from "./NavButton.svelte";
   import type { SaveStubs } from "./uiStore";
   import { uiStore } from "./uiStore";
@@ -10,12 +10,13 @@
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
-  import { makeSimulationStore } from "../events";
+  import { makeSimulationStore, type Simulation } from "../events";
   import { makeObjectiveTracker } from "../objectiveTracker/store";
   import { getPrimitive } from "../hud/types";
   import { getClock } from "../events/processes/clock";
   import { getOrCreateSqlWorker } from "../events/sqlWorker";
   import { initSqlAdapters } from "../adapters";
+  import type { Unsubscriber } from "svelte/store";
 
   let saveStubs: SaveStubs = {
     autoSave: null,
@@ -25,11 +26,18 @@
     index: number;
     name?: string;
   };
-  let dialog;
+  let dialog:
+    | "clone"
+    | "save"
+    | "import"
+    | "delete"
+    | "export"
+    | "load"
+    | undefined;
 
   const uiSub = uiStore.subscribe((stack) => {
     saveStubs = stack[0];
-    const index = stack?.[1] ?? -2;
+    const index = typeof stack?.[1] !== "string" ? stack?.[1] ?? -2 : -2;
     const name = index === -1 ? "AUTOSAVE" : saveStubs.slots[index]?.name;
     selected = { index, name };
     const dialogState = stack?.[2];
@@ -46,22 +54,23 @@
   });
 
   let simulationLoaded = false;
-  let simulation = null;
-  const { appStateStack } = getContext(APP_UI_CONTEXT);
-  let simSub = null;
-  const appUiSub = appStateStack.subscribe((stack) => {
-    simulationLoaded = typeof stack[1] === "object";
-    if (simulationLoaded) {
-      simSub = stack[1].subscribe((sim) => {
+  let simulation: Simulation | undefined;
+  const appStateStore = (
+    getContext(APP_UI_CONTEXT) as { appStateStore: AppStateStore }
+  ).appStateStore;
+  let unsubFromSim: Unsubscriber | undefined;
+  const appUiSub = appStateStore.subscribe((state) => {
+    if (state.simulation !== undefined) {
+      unsubFromSim = state.simulation.subscribe((sim) => {
         simulation = sim;
       });
-    } else if (simSub !== null) {
-      simSub();
-      simSub = null;
+    } else if (unsubFromSim !== undefined) {
+      unsubFromSim();
+      unsubFromSim = undefined;
     }
   });
   onDestroy(() => {
-    if (simSub !== null) simSub();
+    if (unsubFromSim !== undefined) unsubFromSim();
   });
   onDestroy(appUiSub);
   onDestroy(uiSub);
@@ -90,7 +99,7 @@
   <header class="m-2 flex flex-row justify-between gap-2">
     <nav class="flex flex-col gap-2">
       {#if selected.index === -2}
-        <NavButton on:click={() => appStateStack.pop()}
+        <NavButton on:click={appStateStore.closeSave}
           >Back&nbsp;to {#if simulationLoaded}Simulation{:else}Main{/if} Menu</NavButton
         >
       {:else}
@@ -118,13 +127,13 @@
     {#each saveStubs.slots as save, i}
       <button
         class:chosen={selected.index === i}
-        class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900 bg-stone-400"
+        class="w-full flex-grow rounded-xl border-2 border-slate-900 bg-stone-400"
         on:click={uiStore.chooseSlot.bind(this, i)}>{save.name}</button
       >
     {/each}
     <button
       class:chosen={selected.index === saveStubs.slots.length}
-      class="w-full flex-grow flex-grow rounded-xl border-2 border-slate-900"
+      class="w-full flex-grow rounded-xl border-2 border-slate-900"
       on:click={uiStore.chooseSlot.bind(this, saveStubs.slots.length)}
       >(New Slot)</button
     >
@@ -175,7 +184,7 @@
     <Delete name={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "save"}
     <Save
-      simulationState={simulation}
+      simulation={$appStateStore.simulation}
       overWrittenName={selected.name}
       saveNames={saveStubs.slots.map((slot) => slot.name)}
       on:close={uiStore.endAction}
@@ -200,7 +209,7 @@
             const adapters = initSqlAdapters(sqlWorker);
             simStore = makeSimulationStore(objTrackerStore, adapters);
           }
-          simStore.loadSave(saveState);
+          await simStore.loadSave(saveState);
 
           const currentTick = getPrimitive(
             await getClock(simStore.adapters),

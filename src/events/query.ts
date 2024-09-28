@@ -1,6 +1,6 @@
 import { type BusEvent, getTick } from "./events";
 import type { SqlWorker } from "./sqlWorker";
-import { bigIntRestorer } from "../save/save";
+import { SaveJSON } from "../save/save";
 import type { Id } from "./processes";
 
 export type EventsQueryAdapter = {
@@ -23,7 +23,7 @@ export function sqlEventsQueryAdapter(
       let rawEvents = await sqlWorker.queryTickEvents(tick);
       const busEvents: BusEvent[] = [];
       for (const rawEvent of rawEvents) {
-        busEvents.push(JSON.parse(rawEvent[5] /*event data*/, bigIntRestorer));
+        busEvents.push(SaveJSON.parse(rawEvent[5] /*event data*/) as BusEvent);
       }
       return busEvents;
     },
@@ -37,7 +37,7 @@ export function sqlEventsQueryAdapter(
       const rawEvents = await sqlWorker.peekInbox(sourceId);
       const busEvents: Array<BusEvent> = [];
       for (const rawEvent of rawEvents) {
-        busEvents.push(JSON.parse(rawEvent, bigIntRestorer));
+        busEvents.push(SaveJSON.parse(rawEvent) as BusEvent);
       }
       return busEvents;
     },
@@ -45,7 +45,7 @@ export function sqlEventsQueryAdapter(
       const rawEvents = await sqlWorker.consumeInbox(sourceId);
       const busEvents: Array<BusEvent> = [];
       for (const rawEvent of rawEvents) {
-        busEvents.push(JSON.parse(rawEvent, bigIntRestorer));
+        busEvents.push(SaveJSON.parse(rawEvent) as BusEvent);
       }
       return busEvents;
     },
@@ -57,7 +57,7 @@ export function sqlEventsQueryAdapter(
       const busEvents: Array<[number, BusEvent]> = [];
       for (const element of rawEvents) {
         const [tick, rawEvent] = element;
-        busEvents.push([tick, JSON.parse(rawEvent, bigIntRestorer)]);
+        busEvents.push([tick, SaveJSON.parse(rawEvent) as BusEvent]);
       }
       return busEvents;
     },

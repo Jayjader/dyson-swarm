@@ -1,7 +1,7 @@
 import type { SqlWorker } from "./sqlWorker";
 import type { Id, Processor } from "./processes";
 import type { MemoryProcessors } from "../adapters";
-import { bigIntReplacer } from "../save/save";
+import { SaveJSON } from "../save/save";
 
 export type SnapshotsAdapter = {
   debugSnapshots(): void;
@@ -20,7 +20,7 @@ export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
     },
     async getLastSnapshot(id: string) {
       const [lastTick, rawData] = await sqlWorker.getLastSnapshot(id);
-      return [lastTick, JSON.parse(rawData) as Processor["data"]];
+      return [lastTick, SaveJSON.parse(rawData) as Processor["data"]];
     },
     async getAllRawSnapshots() {
       return (await sqlWorker.getAllRawSnapshots()) as unknown as Promise<
@@ -51,7 +51,7 @@ export function memorySnapshotsAdapter(
       return [...memory].map(([procId, proc]) => [
         procId,
         proc.core.lastTick,
-        JSON.stringify(proc.data, bigIntReplacer),
+        SaveJSON.stringify(proc.data),
       ]);
     },
   };
