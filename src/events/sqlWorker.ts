@@ -388,7 +388,11 @@ export async function getOrCreateSqlWorker() {
                 { $eventId: eventId, $ownerId: inboxOwnerId },
               );
             } else {
-              reject(`error in looking up eventId+inboxOwnerId: ${event.data}`);
+              reject(
+                new Error(
+                  `error in looking up eventId+inboxOwnerId: ${event.data}`,
+                ),
+              );
             }
           }
         }
