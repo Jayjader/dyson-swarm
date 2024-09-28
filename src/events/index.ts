@@ -33,12 +33,13 @@ export type Simulation = {
   bus: EventBus;
 };
 
-export function insertProcessor(
+export async function insertProcessor(
   sim: Simulation,
   p: Processor,
   adapters: Adapters,
 ) {
-  adapters.eventSources.insertSource(p.core.id, p);
+  await adapters.eventSources.insertSource(p.core.id);
+  await adapters.snapshots.persistSnapshot(p.core.lastTick, p.core.id, p.data);
   for (let eventTag of SUBSCRIPTIONS[p.core.tag]) {
     const subscribedSources = sim.bus.subscriptions.get(eventTag);
     if (subscribedSources === undefined) {
@@ -163,21 +164,22 @@ export async function processUntilSettled(
 
 export const SIMULATION_STORE = Symbol();
 
+export type SimulationStore = Readable<Simulation> & {
+  processUntilSettled: () => void;
+  broadcastEvent: (e: BusEvent) => void;
+  loadSave: (s: SaveState) => Promise<SimulationStore>;
+  loadNew: (outsideTick: DOMHighResTimeStamp) => Promise<SimulationStore>;
+  adapters: Adapters;
+  objectives: ObjectiveTracker;
+};
 export function makeSimulationStore(
   objectives: ObjectiveTracker,
   adapters: Adapters,
-): Readable<Simulation> & {
-  processUntilSettled: () => void;
-  broadcastEvent: (e: BusEvent) => void;
-  loadSave: (s: SaveState) => SimulationStore;
-  loadNew: (outsideTick: DOMHighResTimeStamp) => SimulationStore;
-  adapters: Adapters;
-  objectives: ObjectiveTracker;
-} {
+): SimulationStore {
   const baseData = writable<Simulation>({
     bus: { subscriptions: new Map() },
   });
-  const { subscribe, update, set } = baseData;
+  const { subscribe, set } = baseData;
   const store = {
     subscribe,
     processUntilSettled: async () => {
@@ -191,21 +193,21 @@ export function makeSimulationStore(
       const broadcasted = await broadcastEvent(sim, e, adapters);
       set(broadcasted);
     },
-    loadSave: (s: SaveState) => {
-      set(loadSave(s, adapters));
+    loadSave: async (s: SaveState) => {
+      set(await loadSave(s, adapters));
       return store;
     },
-    loadNew: (outsideTick: DOMHighResTimeStamp) => {
+    loadNew: async (outsideTick: DOMHighResTimeStamp) => {
       const simulation = {
         bus: { subscriptions: new Map() },
         processors: new Map(),
       };
       adapters.setup(simulation);
       for (let processor of newGame()) {
-        insertProcessor(simulation, processor, adapters);
+        await insertProcessor(simulation, processor, adapters);
       }
       // todo: remove this once the refactoring out of the clock processor type is finished
-      insertProcessor(
+      await insertProcessor(
         simulation,
         createClock(outsideTick, "clock-0", { mode: "pause" }),
         adapters,
@@ -226,5 +228,3 @@ export function makeSimulationStore(
   };
   return store;
 }
-
-export type SimulationStore = ReturnType<typeof makeSimulationStore>;

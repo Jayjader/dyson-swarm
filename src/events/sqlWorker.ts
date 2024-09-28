@@ -218,11 +218,22 @@ export async function getOrCreateSqlWorker() {
       postSqlMessage(queryId, `SELECT * FROM ${event_sources_table_name}`);
     },
     insertEventSource(name: string) {
-      postSqlMessage(
-        ++messageId,
-        `INSERT INTO ${event_sources_table_name} (name) VALUES ($name)`,
-        { $name: name },
-      );
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise<void>((resolve) => {
+        function resolveWhenQueryFinished(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", resolveWhenQueryFinished);
+            resolve();
+          }
+        }
+        worker.addEventListener("message", resolveWhenQueryFinished);
+        postSqlMessage(
+          queryId,
+          `INSERT INTO ${event_sources_table_name} (name) VALUES ($name)`,
+          { $name: name },
+        );
+      });
     },
     getAllEventSourceIds(): Promise<string[]> {
       messageId = messageId + 1;
@@ -251,17 +262,28 @@ export async function getOrCreateSqlWorker() {
       postSqlMessage(queryId, `SELECT * FROM snapshots`);
     },
     persistSnapshot(tick: number, id: string, data: Processor["data"]) {
-      postSqlMessage(
-        ++messageId,
-        `INSERT INTO ${snapshots_table_name} (source_id, tick, data) VALUES (
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return new Promise<void>((resolve) => {
+        function resolveWhenQueryFinished(event: MessageEvent) {
+          if (event.data.id === queryId) {
+            worker.removeEventListener("message", resolveWhenQueryFinished);
+            resolve();
+          }
+        }
+        worker.addEventListener("message", resolveWhenQueryFinished);
+        postSqlMessage(
+          queryId,
+          `INSERT INTO ${snapshots_table_name} (source_id, tick, data) VALUES (
         SELECT id FROM ${event_sources_table_name} WHERE name = $name,
         $tick, $data)`,
-        {
-          $name: id,
-          $tick: tick,
-          $data: JSON.stringify(data, bigIntReplacer),
-        },
-      );
+          {
+            $name: id,
+            $tick: tick,
+            $data: JSON.stringify(data, bigIntReplacer),
+          },
+        );
+      });
     },
     getLastSnapshot(id: string): Promise<[number, string]> {
       messageId = messageId + 1;

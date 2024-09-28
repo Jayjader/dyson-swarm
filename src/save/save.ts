@@ -69,10 +69,8 @@ export async function loadSave(
       if (lastTick === Number.NEGATIVE_INFINITY || data === undefined) {
         continue;
       }
-      adapters.eventSources.insertSource(id, {
-        core: { id, tag, lastTick },
-        data,
-      } as Processor);
+      await adapters.eventSources.insertSource(id as Id);
+      await adapters.snapshots.persistSnapshot(lastTick, id as Id, data);
     }
     for (const event of save.events) {
       await adapters.events.write.persistEvent(event);

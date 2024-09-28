@@ -1,13 +1,13 @@
 import type { SqlWorker } from "./sqlWorker";
-import type { Processor } from "./processes";
+import type { Id, Processor } from "./processes";
 import type { MemoryProcessors } from "../adapters";
 import { bigIntReplacer } from "../save/save";
 
 export type SnapshotsAdapter = {
   debugSnapshots(): void;
-  persistSnapshot(tick: number, id: string, data: any): void;
-  getLastSnapshot(id: string): Promise<[number, Processor["data"]]>;
-  getAllRawSnapshots(): Promise<Array<[string, number, string]>>;
+  persistSnapshot(tick: number, id: Id, data: Processor["data"]): Promise<void>;
+  getLastSnapshot(id: Id): Promise<[number, Processor["data"]]>;
+  getAllRawSnapshots(): Promise<Array<[Id, number, string]>>;
 };
 
 export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
@@ -15,15 +15,17 @@ export function sqlSnapshotsAdapter(sqlWorker: SqlWorker): SnapshotsAdapter {
     debugSnapshots() {
       sqlWorker.debugSnapshots();
     },
-    persistSnapshot(tick: number, id: string, data: any) {
-      sqlWorker.persistSnapshot(tick, id, data);
+    persistSnapshot(tick: number, id: Id, data: Processor["data"]) {
+      return sqlWorker.persistSnapshot(tick, id, data);
     },
     async getLastSnapshot(id: string) {
       const [lastTick, rawData] = await sqlWorker.getLastSnapshot(id);
       return [lastTick, JSON.parse(rawData) as Processor["data"]];
     },
     async getAllRawSnapshots() {
-      return sqlWorker.getAllRawSnapshots();
+      return (await sqlWorker.getAllRawSnapshots()) as unknown as Promise<
+        Array<[Id, number, string]>
+      >;
     },
   };
 }
@@ -35,14 +37,14 @@ export function memorySnapshotsAdapter(
     debugSnapshots(): void {
       console.debug("memory snapshots: ", memory);
     },
-    persistSnapshot(tick: number, id: string, data: any): void {
-      const proc = memory.get(id as Processor["core"]["id"])!;
+    async persistSnapshot(tick: number, id: Id, data: Processor["data"]) {
+      const proc = memory.get(id)!;
       proc.core.lastTick = tick;
       proc.data = data;
-      memory.set(id as Processor["core"]["id"], proc);
+      memory.set(id, proc);
     },
-    async getLastSnapshot(id: string) {
-      const proc = memory.get(id as Processor["core"]["id"])!;
+    async getLastSnapshot(id: Id) {
+      const proc = memory.get(id)!;
       return [proc.core.lastTick, proc.data];
     },
     async getAllRawSnapshots() {

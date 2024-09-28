@@ -1,10 +1,10 @@
 import type { SqlWorker } from "./sqlWorker";
-import type { Id, Processor } from "./processes";
+import { type Id, type Processor, tagFromId } from "./processes";
 import type { BusEvent } from "./events";
 import type { MemoryProcessors } from "../adapters";
 
 export type EventSourcesAdapter = {
-  insertSource(name: string, value: Processor): void;
+  insertSource(name: Id): Promise<void>;
   getAllSourceIds(): Promise<Array<Id>>;
   debugSources(): void;
 };
@@ -17,7 +17,7 @@ export function sqlEventSourcesAdapter(
       sqlWorker.debugEventSources();
     },
     insertSource(name: string) {
-      sqlWorker.insertEventSource(name);
+      return sqlWorker.insertEventSource(name);
     },
     getAllSourceIds() {
       return sqlWorker.getAllEventSourceIds() as Promise<Array<Id>>;
@@ -33,9 +33,16 @@ export function memoryEventSourcesAdapter(
     debugSources() {
       console.debug(memory);
     },
-    insertSource(_name: string, proc: Processor): void {
-      memory.set(proc.core.id, proc);
-      inboxes.set(proc.core.id, []);
+    async insertSource(name: Id) {
+      memory.set(name, {
+        core: {
+          id: name,
+          tag: tagFromId(name),
+          lastTick: Number.NEGATIVE_INFINITY,
+        },
+        data: {},
+      } as Processor);
+      inboxes.set(name, []);
     },
     async getAllSourceIds() {
       return Array.from(memory.keys());
