@@ -1,4 +1,3 @@
-import { type Simulation } from "./events";
 import {
   type EventSourcesAdapter,
   memoryEventSourcesAdapter,
@@ -30,7 +29,6 @@ export type Adapters = {
   };
   eventSources: EventSourcesAdapter;
   snapshots: SnapshotsAdapter;
-  setup(sim: Simulation): Simulation;
 };
 
 export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
@@ -41,9 +39,6 @@ export function initSqlAdapters(sqlWorker: SqlWorker): Adapters {
     },
     eventSources: sqlEventSourcesAdapter(sqlWorker),
     snapshots: sqlSnapshotsAdapter(sqlWorker),
-    setup(sim) {
-      return sim;
-    },
   };
 }
 
@@ -59,8 +54,5 @@ export function initInMemoryAdapters(): Adapters {
     },
     eventSources: memoryEventSourcesAdapter(memory, inboxes),
     snapshots: memorySnapshotsAdapter(memory),
-    setup(sim) {
-      return sim;
-    },
   };
 }

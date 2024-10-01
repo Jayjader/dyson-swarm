@@ -201,7 +201,6 @@ export function makeSimulationStore(
       const simulation = {
         bus: { subscriptions: new Map() },
       };
-      adapters.setup(simulation);
       for (let processor of newGame()) {
         await insertProcessor(simulation, processor, adapters);
       }
