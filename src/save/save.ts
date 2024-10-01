@@ -162,7 +162,10 @@ export function newGame(): Processor[] {
   ];
 }
 
-export function readSave(name: string, storage: Storage): null | SaveState {
+export function readSaveStateFromStorage(
+  name: string,
+  storage: Storage,
+): null | SaveState {
   const data = storage.getItem(slotStorageKey(Slot.NAME)(name));
   if (data === null) {
     return null;

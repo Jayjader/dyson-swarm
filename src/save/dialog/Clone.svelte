@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeCloneDialogStore } from "./cloneDialog";
-  import { readSave, writeSlotToStorage } from "../save";
+  import { readSaveStateFromStorage, writeSlotToStorage } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
@@ -21,11 +21,14 @@
         store.act(() =>
           actions.startClone(
             new Promise((resolve, reject) => {
-              const saveState = readSave(clonedSaveName, window.localStorage);
+              const saveState = readSaveStateFromStorage(
+                clonedSaveName,
+                window.localStorage,
+              );
               if (saveState === null) return reject(null);
               resolve(saveState);
-            })
-          )
+            }),
+          ),
         );
       }
       return;
@@ -56,15 +59,15 @@
               new Promise((resolve) => {
                 writeSlotToStorage(saveState, window.localStorage);
                 resolve();
-              })
-            )
+              }),
+            ),
           );
         },
-        (error) => store.act(actions.fail.bind(this, error))
+        (error) => store.act(actions.fail.bind(this, error)),
       );
     } else if (dialog.state === "progress-write-save") {
       dialog.promise.then(store.act.bind(this, actions.success), (error) =>
-        store.act(actions.fail.bind(this, error))
+        store.act(actions.fail.bind(this, error)),
       );
     }
     current = { dialog, actions };

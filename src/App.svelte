@@ -7,33 +7,17 @@
   import SimulationMenu from "./main-menu/SimulationMenu.svelte";
   import Settings from "./settings/Settings.svelte";
   import { makeSettingsStore, SETTINGS_CONTEXT } from "./settings/store";
-  import { getOrCreateSqlWorker } from "./events/sqlWorker";
-  import {
-    type Adapters,
-    initInMemoryAdapters,
-    initSqlAdapters,
-  } from "./adapters";
 
   const settings = makeSettingsStore();
   setContext(SETTINGS_CONTEXT, { settings });
-  const appStateStore = makeAppStateStore(settings);
+  const inMemory: boolean = true;
+  const appStateStore = makeAppStateStore(settings, inMemory);
   setContext(APP_UI_CONTEXT, { appStateStore });
 
   const showIntro = false;
 
-  const inMemory: boolean = true;
   async function startNewSimulation() {
-    let adapters: Adapters | undefined;
-    if (inMemory) {
-      adapters = initInMemoryAdapters();
-    } else {
-      adapters = initSqlAdapters(await getOrCreateSqlWorker());
-    }
-    await appStateStore.startNewSim(
-      adapters,
-      window.performance.now(),
-      showIntro,
-    );
+    await appStateStore.startNewSim(window.performance.now(), showIntro);
   }
 
   function closeSettings(event: CustomEvent) {

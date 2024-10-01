@@ -10,12 +10,7 @@
   import Import from "./dialog/Import.svelte";
   import Export from "./dialog/Export.svelte";
   import Clone from "./dialog/Clone.svelte";
-  import { makeSimulationStore, type Simulation } from "../events";
-  import { makeObjectiveTracker } from "../objectiveTracker/store";
-  import { getPrimitive } from "../hud/types";
-  import { getClock } from "../events/processes/clock";
-  import { getOrCreateSqlWorker } from "../events/sqlWorker";
-  import { initSqlAdapters } from "../adapters";
+  import { type Simulation } from "../events";
   import type { Unsubscriber } from "svelte/store";
 
   let saveStubs: SaveStubs = {
@@ -119,7 +114,7 @@
       class:chosen={selected.index === -1}
       class={"w-full flex-grow rounded-xl border-2 border-slate-900 font-mono" +
         (saveStubs.autoSave !== null ? " bg-stone-400" : "")}
-      on:click={uiStore.chooseSlot.bind(this, -1)}
+      on:click={() => uiStore.chooseSlot.bind(-1)}
       >{#if saveStubs.autoSave === null}(NO
       {/if}AUTOSAVE{#if saveStubs.autoSave === null}){/if}</button
     >
@@ -128,13 +123,13 @@
       <button
         class:chosen={selected.index === i}
         class="w-full flex-grow rounded-xl border-2 border-slate-900 bg-stone-400"
-        on:click={uiStore.chooseSlot.bind(this, i)}>{save.name}</button
+        on:click={() => uiStore.chooseSlot(i)}>{save.name}</button
       >
     {/each}
     <button
       class:chosen={selected.index === saveStubs.slots.length}
       class="w-full flex-grow rounded-xl border-2 border-slate-900"
-      on:click={uiStore.chooseSlot.bind(this, saveStubs.slots.length)}
+      on:click={() => uiStore.chooseSlot(saveStubs.slots.length)}
       >(New Slot)</button
     >
   </div>
@@ -143,7 +138,7 @@
       <button
         class="rounded border-2 border-slate-900 disabled:border-dashed"
         disabled={allDisabled || overWriteDisabled}
-        on:click={uiStore.startAction.bind(this, "save")}>Save</button
+        on:click={() => uiStore.startAction("save")}>Save</button
       >
     {:else}
       <div>
@@ -153,84 +148,59 @@
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || overWriteDisabled}
-      on:click={uiStore.startAction.bind(this, "import")}
+      on:click={() => uiStore.startAction("import")}
     >
       Import</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startAction.bind(this, "delete")}>Delete</button
+      on:click={() => uiStore.startAction("delete")}>Delete</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startAction.bind(this, "load")}>Load</button
+      on:click={() => uiStore.startAction("load")}>Load</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startAction.bind(this, "export")}
+      on:click={() => uiStore.startAction("export")}
     >
       Export</button
     >
     <button
       class="rounded border-2 border-slate-900 disabled:border-dashed"
       disabled={allDisabled || slotIsEmpty}
-      on:click={uiStore.startAction.bind(this, "clone")}>Clone</button
+      on:click={() => uiStore.startAction("clone")}>Clone</button
     >
   </div>
-  {#if dialog === "delete"}
+  {#if dialog === "delete" && selected.name}
     <Delete name={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "save"}
     <Save
-      simulation={$appStateStore.simulation}
+      simulationStore={$appStateStore.simulation}
       overWrittenName={selected.name}
       saveNames={saveStubs.slots.map((slot) => slot.name)}
       on:close={uiStore.endAction}
     />
-  {:else if dialog === "load"}
+  {:else if dialog === "load" && selected.name}
     <Load
       name={selected.name}
       {simulationLoaded}
       on:close={async (event) => {
         const saveState = event.detail.saveState;
         if (saveState !== undefined) {
-          appStateStack.pop(2); // close menus
-
-          let simStore, objTrackerStore;
-          if (simulationLoaded) {
-            const [currentSimStore, currentTrackerStore] = appStateStack.pop(2);
-            simStore = currentSimStore;
-            objTrackerStore = currentTrackerStore;
-          } else {
-            objTrackerStore = makeObjectiveTracker();
-            const sqlWorker = await getOrCreateSqlWorker();
-            const adapters = initSqlAdapters(sqlWorker);
-            simStore = makeSimulationStore(objTrackerStore, adapters);
-          }
-          await simStore.loadSave(saveState);
-
-          const currentTick = getPrimitive(
-            await getClock(simStore.adapters),
-          ).tick;
-          const busEvent = {
-            tag: "command-simulation-clock-indirect-resume",
-            afterTick: currentTick,
-            timeStamp: performance.now(),
-          };
-          simStore.broadcastEvent(busEvent);
-
-          appStateStack.push(simStore, objTrackerStore);
+          await appStateStore.loadExistingSim(saveState);
         }
         uiStore.endAction();
       }}
     />
   {:else if dialog === "import"}
     <Import overWrittenName={selected.name} on:close={uiStore.endAction} />
-  {:else if dialog === "export"}
+  {:else if dialog === "export" && selected.name}
     <Export saveName={selected.name} on:close={uiStore.endAction} />
-  {:else if dialog === "clone"}
+  {:else if dialog === "clone" && selected.name}
     <Clone clonedSaveName={selected.name} on:close={uiStore.endAction} />
   {/if}
 </main>

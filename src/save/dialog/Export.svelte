@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
   import { makeExportDialogStore } from "./exportDialog";
-  import { readSave, writeSaveDataToBlob } from "../save";
+  import { readSaveStateFromStorage, writeSaveDataToBlob } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
 
   const dispatch = createEventDispatcher();
@@ -23,12 +23,15 @@
       confirm = store.act.bind(this, () =>
         actions.confirm(
           new Promise((resolve, reject) => {
-            const saveState = readSave(saveName, window.localStorage);
+            const saveState = readSaveStateFromStorage(
+              saveName,
+              window.localStorage,
+            );
             if (saveState === null)
               return reject(new Error("save state is null"));
             resolve(saveState);
-          })
-        )
+          }),
+        ),
       );
     } else if (
       dialog.state === "progress-read-save" ||
@@ -55,10 +58,10 @@
                 const save = { name: `${fileName}.json`, ...saveState };
                 writeSaveDataToBlob(save, document);
                 resolve();
-              })
-            )
+              }),
+            ),
           ),
-        (error) => store.act(actions.fail.bind(this, error))
+        (error) => store.act(actions.fail.bind(this, error)),
       );
     } else if (dialog.state === "progress-export-save") {
       dialog.promise.then(
@@ -66,7 +69,7 @@
           fileData = data;
           store.act(actions.success);
         },
-        (error) => store.act(actions.fail.bind(this, error))
+        (error) => store.act(actions.fail.bind(this, error)),
       );
     }
     current = { dialog, actions };

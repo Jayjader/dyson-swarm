@@ -1,7 +1,7 @@
 <script lang="ts">
   import { makeImportDialogStore } from "./importDialog";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { deleteSave, parseProcessors, writeSlotToStorage } from "../save";
+  import { deleteSave, type SaveState, writeSlotToStorage } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
   import { SaveJSON } from "../save.js";
 
@@ -20,14 +20,14 @@
     if (dialog === "closed") {
       if (current === undefined) {
         store.act(
-          actions.startImport.bind(this, overWrittenName !== undefined)
+          actions.startImport.bind(this, overWrittenName !== undefined),
         );
       }
       return;
     } else if (dialog.state === "input-file") {
       cancel = store.act.bind(this, actions.cancel);
       confirm = store.act.bind(this, () => {
-        const fileData = element.firstChild.elements["fileName"].files[0];
+        const fileData = element.firstChild!.elements["fileName"].files[0];
         return actions.confirm(
           fileData.text().then((data) => {
             return {
@@ -60,31 +60,31 @@
                     deleteSave(window.localStorage, overWrittenName!);
                     resolve(save);
                   })
-                : new Promise((resolve) => {
+                : new Promise<void>((resolve) => {
                     writeSlotToStorage(save, window.localStorage);
                     resolve();
-                  })
-            )
+                  }),
+            ),
           );
         },
-        (error) => store.act(actions.fail.bind(this, error))
+        (error) => store.act(actions.fail.bind(this, error)),
       );
     } else if (dialog.state === "progress-delete") {
       dialog.promise.then(
         (save) =>
           store.act(() =>
             actions.success(
-              new Promise((resolve) => {
+              new Promise<void>((resolve) => {
                 writeSlotToStorage(save, window.localStorage);
                 resolve();
-              })
-            )
+              }),
+            ),
           ),
-        (error) => store.act(actions.fail.bind(this, error))
+        (error) => store.act(actions.fail.bind(this, error)),
       );
     } else if (dialog.state === "progress-write-save") {
       dialog.promise.then(store.act.bind(this, actions.success), (error) =>
-        store.act(actions.fail.bind(this, error))
+        store.act(actions.fail.bind(this, error)),
       );
     }
     current = { dialog, actions };

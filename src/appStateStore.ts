@@ -2,7 +2,9 @@ import { writable } from "svelte/store";
 import { makeSimulationStore, type SimulationStore } from "./events";
 import type { SettingsStore } from "./settings/store";
 import { makeObjectiveTracker } from "./objectiveTracker/store";
-import type { Adapters } from "./adapters";
+import { initInMemoryAdapters, initSqlAdapters } from "./adapters";
+import type { SaveState } from "./save/save";
+import { getOrCreateSqlWorker } from "./events/sqlWorker";
 
 type BaseAppState = {
   settings: SettingsStore;
@@ -14,7 +16,7 @@ type AppState = BaseAppState & {
   inSave: boolean;
 };
 
-export function makeAppStateStore(settings: SettingsStore) {
+export function makeAppStateStore(settings: SettingsStore, inMemory: boolean) {
   const { subscribe, update } = writable<AppState>({
     settings,
     simulation: undefined,
@@ -65,8 +67,13 @@ export function makeAppStateStore(settings: SettingsStore) {
         return state;
       });
     },
+    closeMenu() {
+      update((state) => {
+        state.inMenu = false;
+        return state;
+      });
+    },
     async startNewSim(
-      adapters: Adapters,
       outsideClockTick: DOMHighResTimeStamp,
       showIntro: boolean,
     ) {
@@ -74,10 +81,11 @@ export function makeAppStateStore(settings: SettingsStore) {
       if (showIntro) {
         objectiveTracker.setActive([0]); // Intro
       }
-      const simulationStore = await makeSimulationStore(
-        objectiveTracker,
-        adapters,
-      ).loadNew(outsideClockTick);
+      const adapters = inMemory
+        ? initInMemoryAdapters()
+        : initSqlAdapters(await getOrCreateSqlWorker());
+      const simulationStore = makeSimulationStore(objectiveTracker, adapters);
+      await simulationStore.loadNew(outsideClockTick);
       update(({ settings }) => {
         return {
           settings,
@@ -86,6 +94,30 @@ export function makeAppStateStore(settings: SettingsStore) {
           inSettings: false,
           inSave: false,
         };
+      });
+    },
+    async loadExistingSim(saveState: SaveState) {
+      this.closeSave();
+      this.closeMenu();
+      this.closeSettings();
+      return new Promise<void>((resolve) => {
+        subscribe(async (store) => {
+          if (!store.simulation) {
+            const objTrackerStore = makeObjectiveTracker();
+            const adapters = inMemory
+              ? initInMemoryAdapters()
+              : initSqlAdapters(await getOrCreateSqlWorker());
+            const newStore = makeSimulationStore(objTrackerStore, adapters);
+            await newStore.loadSave(saveState);
+            update((store) => {
+              store.simulation = newStore;
+              return store;
+            });
+          } else {
+            await store.simulation.loadSave(saveState);
+          }
+          resolve();
+        });
       });
     },
     clearProgress() {

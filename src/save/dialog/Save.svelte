@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { makeSaveDialogStore } from "./saveDialog";
+  import { makeSaveDialogStore, type SaveDialog } from "./saveDialog";
   import { deleteSave, generateSave, writeSlotToStorage } from "../save";
   import type { SimulationStore } from "../../events";
   import ErrorDisplay from "./ErrorDisplay.svelte";
@@ -12,11 +12,11 @@
     element.showModal();
   });
 
-  export let simulationStore: SimulationStore;
+  export let simulationStore: SimulationStore | undefined;
   export let overWrittenName: undefined | string;
   const store = makeSaveDialogStore(overWrittenName !== undefined);
-  let current;
-  let confirm, cancel;
+  let current: undefined | { dialog: SaveDialog; actions: {} };
+  let confirm: undefined | (() => void), cancel: undefined | (() => void);
   let saveName = "";
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") return;
@@ -24,12 +24,12 @@
       cancel = store.act.bind(this, actions.cancel);
       confirm = store.act.bind(this, (...args) =>
         actions.confirm(
-          new Promise((resolve) => {
+          new Promise<void>((resolve) => {
             deleteSave(window.localStorage, overWrittenName!);
             resolve();
           }),
-          ...args
-        )
+          ...args,
+        ),
       );
     } else if (
       dialog.state === "progress-delete" ||
@@ -66,7 +66,7 @@
       dialog.state === "progress-write-save"
     ) {
       dialog.promise.then(store.act.bind(this, actions.success), (error) =>
-        store.act(actions.fail.bind(this, error))
+        store.act(actions.fail.bind(this, error)),
       );
     }
     current = { dialog, actions };
@@ -87,22 +87,22 @@
 >
   <form method="dialog">
     <h3>New save</h3>
-    {#if current.dialog.state === "warn-overwrite"}
+    {#if current?.dialog.state === "warn-overwrite"}
       <p>
         This will delete the existing simulation data for {overWrittenName}.
         Delete saved data?
       </p>
-    {:else if current.dialog.state === "progress-delete"}
+    {:else if current?.dialog.state === "progress-delete"}
       <label>
         Deleting previous save...
         <progress />
       </label>
-    {:else if current.dialog.state === "success-delete"}
+    {:else if current?.dialog.state === "success-delete"}
       <p>Previous save deleted.</p>
-    {:else if current.dialog.state === "failure-delete"}
+    {:else if current?.dialog.state === "failure-delete"}
       <p class="text-red-700">Deleting previous save failed.</p>
       <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
-    {:else if current.dialog.state === "input-savename"}
+    {:else if current?.dialog.state === "input-savename"}
       <label
         >Save name<input
           class="rounded border-2 border-slate-900 px-2"
@@ -117,15 +117,15 @@
           autocorrect="off"
         /></label
       >
-    {:else if current.dialog.state === "progress-write-save"}
+    {:else if current?.dialog.state === "progress-write-save"}
       <label>
         Saving...
         <progress />
       </label>
-    {:else if current.dialog.state === "failure-write-save"}
+    {:else if current?.dialog.state === "failure-write-save"}
       <p class="text-red-700">Writing save failed.</p>
-      <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
-    {:else if current.dialog.state === "success-write-save"}
+      <ErrorDisplay>{current?.dialog.error}</ErrorDisplay>
+    {:else if current?.dialog.state === "success-write-save"}
       <p>Saved.</p>
     {/if}
     <div class="flex flex-row justify-between gap-2">
