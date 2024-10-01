@@ -200,7 +200,6 @@ export function makeSimulationStore(
     loadNew: async (outsideTick: DOMHighResTimeStamp) => {
       const simulation = {
         bus: { subscriptions: new Map() },
-        processors: new Map(),
       };
       adapters.setup(simulation);
       for (let processor of newGame()) {
