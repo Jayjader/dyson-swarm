@@ -147,7 +147,7 @@ export async function processUntilSettled(
           inbox,
         );
         emitted.push(...newEmitted);
-        adapters.snapshots.persistSnapshot(
+        await adapters.snapshots.persistSnapshot(
           inboxTick ?? lastTick,
           processorId,
           updatedProcessor.data,

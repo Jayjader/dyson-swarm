@@ -60,412 +60,290 @@ export async function getOrCreateSqlWorker() {
   if (worker === undefined) {
     worker = new Worker("/worker.sql-wasm.js");
     worker.onerror = (event) => console.error("Worker error: ", event);
-    worker.addEventListener("message", (event) => console.debug(event));
+    worker.addEventListener(
+      "message",
+      (event) => event.data.id || console.debug(event),
+    );
     const statementId = ++messageId;
     await new Promise<void>((resolve) => {
-      function createTables(event: MessageEvent) {
+      async function createTables(event: MessageEvent) {
         if (event.data.id === statementId && event.data.ready) {
           worker.removeEventListener("message", createTables);
           const creationId = ++messageId;
-          function resolveOnCreation(event: MessageEvent) {
-            if (event.data.id === creationId) {
-              resolve();
-            }
-          }
-          worker.addEventListener("message", resolveOnCreation);
-          postSqlMessage(
+          await postSqlMessage(
             creationId,
             events_table_creation +
               event_sources_table_creation +
               snapshots_table_creation +
               inboxes_table_creation,
           );
+          resolve();
         }
       }
       worker.addEventListener("message", createTables);
       worker.postMessage({ id: statementId, action: "open" });
     });
   }
-  // todo: introduce optional "callback" argument to allow moving the promise construction inside this function
   function postSqlMessage(
     id: number,
     sql: string,
     params?: Record<string, any>,
   ) {
-    console.debug({ sqlMessage: { id, sql, params } });
-    worker.postMessage({ id, action: "exec", sql, params });
-  }
-  return {
-    // events
-    queryTickEvents(tick: number): Promise<RawEvent[]> {
-      const queryId = ++messageId;
-      return new Promise((resolve) => {
-        function resolveOnQuery(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", resolveOnQuery);
-            resolve(event.data.results[0].values);
+    return new Promise<Array<unknown>>((resolve, reject) => {
+      function handleMessageResponse(event: MessageEvent) {
+        if (event.data.id === id) {
+          worker.removeEventListener("message", handleMessageResponse);
+          console.debug(event.data);
+          if (event.data.error) {
+            reject(new Error(event.data.error));
+          } else {
+            resolve((event.data?.results as undefined | Array<unknown>) ?? []);
           }
         }
-        worker.addEventListener("message", resolveOnQuery);
-        postSqlMessage(queryId, "SELECT * FROM events WHERE tick = $tick", {
-          $tick: tick,
-        });
-      });
+      }
+      worker.addEventListener("message", handleMessageResponse);
+      console.debug({ sqlMessage: { id, sql, params } });
+      worker.postMessage({ id, action: "exec", sql, params });
+    });
+  }
+  return {
+    close() {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      worker.postMessage({ id: queryId, action: "close" });
     },
-    queryEventDataTickRange(
+    // events
+    async queryTickEvents(tick: number): Promise<RawEvent[]> {
+      const queryId = ++messageId;
+      const results = await postSqlMessage(
+        queryId,
+        "SELECT * FROM events WHERE tick = $tick",
+        { $tick: tick },
+      );
+      return (results as [{ values: RawEvent[] }])[0].values;
+    },
+    async queryEventDataTickRange(
       start: number,
       end?: number,
     ): Promise<[number, string][]> {
       const queryId = ++messageId;
-      return new Promise((resolve) => {
-        function resolveOnQuery(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", resolveOnQuery);
-            if (event.data.results.length > 0) {
-              resolve(event.data.results[0].values);
-            } else {
-              resolve([]);
-            }
-          }
-        }
-        worker.addEventListener("message", resolveOnQuery);
-        postSqlMessage(
-          queryId,
-          "SELECT tick, data FROM events WHERE (tick >= $start AND ($end IS NULL OR tick < $end)) ORDER BY tick ASC",
-          { $start: start, $end: end },
-        );
-      });
+      const [result] = await postSqlMessage(
+        queryId,
+        "SELECT tick, data FROM events WHERE (tick >= $start AND ($end IS NULL OR tick < $end)) ORDER BY tick ASC",
+        { $start: start, $end: end },
+      );
+      if (result !== undefined) {
+        return (result as { values: Array<[number, string]> }).values;
+      } else {
+        return [];
+      }
     },
     persistTickTimestampEvent(tick: number, event: BusEvent & TimeStamped) {
-      messageId = ++messageId;
-      const queryId = ++messageId;
-      return new Promise<void>((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            resolve();
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `INSERT INTO ${events_table_name} (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)`,
-          {
-            $name: event.tag,
-            $timestamp: event.timeStamp,
-            $tick: tick,
-            $data: SaveJSON.stringify(event),
-          },
-        );
-      });
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return postSqlMessage(
+        queryId,
+        `INSERT INTO ${events_table_name} (name, timestamp, tick, data) VALUES ($name, $timestamp, $tick, $data)`,
+        {
+          $name: event.tag,
+          $timestamp: event.timeStamp,
+          $tick: tick,
+          $data: SaveJSON.stringify(event),
+        },
+      );
     },
     persistTimestampEvent(event: BusEvent & TimeStamped) {
       messageId = ++messageId;
       const queryId = ++messageId;
-      return new Promise<void>((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            resolve();
-          }
-        }
-
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `INSERT INTO ${events_table_name} (name, timestamp, data) VALUES ($name, $timestamp, $data)`,
-          {
-            $name: event.tag,
-            $timestamp: event.timeStamp,
-            $data: SaveJSON.stringify(event),
-          },
-        );
-      });
+      return postSqlMessage(
+        queryId,
+        `INSERT INTO ${events_table_name} (name, timestamp, data) VALUES ($name, $timestamp, $data)`,
+        {
+          $name: event.tag,
+          $timestamp: event.timeStamp,
+          $data: SaveJSON.stringify(event),
+        },
+      );
     },
     persistTickEvent(tick: number, event: BusEvent) {
-      messageId = ++messageId;
-      const queryId = ++messageId;
-      return new Promise<void>((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            resolve();
-          }
-        }
-
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `INSERT INTO ${events_table_name} (name, tick, data) VALUES ($name, $tick, $data)`,
-          {
-            $name: event.tag,
-            $tick: tick,
-            $data: SaveJSON.stringify(event),
-          },
-        );
-      });
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return postSqlMessage(
+        queryId,
+        `INSERT INTO ${events_table_name} (name, tick, data) VALUES ($name, $tick, $data)`,
+        {
+          $name: event.tag,
+          $tick: tick,
+          $data: SaveJSON.stringify(event),
+        },
+      );
     },
     // event sources
-    debugEventSources() {
-      const queryId = ++messageId;
-      function logQueryResult(event: MessageEvent) {
-        if (event.data.id === queryId) {
-          worker.removeEventListener("message", logQueryResult);
-          console.log(event.data.results);
-        }
-      }
-      worker.addEventListener("message", logQueryResult);
-      postSqlMessage(queryId, `SELECT * FROM ${event_sources_table_name}`);
+    async debugEventSources() {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      const results = await postSqlMessage(
+        queryId,
+        `SELECT * FROM ${event_sources_table_name}`,
+      );
+      console.log(results);
     },
     insertEventSource(name: string) {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise<void>((resolve) => {
-        function resolveWhenQueryFinished(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", resolveWhenQueryFinished);
-            resolve();
-          }
-        }
-        worker.addEventListener("message", resolveWhenQueryFinished);
-        postSqlMessage(
-          queryId,
-          `INSERT INTO ${event_sources_table_name} (name) VALUES ($name)`,
-          { $name: name },
-        );
-      });
+      return postSqlMessage(
+        queryId,
+        `INSERT INTO ${event_sources_table_name} (name) VALUES ($name)`,
+        { $name: name },
+      );
     },
-    getAllEventSourceIds(): Promise<string[]> {
+    async getAllEventSourceIds(): Promise<string[]> {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            resolve(event.data.results?.[0]?.values ?? []);
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(queryId, `SELECT name FROM ${event_sources_table_name}`);
-      });
+      const [result] = await postSqlMessage(
+        queryId,
+        `SELECT name FROM ${event_sources_table_name}`,
+      );
+      if (result !== undefined) {
+        return (result as { values: string[] }).values ?? [];
+      }
+      return [];
     },
     // snapshots
-    debugSnapshots() {
-      const queryId = ++messageId;
-      function query(event: MessageEvent) {
-        if (event.data.id === queryId) {
-          worker.removeEventListener("message", query);
-          console.log(event.data.results);
-        }
-      }
-      worker.addEventListener("message", query);
-      postSqlMessage(queryId, `SELECT * FROM snapshots`);
+    async debugSnapshots() {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      const results = await postSqlMessage(
+        queryId,
+        `SELECT * FROM ${snapshots_table_name}`,
+      );
+      console.log(results);
     },
     persistSnapshot(tick: number, id: string, data: Processor["data"]) {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise<void>((resolve) => {
-        function resolveWhenQueryFinished(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", resolveWhenQueryFinished);
-            resolve();
-          }
-        }
-        worker.addEventListener("message", resolveWhenQueryFinished);
-        postSqlMessage(
-          queryId,
-          `INSERT INTO ${snapshots_table_name} (source_id, tick, data) VALUES (
-        SELECT id FROM ${event_sources_table_name} WHERE name = $name,
+      return postSqlMessage(
+        queryId,
+        `INSERT INTO ${snapshots_table_name} (source_id, tick, data) VALUES (
+        (SELECT id FROM ${event_sources_table_name} WHERE name = $name),
         $tick, $data)`,
-          {
-            $name: id,
-            $tick: tick,
-            $data: SaveJSON.stringify(data),
-          },
-        );
-      });
+        {
+          $name: id,
+          $tick: tick,
+          $data: SaveJSON.stringify(data),
+        },
+      );
     },
-    getLastSnapshot(id: string): Promise<[number, string]> {
+    async getLastSnapshot(id: string): Promise<[number, string]> {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise((resolve, reject) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            const result = event.data.results?.[0]?.values?.[0];
-            if (result) {
-              resolve(result);
-            } else {
-              reject(new Error(`couldn't parse snapshot from db: ${result}`));
-            }
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `SELECT tick, data
+      const [result] = await postSqlMessage(
+        queryId,
+        `SELECT tick, data
             FROM ${snapshots_table_name}
             WHERE source_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $sourceName)
           ORDER BY tick DESC LIMIT 1`,
-          { $sourceName: id },
-        );
-      });
+        { $sourceName: id },
+      );
+      if (result !== undefined) {
+        return (result as { values: Array<[number, string]> }).values[0];
+      } else {
+        throw new Error(`couldn't parse snapshot from db: ${result}`);
+      }
     },
-    getAllRawSnapshots(): Promise<Array<[string, number, string]>> {
+    async getAllRawSnapshots(): Promise<Array<[string, number, string]>> {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            const result = event.data.results?.[0]?.values ?? [];
-            resolve(result);
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `SELECT sources.name, snapshots.tick, snapshots.data FROM ${snapshots_table_name} as snapshots
+      const results = await postSqlMessage(
+        queryId,
+        `SELECT sources.name, snapshots.tick, snapshots.data FROM ${snapshots_table_name} as snapshots
             JOIN ${event_sources_table_name} as sources
             ON snapshots.source_id = sources.id
           ORDER BY snapshots.tick ASC`,
-        );
-      });
+      );
+      return (
+        (results?.[0] as { values: Array<[string, number, string]> }).values ??
+        []
+      );
     },
     // inboxes
-    getTotalInboxSize() {
-      const queryId = ++messageId;
-      return new Promise<number>((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            resolve(event.data.results?.[0] ?? 0);
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(queryId, `SELECT COUNT() FROM ${inboxes_table_name}`);
-      });
+    async getTotalInboxSize() {
+      messageId = messageId + 1;
+      const queryId = messageId;
+
+      return (
+        (
+          (await postSqlMessage(
+            queryId,
+            `SELECT COUNT() FROM ${inboxes_table_name}`,
+          )) as Array<[number]>
+        )?.[0]?.[0] ?? 0
+      );
     },
-    getInboxSize(name: string): Promise<number> {
-      const queryId = ++messageId;
-      return new Promise((resolve) => {
-        function handleStatementResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleStatementResult);
-            resolve(event.data.results?.[0] ?? 0);
-          }
-        }
-        worker.addEventListener("message", handleStatementResult);
-        postSqlMessage(
-          queryId,
-          `SELECT COUNT(*) FROM ${inboxes_table_name} as inbox WHERE inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)`,
-          { $inboxOwner: name },
-        );
-      });
+    async getInboxSize(name: string): Promise<number> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      return (
+        (
+          (await postSqlMessage(
+            queryId,
+            `SELECT COUNT(*) FROM ${inboxes_table_name} as inbox WHERE inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)`,
+            { $inboxOwner: name },
+          )) as Array<[number]>
+        )?.[0]?.[0] ?? 0
+      );
     },
-    deliverToInbox(busEvent: BusEvent, to: string) {
+    async deliverToInbox(busEvent: BusEvent, to: string) {
       messageId = messageId + 1;
       const firstQueryId = messageId;
       messageId = messageId + 1;
       const secondQueryId = messageId;
-      return new Promise<void>((resolve, reject) => {
-        function handleFirstQuery(event: MessageEvent) {
-          if (event.data.id === firstQueryId) {
-            worker.removeEventListener("message", handleFirstQuery);
-            const results = event.data.results ?? [];
-            if (results.length > 0) {
-              function handleSecondQuery(event: MessageEvent) {
-                if (event.data.id === secondQueryId) {
-                  worker.removeEventListener("message", handleSecondQuery);
-                  resolve();
-                }
-              }
-              worker.addEventListener("message", handleSecondQuery);
-              const [eventId, inboxOwnerId] = results;
-              postSqlMessage(
-                secondQueryId,
-                `INSERT INTO ${inboxes_table_name} (event_id, owner_id) VALUES ($eventId, $ownerId)`,
-                { $eventId: eventId, $ownerId: inboxOwnerId },
-              );
-            } else {
-              reject(
-                new Error(
-                  `error in looking up eventId+inboxOwnerId: ${event.data}`,
-                ),
-              );
-            }
-          }
-        }
-        worker.addEventListener("message", handleFirstQuery);
-        postSqlMessage(
-          firstQueryId,
-          `SELECT event.id FROM ${events_table_name} as event WHERE event.name = $name AND event.tick = $tick AND event.data = $data` +
-            `UNION ALL SELECT source.id FROM ${event_sources_table_name} as source WHERE source.name = $owner`,
-          {
-            $name: busEvent.tag,
-            $tick: getTick(busEvent),
-            $data: SaveJSON.stringify(busEvent),
-            $owner: to,
-          },
-        );
-      });
+      const [eventId, inboxOwnerId] = await postSqlMessage(
+        firstQueryId,
+        `SELECT event.id FROM ${events_table_name} as event WHERE event.name = $name AND event.tick = $tick AND event.data = $data` +
+          `UNION ALL SELECT source.id FROM ${event_sources_table_name} as source WHERE source.name = $owner`,
+        {
+          $name: busEvent.tag,
+          $tick: getTick(busEvent),
+          $data: SaveJSON.stringify(busEvent),
+          $owner: to,
+        },
+      );
+      return postSqlMessage(
+        secondQueryId,
+        `INSERT INTO ${inboxes_table_name} (event_id, owner_id) VALUES ($eventId, $ownerId)`,
+        { $eventId: eventId, $ownerId: inboxOwnerId },
+      );
     },
-    peekInbox(sourceName: string): Promise<string[]> {
+    async peekInbox(sourceName: string): Promise<string[]> {
       messageId = messageId + 1;
       const queryId = messageId;
-      return new Promise((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            let results = event.data.results?.[0]?.values ?? [];
-            (results as unknown as [number, string][]).sort(
-              ([aTick], [bTick]) => aTick - bTick,
-            );
-            for (let i = 0; i < results.length; i++) {
-              results[i] = results[i][1]; // just return the event data (it includes the tick as an attribute)
-            }
-            resolve(results);
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `SELECT events.tick, events.data FROM ${events_table_name} as events
+      const [{ values }] = (await postSqlMessage(
+        queryId,
+        `SELECT events.tick, events.data FROM ${events_table_name} as events
         JOIN ${inboxes_table_name} as inboxes
         ON inboxes.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
         AND inboxes.event_id = events.id`,
-          { $inboxOwner: sourceName },
-        );
-      });
+        { $inboxOwner: sourceName },
+      )) as Array<{ values: Array<[number, string]> }>;
+      values.sort(([aTick], [bTick]) => aTick - bTick);
+      return values.map(([_tick, data]) => data) ?? [];
     },
-    consumeInbox(sourceName: string): Promise<string[]> {
-      const queryId = ++messageId;
-      return new Promise((resolve) => {
-        function handleQueryResult(event: MessageEvent) {
-          if (event.data.id === queryId) {
-            worker.removeEventListener("message", handleQueryResult);
-            let results = event.data.results?.[0]?.values ?? [];
-            (results as unknown as [number, string][]).sort(
-              ([aTick], [bTick]) => aTick - bTick,
-            );
-            for (let i = 0; i < results.length; i++) {
-              results[i] = results[i][1]; // just return the event data (it includes the tick as an attribute)
-            }
-            resolve(results);
-          }
-        }
-        worker.addEventListener("message", handleQueryResult);
-        postSqlMessage(
-          queryId,
-          `DELETE FROM ${inboxes_table_name} as inbox
+    async consumeInbox(sourceName: string): Promise<string[]> {
+      messageId = messageId + 1;
+      const queryId = messageId;
+      const [{ values }] = (await postSqlMessage(
+        queryId,
+        `DELETE FROM ${inboxes_table_name} as inbox
             JOIN ${events_table_name} as e
             ON inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
               AND inbox.event_id = e.id
           RETURNING tick, data
           ;`,
-          { $inboxOwner: sourceName },
-        );
-      });
+        { $inboxOwner: sourceName },
+      )) as Array<{ values: Array<[number, string]> }>;
+      values.sort(([aTick], [bTick]) => aTick - bTick);
+      return values.map(([_tick, data]) => data) ?? [];
     },
   };
 }
