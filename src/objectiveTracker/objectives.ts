@@ -16,16 +16,16 @@ export type Aside = [
   string,
   [string, string],
   [string, string],
-  [string, string]
+  [string, string],
 ];
 
 export function isNode(o: Objective): o is NodeObjective {
   return Array.isArray(
-    (o as unknown as { subObjectives: Objective[] })?.subObjectives
+    (o as unknown as { subObjectives: Objective[] })?.subObjectives,
   );
 }
 export function hasSubObjectives(
-  o: Objective
+  o: Objective,
 ): o is NodeObjective & { subObjectives: [Objective, ...Array<Objective>] } {
   return isNode(o) && o.subObjectives.length > 0;
 }
@@ -37,7 +37,7 @@ export type ObjectivePosition = number[];
  */
 export function getPositionOfFirstItem(
   list: Objective[],
-  position: ObjectivePosition = [0]
+  position: ObjectivePosition = [0],
 ): ObjectivePosition {
   const element = getNestedItem(list, position);
   if (!isNode(element)) {
@@ -49,17 +49,17 @@ export function getPositionOfFirstItem(
 export function getNestedItem(
   list: Objective[],
   position: ObjectivePosition,
-  enforceIsNode: true
+  enforceIsNode: true,
 ): NodeObjective;
 export function getNestedItem(
   list: Objective[],
   position: ObjectivePosition,
-  enforceIsNode?: boolean
+  enforceIsNode?: boolean,
 ): Objective;
 export function getNestedItem(
   list: Objective[],
   position: ObjectivePosition,
-  enforceIsNode: boolean = false
+  enforceIsNode: boolean = false,
 ): Objective {
   let retVal: Objective;
   const [currentIndex, ...subCoordinates] = position;
@@ -71,15 +71,15 @@ export function getNestedItem(
       retVal = getNestedItem(
         currentObjective.subObjectives,
         subCoordinates,
-        enforceIsNode
+        enforceIsNode,
       );
     } else {
       console.warn(
         `Error in retrieving objective from list @${JSON.stringify(
-          position
+          position,
         )}. Using closest parent objective "${
           currentObjective.title
-        }" as return value instead. This may have been caused by using the position of an objective step (or counter for a step) as the position of an actual objective.`
+        }" as return value instead. This may have been caused by using the position of an objective step (or counter for a step) as the position of an actual objective.`,
       );
       retVal = currentObjective;
     }
@@ -87,8 +87,8 @@ export function getNestedItem(
   if (enforceIsNode && !isNode(retVal)) {
     throw new Error(
       `found objective @${JSON.stringify(
-        position
-      )} that has no sub-objectives: ${JSON.stringify(retVal)}`
+        position,
+      )} that has no sub-objectives: ${JSON.stringify(retVal)}`,
     );
   }
   return retVal;
@@ -96,7 +96,7 @@ export function getNestedItem(
 
 export function getNextObjective(
   list: Objective[],
-  position: ObjectivePosition
+  position: ObjectivePosition,
 ): [Objective, ObjectivePosition] | undefined {
   const following = walkObjectives(list, position).slice(1); // skip index 0 which corresponds to the input position
   if (following.length > 0) {
@@ -116,7 +116,7 @@ export function getNextObjective(
  * @param [position=[]] used for recursive calls, this is the "starting contextual" position for the walk, and corresponds to the position of ``list`` in its parent collection */
 export function walkObjectivePositions(
   list: Objective[],
-  position: ObjectivePosition = []
+  position: ObjectivePosition = [],
 ): ObjectivePosition[] {
   const positions = recursivePositionWalk(list);
   if (position.length > 0) {
@@ -129,7 +129,7 @@ export function walkObjectivePositions(
 }
 function recursivePositionWalk(
   list: Objective[],
-  position: ObjectivePosition = []
+  position: ObjectivePosition = [],
 ): ObjectivePosition[] {
   return list.flatMap((objective, i) => {
     const nestedPosition: ObjectivePosition = [...position, i];
@@ -156,7 +156,7 @@ function walkObjectives(list: Objective[], position: ObjectivePosition = []) {
 }
 function recursiveObjectiveWalk(
   list: Objective[],
-  position: ObjectivePosition = []
+  position: ObjectivePosition = [],
 ): [ObjectivePosition, Objective][] {
   return list.flatMap((objective, i) => {
     const nestedPosition: ObjectivePosition = [...position, i];
@@ -195,7 +195,7 @@ export function areEqual(a: ObjectivePosition, b: ObjectivePosition): boolean {
 function findCompleted(
   objectives: Objective[],
   trigger: Trigger,
-  previous: Pick<TrackedObjectives, "started" | "completed">
+  previous: Pick<TrackedObjectives, "started" | "completed">,
 ) {
   const newlyCompleted = new Set<SerializedPosition>();
   for (let [position, objective] of walkObjectives(objectives)) {
@@ -291,7 +291,7 @@ function findCompleted(
 }
 function findStartedFromCompleted(
   objectives: Objective[],
-  newlyCompleted: Set<SerializedPosition>
+  newlyCompleted: Set<SerializedPosition>,
 ) {
   const startedFromCompleted = new Set<SerializedPosition>();
   for (let [position, objective] of walkObjectives(objectives)) {
@@ -302,7 +302,7 @@ function findStartedFromCompleted(
         JSON.stringify([
           ...position.slice(0, position.length - 1),
           positionIndex - 1,
-        ])
+        ]),
       )
     ) {
       // previous sibling was just completed
@@ -331,7 +331,7 @@ function findStartedFromCompleted(
 }
 function propagateStartedFromCompleted(
   objectives: Objective[],
-  startedFromCompleted: Set<SerializedPosition>
+  startedFromCompleted: Set<SerializedPosition>,
 ) {
   const startedFromCompletedPropagation = new Set<SerializedPosition>();
   for (let [position, objective] of walkObjectives(objectives)) {
@@ -339,7 +339,7 @@ function propagateStartedFromCompleted(
     if (position.length > 1 && position.at(-1)! === 0) {
       // this is the first child of an objective
       const serializedParentPosition = JSON.stringify(
-        position.slice(0, position.length - 1)
+        position.slice(0, position.length - 1),
       );
       if (
         startedFromCompleted.has(serializedParentPosition) ||
@@ -388,7 +388,7 @@ function findStartedFromTrigger(objectives: Objective[], trigger: Trigger) {
 }
 export function propagateStartedFromTrigger(
   objectives: Objective[],
-  startedFromTrigger: Set<SerializedPosition>
+  startedFromTrigger: Set<SerializedPosition>,
 ) {
   const startedFromTriggerPropagation = new Set<SerializedPosition>();
   for (let [position, objective] of walkObjectives(objectives)) {
@@ -408,7 +408,7 @@ export function propagateStartedFromTrigger(
       position.length > 1 &&
       positionIndex === 0 &&
       startedFromTrigger.has(
-        JSON.stringify(position.slice(0, position.length - 1))
+        JSON.stringify(position.slice(0, position.length - 1)),
       )
     ) {
       // parent is started and this is its first child
@@ -424,21 +424,21 @@ export function propagateStartedFromTrigger(
 export function findTriggeredSteps(
   objectives: Objective[],
   trigger: Trigger,
-  previous: Pick<TrackedObjectives, "started" | "completed">
+  previous: Pick<TrackedObjectives, "started" | "completed">,
 ) {
   const newlyCompleted = findCompleted(objectives, trigger, previous);
   const startedFromCompleted = findStartedFromCompleted(
     objectives,
-    newlyCompleted
+    newlyCompleted,
   );
   const startedFromCompletedPropagation = propagateStartedFromCompleted(
     objectives,
-    startedFromCompleted
+    startedFromCompleted,
   );
   const startedFromTrigger = findStartedFromTrigger(objectives, trigger);
   const startedFromTriggerPropagation = propagateStartedFromTrigger(
     objectives,
-    startedFromTrigger
+    startedFromTrigger,
   );
 
   return {
@@ -628,7 +628,7 @@ export function findAutoStartPositions(list: Objective[]): ObjectivePosition[] {
 }
 function autoStartWorker(
   list: Objective[],
-  position: ObjectivePosition = []
+  position: ObjectivePosition = [],
 ): ObjectivePosition[] {
   return list.flatMap((objective, i) => {
     const nestedPosition = [...position, i];
@@ -645,7 +645,7 @@ export function triggerWithContents(order: Repeat): RepeatsTriggerWithContents {
   return [
     order.count,
     order.repeat.map((order) =>
-      isRepeat(order) ? triggerWithContents(order) : order.building
+      isRepeat(order) ? triggerWithContents(order) : order.building,
     ),
   ];
 }

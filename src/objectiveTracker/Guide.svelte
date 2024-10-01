@@ -47,7 +47,7 @@
         const next = getNextObjective(trackerState.objectives, position)?.[1];
         trackerState.viewing = { objective, position, next };
       }
-    })
+    }),
   );
 
   function setViewing(position) {
@@ -61,7 +61,7 @@
   $: debugProgress(
     $objectives.started,
     $objectives.completed,
-    objectives.objectives
+    objectives.objectives,
   );
 
   $: showNextButton =
@@ -69,7 +69,7 @@
     ((!isNode(trackerState.viewing.objective) &&
       trackerState.viewing.objective.steps?.length === 0) ||
       trackerState.tracking.completed.has(
-        JSON.stringify(trackerState.viewing.position)
+        JSON.stringify(trackerState.viewing.position),
       ));
 </script>
 
@@ -92,7 +92,7 @@
           disabled={trackerState.viewing === undefined ||
             areEqual(
               trackerState.tracking.active,
-              trackerState.viewing.position
+              trackerState.viewing.position,
             )}
           on:click={() => objectives.setActive(trackerState.viewing.position)}
         >
@@ -128,7 +128,7 @@
                 disabled
                 id="guide-objective-step-completed-{index}"
                 checked={trackerState.tracking.completed.has(
-                  JSON.stringify([...trackerState.viewing.position, index])
+                  JSON.stringify([...trackerState.viewing.position, index]),
                 )}
                 class="mt-1 self-start"
               />
@@ -161,21 +161,21 @@
             position: trackerState.tracking.active,
             objective: getNestedItem(
               trackerState.objectives,
-              trackerState.tracking.active
+              trackerState.tracking.active,
             ),
             next: getNextObjective(
               trackerState.objectives,
-              trackerState.tracking.active
+              trackerState.tracking.active,
             )?.[1],
           }),
           trackerState.tracking.active.forEach((_, i) =>
             dialogElement
               .querySelectorAll(
                 `[data-position="${JSON.stringify(
-                  trackerState.tracking.active.slice(0, i + 1)
-                )}"]`
+                  trackerState.tracking.active.slice(0, i + 1),
+                )}"]`,
               )
-              .forEach((details) => !details.open && (details.open = true))
+              .forEach((details) => !details.open && (details.open = true)),
           )
         )}>View Active</CommonGuideButton
       >
@@ -191,7 +191,7 @@
           walkObjectivePositions(trackerState.objectives).forEach((position) =>
             dialogElement
               .querySelectorAll(`[data-position="${JSON.stringify(position)}"]`)
-              .forEach((details) => details.open && (details.open = false))
+              .forEach((details) => details.open && (details.open = false)),
           )}>Collapse All</CommonGuideButton
       >
       <CommonGuideButton
@@ -200,11 +200,11 @@
           walkObjectivePositions(trackerState.objectives).forEach((position) =>
             dialogElement
               .querySelectorAll(`[data-position="${JSON.stringify(position)}"]`)
-              .forEach((details) => !details.open && (details.open = true))
+              .forEach((details) => !details.open && (details.open = true)),
           )}>Expand All</CommonGuideButton
       >
       <hr
-        class="col-span-2 rounded border-t-2 border-b-2 border-slate-900 text-slate-900"
+        class="col-span-2 rounded border-b-2 border-t-2 border-slate-900 text-slate-900"
       />
       <ol
         class="p-l-1 col-span-2 flex flex-col flex-nowrap gap-2.5 overflow-y-scroll"
