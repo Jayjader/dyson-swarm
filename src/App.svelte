@@ -29,7 +29,7 @@
   }
 </script>
 
-{#if $appStateStore.inMenu}
+{#if $appStateStore.inMenu && !($appStateStore.inSave || $appStateStore.inSettings)}
   <SimulationMenu
     on:open-save={appStateStore.openSave}
     on:open-settings={appStateStore.openSettings}
