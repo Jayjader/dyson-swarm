@@ -81,8 +81,43 @@ export async function loadSave(
     }
     return sim;
   } else {
-    // todo: try to convert to the most current version
-    return { bus: { subscriptions: new Map() } };
+    const actualSaveState = save as unknown as {
+      stream: {
+        tag: "stream";
+        id: `stream-${number}`;
+        incoming: [];
+        data: { unfinishedTick: number; received: Array<[number, BusEvent[]]> };
+      };
+      processors: Array<
+        Processor["core"] & { data: Processor["data"]; incoming: [] }
+      >;
+    };
+    const sim = { bus: { subscriptions: new Map() } };
+    for (const processor of actualSaveState.processors) {
+      if (SUBSCRIPTIONS[processor.tag] === undefined) {
+        continue;
+      }
+      for (const eventTag of SUBSCRIPTIONS[processor.tag]) {
+        const subsForEvent = sim.bus.subscriptions.get(eventTag);
+        if (subsForEvent !== undefined) {
+          subsForEvent.add(processor.id);
+        } else {
+          sim.bus.subscriptions.set(eventTag, new Set([processor.id]));
+        }
+      }
+      await adapters.eventSources.insertSource(processor.id);
+      await adapters.snapshots.persistSnapshot(
+        actualSaveState.stream.data.unfinishedTick, // todo: check if this works with all old save files
+        processor.id,
+        processor.data,
+      );
+      for (const [_tick, events] of actualSaveState.stream.data.received) {
+        for (const event of events) {
+          await adapters.events.write.persistEvent(event);
+        }
+      }
+    }
+    return sim;
   }
 }
 
