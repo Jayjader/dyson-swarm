@@ -198,7 +198,7 @@ function saveFileFromJsonRestorer(key: string, value: any) {
     return BigInt(value);
   }
   if (key === "queue") {
-    return convertNullBuildOrderCountsToInfinity(JSON.parse(value));
+    return convertNullBuildOrderCountsToInfinity(value);
   }
   return value;
 }
