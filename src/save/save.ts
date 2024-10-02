@@ -28,96 +28,128 @@ export type SaveState = {
   inboxes: Array<{ sourceId: string; events: BusEvent[] }>;
 };
 
+export type OldSaveState = {
+  stream: {
+    tag: "stream";
+    id: `stream-${number}`;
+    incoming: [];
+    data: { unfinishedTick: number; received: Array<[number, BusEvent[]]> };
+  };
+  processors: Array<
+    Processor["core"] & { data: Processor["data"]; incoming: [] }
+  >;
+};
+async function loadOldSave(actualSaveState: OldSaveState, adapters: Adapters) {
+  const sim = { bus: { subscriptions: new Map() } };
+  for (const processor of actualSaveState.processors) {
+    if (SUBSCRIPTIONS[processor.tag] === undefined) {
+      continue;
+    }
+    for (const eventTag of SUBSCRIPTIONS[processor.tag]) {
+      const subsForEvent = sim.bus.subscriptions.get(eventTag);
+      if (subsForEvent !== undefined) {
+        subsForEvent.add(processor.id);
+      } else {
+        sim.bus.subscriptions.set(eventTag, new Set([processor.id]));
+      }
+    }
+    await adapters.eventSources.insertSource(processor.id);
+    await adapters.snapshots.persistSnapshot(
+      actualSaveState.stream.data.unfinishedTick, // todo: check if this works with all old save files
+      processor.id,
+      processor.data,
+    );
+    for (const [_tick, events] of actualSaveState.stream.data.received) {
+      for (const event of events) {
+        await adapters.events.write.persistEvent(event);
+      }
+    }
+  }
+  return sim;
+}
+export function migrateOldSave(save: OldSaveState): SaveState {
+  const migrated: SaveState = {
+    version: versions[1],
+    sources: [],
+    snapshots: [],
+    events: [],
+    inboxes: [],
+  };
+  for (const [_tick, events] of save.stream.data.received) {
+    migrated.events.push(...events);
+  }
+  for (const processor of save.processors) {
+    migrated.sources.push({ id: processor.id, tag: processor.tag });
+    migrated.inboxes.push({
+      sourceId: processor.id,
+      events: processor.incoming,
+    });
+    migrated.snapshots.push({
+      id: processor.id,
+      tick: save.stream.data.unfinishedTick, // todo: check that this works, maybe try searching for last event emitted instead?
+      data: SaveJSON.stringify(processor.data),
+    });
+  }
+  return migrated;
+}
+async function loadNewSave(save: SaveState, adapters: Adapters) {
+  const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
+  for (const { id, tag } of save.sources) {
+    if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
+      continue;
+    }
+    for (const eventTag of SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS]) {
+      const subsForEvent = sim.bus.subscriptions.get(eventTag);
+      if (subsForEvent !== undefined) {
+        subsForEvent.add(id as Id);
+      } else {
+        sim.bus.subscriptions.set(eventTag, new Set([id as Id]));
+      }
+    }
+    let lastTick = Number.NEGATIVE_INFINITY,
+      indexOfLastTick = 0;
+    for (let i = 0; i < save.snapshots.length; i++) {
+      const snapshot = save.snapshots[i];
+      if (snapshot.id === id) {
+        if (snapshot.tick > lastTick) {
+          lastTick = snapshot.tick;
+          indexOfLastTick = i;
+        }
+      }
+    }
+    let data;
+    try {
+      data = SaveJSON.parse(
+        save.snapshots[indexOfLastTick].data,
+      ) as Processor["data"];
+    } catch (e) {
+      console.error(`json error for snapshot of ${id}/${tag}: `, e);
+    }
+    if (lastTick === Number.NEGATIVE_INFINITY || data === undefined) {
+      continue;
+    }
+    await adapters.eventSources.insertSource(id as Id);
+    // todo: investigate persisting *each* snapshot
+    await adapters.snapshots.persistSnapshot(lastTick, id as Id, data);
+  }
+  for (const event of save.events) {
+    await adapters.events.write.persistEvent(event);
+  }
+  for (const { sourceId, events } of save.inboxes) {
+    for (const event of events) {
+      await adapters.events.write.deliverEvent(event, sourceId);
+    }
+  }
+  return sim;
+}
 export async function loadSave(
   save: SaveState,
   adapters: Adapters,
 ): Promise<Simulation> {
   if (save.version === "adapters-rewrite") {
-    const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
-    for (const { id, tag } of save.sources) {
-      if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
-        continue;
-      }
-      for (const eventTag of SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS]) {
-        const subsForEvent = sim.bus.subscriptions.get(eventTag);
-        if (subsForEvent !== undefined) {
-          subsForEvent.add(id as Id);
-        } else {
-          sim.bus.subscriptions.set(eventTag, new Set([id as Id]));
-        }
-      }
-      let lastTick = Number.NEGATIVE_INFINITY,
-        indexOfLastTick = 0;
-      for (let i = 0; i < save.snapshots.length; i++) {
-        const snapshot = save.snapshots[i];
-        if (snapshot.id === id) {
-          if (snapshot.tick > lastTick) {
-            lastTick = snapshot.tick;
-            indexOfLastTick = i;
-          }
-        }
-      }
-      let data;
-      try {
-        data = SaveJSON.parse(
-          save.snapshots[indexOfLastTick].data,
-        ) as Processor["data"];
-      } catch (e) {
-        console.error(`json error for snapshot of ${id}/${tag}: `, e);
-      }
-      if (lastTick === Number.NEGATIVE_INFINITY || data === undefined) {
-        continue;
-      }
-      await adapters.eventSources.insertSource(id as Id);
-      await adapters.snapshots.persistSnapshot(lastTick, id as Id, data);
-    }
-    for (const event of save.events) {
-      await adapters.events.write.persistEvent(event);
-    }
-    for (const { sourceId, events } of save.inboxes) {
-      for (const event of events) {
-        await adapters.events.write.deliverEvent(event, sourceId);
-      }
-    }
-    return sim;
+    return await loadNewSave(save, adapters);
   } else {
-    const actualSaveState = save as unknown as {
-      stream: {
-        tag: "stream";
-        id: `stream-${number}`;
-        incoming: [];
-        data: { unfinishedTick: number; received: Array<[number, BusEvent[]]> };
-      };
-      processors: Array<
-        Processor["core"] & { data: Processor["data"]; incoming: [] }
-      >;
-    };
-    const sim = { bus: { subscriptions: new Map() } };
-    for (const processor of actualSaveState.processors) {
-      if (SUBSCRIPTIONS[processor.tag] === undefined) {
-        continue;
-      }
-      for (const eventTag of SUBSCRIPTIONS[processor.tag]) {
-        const subsForEvent = sim.bus.subscriptions.get(eventTag);
-        if (subsForEvent !== undefined) {
-          subsForEvent.add(processor.id);
-        } else {
-          sim.bus.subscriptions.set(eventTag, new Set([processor.id]));
-        }
-      }
-      await adapters.eventSources.insertSource(processor.id);
-      await adapters.snapshots.persistSnapshot(
-        actualSaveState.stream.data.unfinishedTick, // todo: check if this works with all old save files
-        processor.id,
-        processor.data,
-      );
-      for (const [_tick, events] of actualSaveState.stream.data.received) {
-        for (const event of events) {
-          await adapters.events.write.persistEvent(event);
-        }
-      }
-    }
-    return sim;
+    return await loadOldSave(save as unknown as OldSaveState, adapters);
   }
 }
 
@@ -151,29 +183,6 @@ export async function generateSave(adapters: Adapters): Promise<SaveState> {
     snapshots.push({ id: sourceId, tick, data: rawSnapshot });
   }
   return { version: versions[1], sources, events, inboxes, snapshots };
-  /*
-  const processors = [];
-  let stream!: SerializedStream;
-  for (const proc of sim.processors.values()) {
-    if (proc.core.tag !== "stream") {
-      processors.push(proc as Exclude<Processor, EventStream>);
-      continue;
-    }
-    stream = {
-      data: {
-        unfinishedTick: (proc as EventStream).data.unfinishedTick,
-        received: [...(proc as EventStream).data.received],
-      },
-      core: {
-        tag: proc.core.tag,
-        id: proc.core.id,
-        lastTick: proc.core.lastTick,
-      },
-      // incoming: proc.incoming, // todo: use events adapter's .peekInbox()
-    };
-  }
-  console.debug({ saveStream: stream });
-   */
 }
 
 export function newGame(): Processor[] {
@@ -205,7 +214,11 @@ export function readSaveStateFromStorage(
   if (data === null) {
     return null;
   }
-  return SaveJSON.parse(data) as SaveState;
+  let parsed = SaveJSON.parse(data) as SaveState;
+  if (parsed?.version === undefined || parsed?.version === "initial-json") {
+    parsed = migrateOldSave(parsed as unknown as OldSaveState);
+  }
+  return parsed;
 }
 
 /**

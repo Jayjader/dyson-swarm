@@ -5,7 +5,12 @@
     makeCloneDialogStore,
     type StoreState,
   } from "./cloneDialog";
-  import { readSaveStateFromStorage, writeSlotToStorage } from "../save";
+  import {
+    migrateOldSave,
+    type OldSaveState,
+    readSaveStateFromStorage,
+    writeSlotToStorage,
+  } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
   import type { EventHandler } from "svelte/elements";
   import type { Save } from "../uiStore";
@@ -69,9 +74,12 @@
 
     if (dialog.state === "progress-read-save") {
       dialog.promise.then(
-        (saveState) => {
-          saveState.name = `${clonedSaveName} (cloned)`;
-          store.act(() => actions.success(startWrite(saveState)));
+        ({ name, ...saveState }: Save) => {
+          if (saveState.version === "initial-json") {
+            saveState = migrateOldSave(saveState as unknown as OldSaveState);
+          }
+          const cloned = { name: `${name} (cloned)`, ...saveState };
+          store.act(() => actions.success(startWrite(cloned)));
         },
         (error) => store.act(() => actions.fail(error)),
       );
