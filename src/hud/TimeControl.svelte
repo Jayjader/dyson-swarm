@@ -1,16 +1,16 @@
 <script lang="ts">
+  import { getClock } from "../events/processes/clock";
+  import { getContext, onDestroy } from "svelte";
+  import { SIMULATION_STORE, type SimulationStore } from "../events";
+  import type { BusEvent as BusEvent } from "../events/events";
+  import type { FormEventHandler, MouseEventHandler } from "svelte/elements";
   import {
     type ClockState,
     getPrimitive,
     isEditing,
     isIndirectPause,
     isPlay,
-  } from "./types";
-  import { getClock } from "../events/processes/clock";
-  import { getContext, onDestroy } from "svelte";
-  import { SIMULATION_STORE, type SimulationStore } from "../events";
-  import type { BusEvent as BusEvent } from "../events/events";
-  import type { FormEventHandler, MouseEventHandler } from "svelte/elements";
+  } from "../simulation/clockStore";
 
   const { simulation } = getContext(SIMULATION_STORE) as {
     simulation: SimulationStore;

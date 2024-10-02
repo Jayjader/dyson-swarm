@@ -6,7 +6,6 @@ import {
   tickConsumption,
   tickProduction,
 } from "../gameRules";
-import { isEditing, type Pause } from "../hud/types";
 import type { BusEvent as BusEvent, Events } from "./events";
 import {
   broadcastEvent,
@@ -40,6 +39,7 @@ import { createStorage, type Storage } from "./processes/storage";
 import { loadSave, type SaveState, versions } from "../save/save";
 import { initInMemoryAdapters } from "../adapters";
 import { describe, expect, test } from "vitest";
+import { isEditing, type Pause } from "../simulation/clockStore";
 
 const LATEST_VERSION = versions[1];
 function emptySave(): SaveState {
@@ -73,7 +73,6 @@ describe("event bus", () => {
     ])("%j", async (events) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       await insertProcessor(
         simulation,
         createClock(0, "clock-0", { speed: 1 }),
@@ -96,7 +95,6 @@ describe("event bus", () => {
     ])("%j", async (events) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       await insertProcessor(
         simulation,
         createClock(0, "clock-0", { speed: 1, mode: "pause" }),
@@ -119,7 +117,6 @@ describe("event bus", () => {
   test("clock should switch to pause when receiving command while in play", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(
       simulation,
       createClock(0, "clock-0", { speed: 1, mode: "play" }),
@@ -147,7 +144,6 @@ describe("event bus", () => {
   test("clock should switch to indirect pause when receiving command while in play", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(
       simulation,
       createClock(0, "clock-0", { speed: 1, mode: "play" }),
@@ -175,7 +171,6 @@ describe("event bus", () => {
   test("clock should switch to play when receiving command for indirect-resume while in indirect pause", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(
       simulation,
       createClock(0, "clock-0", { speed: 1, mode: "indirect-pause" }),
@@ -219,7 +214,6 @@ describe("event bus", () => {
     ])("%j", async (event) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       await insertProcessor(
         simulation,
         createClock(0, "clock-0", { speed: 1, mode: "pause" }),
@@ -244,7 +238,6 @@ describe("event bus", () => {
     ])("%j", async (event) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       const clockId = "clock-0";
       await insertProcessor(
         simulation,
@@ -282,7 +275,6 @@ describe("event bus", () => {
   test("clock should enter editing-speed state when receiving command to start editing speed", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const clock = createClock(0, "clock-0", {
       speed: 1,
       tick: 0,
@@ -321,7 +313,6 @@ describe("event bus", () => {
   test("clock should change speed when receiving command while paused", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const clock = createClock(0, "clock-0", {
       speed: 1,
       tick: 0,
@@ -358,7 +349,6 @@ describe("event bus", () => {
   test("clock should emit ticks according to speed", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const clock = createClock(0, "clock-0", {
       speed: 10,
       tick: 0,
@@ -422,7 +412,6 @@ describe("event bus", () => {
     test("tickClock()", async () => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       await tickClock(1, simulation, adapters);
       expect(await adapters.events.read.getTickEvents(1)).toContainEqual({
         tag: "simulation-clock-tick",
@@ -468,7 +457,6 @@ describe("event bus", () => {
     ] as const)("receive %j, emit %j", async (events, expectedStream) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       await insertProcessor(
         simulation,
         createClock(0, "clock-0", { speed: 1, tick: 0, mode: "play" }),
@@ -493,7 +481,6 @@ describe("event bus", () => {
   test("star should output flux from processing simulation clock tick", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     await processUntilSettled(
       await broadcastEvent(
@@ -511,7 +498,6 @@ describe("event bus", () => {
   test("collector should output power from processing star flux emission", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const count = 3;
     await insertProcessor(
       simulation,
@@ -539,7 +525,6 @@ describe("event bus", () => {
   test("collector and star over time", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     await insertProcessor(
       simulation,
@@ -568,7 +553,6 @@ describe("event bus", () => {
   test("grid should receive power production after 3 ticks", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     await insertProcessor(
       simulation,
@@ -601,7 +585,6 @@ describe("event bus", () => {
   test("grid should supply power when drawn", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const powerGrid = createPowerGrid();
     powerGrid.data.stored = 10n;
     await insertProcessor(simulation, powerGrid, adapters);
@@ -643,7 +626,6 @@ describe("event bus", () => {
   test("miner should draw power on sim clock tick when working", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const miner = createMinerManager({ count: 1 });
     await insertProcessor(simulation, miner, adapters);
     await processUntilSettled(
@@ -666,7 +648,6 @@ describe("event bus", () => {
   test("miner should mine planet when supplied with power", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const miner = createMinerManager({ count: 1 });
     await insertProcessor(simulation, miner, adapters);
     await processUntilSettled(
@@ -696,7 +677,6 @@ describe("event bus", () => {
   test("miner integration", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     await insertProcessor(
       simulation,
@@ -732,7 +712,6 @@ describe("event bus", () => {
   test("planet should produce ore when mined", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const planet = createPlanet();
     await insertProcessor(simulation, planet, adapters);
     await processUntilSettled(
@@ -767,7 +746,6 @@ describe("event bus", () => {
     ])("%j", async (resource) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       const storage = createStorage(resource);
       await insertProcessor(simulation, storage, adapters);
       await processUntilSettled(
@@ -805,7 +783,6 @@ describe("event bus", () => {
     ])("%j", async (resource) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       const storage = createStorage(resource);
       storage.data.stored += 20n;
       await insertProcessor(simulation, storage, adapters);
@@ -847,7 +824,6 @@ describe("event bus", () => {
   test("refiner should draw power and ore on sim clock tick when working", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const refiner = createRefinerManager({ count: 1 });
     await insertProcessor(simulation, refiner, adapters);
     await processUntilSettled(
@@ -878,7 +854,6 @@ describe("event bus", () => {
   test("refiner should refine ore into metal when supplied with power (and ore)", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const refiner = createRefinerManager({ count: 1 });
     await insertProcessor(simulation, refiner, adapters);
     for (const event of [
@@ -912,7 +887,6 @@ describe("event bus", () => {
   test("refiner integration", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createPlanet(), adapters);
     const powerGrid = createPowerGrid();
     powerGrid.data.stored +=
@@ -959,7 +933,6 @@ describe("event bus", () => {
   test("factory should draw power and metal on simulation clock tick", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const factory = createFactoryManager({ count: 1 });
     await insertProcessor(simulation, factory, adapters);
     await processUntilSettled(
@@ -989,7 +962,6 @@ describe("event bus", () => {
   test("factory should produce packaged satellite when supplied with power and metal", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const factory = createFactoryManager({ count: 1 });
     await insertProcessor(simulation, factory, adapters);
     simulation = await broadcastEvent(
@@ -1031,7 +1003,6 @@ describe("event bus", () => {
   test("factory integration", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
 
     const powerGrid = createPowerGrid();
     powerGrid.data.stored +=
@@ -1068,7 +1039,6 @@ describe("event bus", () => {
   test("launcher should draw power when not fully charged", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = 0n;
     await insertProcessor(simulation, launcher, adapters);
@@ -1091,7 +1061,6 @@ describe("event bus", () => {
   test("launcher should draw packaged satellite when fully charged", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     await insertProcessor(simulation, launcher, adapters);
@@ -1114,7 +1083,6 @@ describe("event bus", () => {
   test("launcher should launch supplied satellite on sim clock tick when fully charged", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     await insertProcessor(simulation, launcher, adapters);
@@ -1145,7 +1113,6 @@ describe("event bus", () => {
   test("launcher should empty charge when launching satellite", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const launcher = createLauncherManager({ count: 1 });
     launcher.data.charge = tickConsumption.launcher.get(Resource.ELECTRICITY)!;
     await insertProcessor(simulation, launcher, adapters);
@@ -1179,7 +1146,6 @@ describe("event bus", () => {
   test("swarm should increase in count when satellite is launched", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const swarm = createSwarm({ count: 0 });
     await insertProcessor(simulation, swarm, adapters);
     await processUntilSettled(
@@ -1208,7 +1174,6 @@ describe("event bus", () => {
   test("swarm should reflect energy flux emitted by star", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     const count = 3;
     await insertProcessor(simulation, createSwarm({ count }), adapters);
@@ -1245,7 +1210,6 @@ describe("event bus", () => {
   test("collector should produce energy when processing satellite reflected emission", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const count = 3;
     await insertProcessor(
       simulation,
@@ -1277,7 +1241,6 @@ describe("event bus", () => {
   test("swarm integration", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     await insertProcessor(simulation, createStar(), adapters);
     await insertProcessor(simulation, createSwarm({ count: 1 }), adapters);
     await insertProcessor(
@@ -1313,7 +1276,6 @@ describe("event bus", () => {
       async (construct) => {
         const adapters = initInMemoryAdapters();
         let simulation = await loadSave(emptySave(), adapters);
-        simulation = adapters.setup(simulation);
         const fabricator = createFabricator();
         fabricator.data.job = construct;
         await insertProcessor(simulation, fabricator, adapters);
@@ -1343,7 +1305,6 @@ describe("event bus", () => {
       async (construct) => {
         const adapters = initInMemoryAdapters();
         let simulation = await loadSave(emptySave(), adapters);
-        simulation = adapters.setup(simulation);
         const fabricator = createFabricator();
         fabricator.data.job = construct;
         await insertProcessor(simulation, fabricator, adapters);
@@ -1390,7 +1351,6 @@ describe("event bus", () => {
     ])("construct: %s", async (construct) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       for (const createManager of [
         createCollectorManager,
         createMinerManager,
@@ -1435,7 +1395,6 @@ describe("event bus", () => {
   test("fabricator should clear internal job when receiving command to do so", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const fabricator = createFabricator();
     fabricator.data.job = Construct.SATELLITE_FACTORY;
     await insertProcessor(simulation, fabricator, adapters);
@@ -1501,7 +1460,6 @@ describe("event bus", () => {
   test("tripped power grid should supply nothing (but still store production)", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const grid = createPowerGrid();
     grid.data.breakerTripped = true;
     grid.data.stored = 100n;
@@ -1549,7 +1507,6 @@ describe("event bus", () => {
   test("grid should fulfill command to reset tripped circuit breaker", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const grid = createPowerGrid();
     grid.data.breakerTripped = true;
     await insertProcessor(simulation, grid, adapters);
@@ -1580,7 +1537,6 @@ describe("event bus", () => {
   test("grid should fulfill command to trip breaker", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const grid = createPowerGrid();
     grid.data.breakerTripped = false;
     await insertProcessor(simulation, grid, adapters);
@@ -1618,7 +1574,6 @@ describe("event bus", () => {
     ])("construct: %s", async (construct) => {
       const adapters = initInMemoryAdapters();
       let simulation = await loadSave(emptySave(), adapters);
-      simulation = adapters.setup(simulation);
       for (const createManager of [
         createMinerManager,
         createRefinerManager,
@@ -1666,7 +1621,6 @@ describe("event bus", () => {
   test("fabricator job queue state should update when receiving command to do so", async () => {
     const adapters = initInMemoryAdapters();
     let simulation = await loadSave(emptySave(), adapters);
-    simulation = adapters.setup(simulation);
     const fabricator = createFabricator();
     await insertProcessor(simulation, fabricator, adapters);
     await processUntilSettled(

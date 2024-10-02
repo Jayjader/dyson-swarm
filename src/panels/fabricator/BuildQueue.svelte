@@ -6,7 +6,6 @@
   import { getClock } from "../../events/processes/clock";
   import { getFabricator } from "../../events/processes/fabricator";
   import { Construct } from "../../gameRules";
-  import { getPrimitive } from "../../hud/types";
   import type { BuildOrder, Repeat } from "../../types";
   import { isRepeat } from "../../types";
   import BuildQueueItem from "./BuildQueueItem.svelte";
@@ -22,6 +21,7 @@
     stackMode,
   } from "./store";
   import { OBJECTIVE_TRACKER_CONTEXT } from "../../objectiveTracker/store";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
 

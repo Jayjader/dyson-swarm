@@ -3,8 +3,8 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
-  import { getPrimitive } from "../../hud/types";
   import type { BusEvent } from "../../events/events";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   let tripped = false,
     lastTick = 0;

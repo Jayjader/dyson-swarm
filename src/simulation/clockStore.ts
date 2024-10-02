@@ -1,33 +1,110 @@
-import { writable } from "svelte/store";
+type Primitive = {
+  speed: number;
+  tick: number;
+};
 
-type ClockState = { outsideMillisBeforeNextTick: number };
+export type Play = [Primitive];
+export type Pause = [Primitive, "pause"];
+export type IndirectPause = [...(Play | Pause), "indirect-pause"];
+export type NotEditing = Play | Pause | IndirectPause;
+export type EditingSpeed = [...NotEditing, "editing-speed"];
+export type ClockState = NotEditing | EditingSpeed;
+
+export function isPlay(c: ClockState): c is Play {
+  return c.length === 1;
+}
+
+export function isPause(c: ClockState): c is Pause {
+  return c.at(-1) === "pause";
+}
+
+export function isIndirectPause(c: ClockState): c is IndirectPause {
+  return c.at(-1) === "indirect-pause";
+}
+
+export function isEditing(c: ClockState): c is EditingSpeed {
+  return c.at(-1) === "editing-speed";
+}
+
+export function getPrimitive(c: ClockState): Primitive {
+  return c[0];
+}
+
+export function setPrimitive(c: ClockState, p: Primitive): ClockState {
+  c[0] = p;
+  return c;
+}
+
+export function unPause(c: Pause): Play {
+  c.pop();
+  // @ts-ignore
+  return c;
+}
+
+export function pause(c: Play): Pause {
+  // @ts-ignore
+  c.push("pause");
+  //@ts-ignore
+  return c;
+}
+
+export function indirectPause(c: Play | Pause): IndirectPause {
+  // @ts-ignore
+  c.push("indirect-pause");
+  // @ts-ignore
+  return c;
+}
+
+export function indirectResume(c: IndirectPause): Play | Pause {
+  c.pop();
+  // @ts-ignore
+  return c;
+}
+
+export function startEditing(c: NotEditing): EditingSpeed {
+  // @ts-ignore
+  c.push("editing-speed");
+  // @ts-ignore
+  return c;
+}
+
+export function stopEditing(c: EditingSpeed): NotEditing {
+  c.pop();
+  // @ts-ignore
+  return c;
+}
+
+export function setSpeed(c: NotEditing, speed: number): NotEditing {
+  getPrimitive(c).speed = speed;
+  return c;
+}
+
+type ClockCounter = { outsideMillisBeforeNextTick: number };
 interface ClockStore {
   outsideDelta(delta: number): void;
 }
-export function makeClockStore(callback: () => void): ClockStore {
-  const { update } = writable<ClockState>({ outsideMillisBeforeNextTick: 0 });
+export function makeClockStore(
+  millisBeforeClockTick: number,
+  callback: () => void,
+) {
+  let counter = { outsideMillisBeforeNextTick: millisBeforeClockTick };
   return {
+    counter,
     outsideDelta(delta: number) {
-      update((state) => outsideDelta(state, delta));
+      counter = outsideDelta(counter, delta, callback);
     },
   };
 }
 
-function outsideDelta(state: ClockState, delta: number) {
+function outsideDelta(
+  state: ClockCounter,
+  delta: number,
+  callback: () => void,
+) {
   state.outsideMillisBeforeNextTick -= delta;
+  while (state.outsideMillisBeforeNextTick <= 0) {
+    state.outsideMillisBeforeNextTick += 1_000;
+    callback();
+  }
   return state;
 }
-
-export const testStore = {
-  withMillisBeforeNextTick: (
-    millis: number,
-  ): { state: ClockState } & ClockStore => {
-    let state = { outsideMillisBeforeNextTick: millis };
-    return {
-      state,
-      outsideDelta: (delta: number) => {
-        state = outsideDelta(state, delta);
-      },
-    };
-  },
-} as const;

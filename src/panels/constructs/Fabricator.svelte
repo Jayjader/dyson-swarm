@@ -7,8 +7,8 @@
   import type { Construct } from "../../gameRules";
   import { constructionCosts } from "../../gameRules";
   import { getClock } from "../../events/processes/clock";
-  import { getPrimitive } from "../../hud/types";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 

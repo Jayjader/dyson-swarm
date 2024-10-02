@@ -1,3 +1,7 @@
+import type { BusEvent, Events } from "../events";
+import type { SubscriptionsFor } from "../subscriptions";
+import type { EventProcessor } from "./index";
+import type { Adapters } from "../../adapters";
 import {
   type ClockState,
   getPrimitive,
@@ -13,11 +17,7 @@ import {
   startEditing,
   stopEditing,
   unPause,
-} from "../../hud/types";
-import type { BusEvent, Events } from "../events";
-import type { SubscriptionsFor } from "../subscriptions";
-import type { EventProcessor } from "./index";
-import type { Adapters } from "../../adapters";
+} from "../../simulation/clockStore";
 
 export type Clock = EventProcessor<
   "clock",

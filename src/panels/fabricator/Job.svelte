@@ -10,9 +10,9 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
-  import { getPrimitive } from "../../hud/types";
   import { getClock } from "../../events/processes/clock";
   import { ICON } from "../../icons";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   type Job = [Construct, Input] | null;
 

@@ -3,8 +3,8 @@
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getClock } from "../../events/processes/clock";
   import { Resource } from "../../gameRules";
-  import { getPrimitive } from "../../hud/types";
   import Storage from "./Storage.svelte";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   const watt = "W";
   const wattTick = `${watt}t`;
