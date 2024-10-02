@@ -165,10 +165,10 @@ export async function processUntilSettled(
 export const SIMULATION_STORE = Symbol();
 
 export type SimulationStore = Readable<Simulation> & {
-  processUntilSettled: () => void;
-  broadcastEvent: (e: BusEvent) => void;
-  loadSave: (s: SaveState) => Promise<SimulationStore>;
-  loadNew: (outsideTick: DOMHighResTimeStamp) => Promise<SimulationStore>;
+  processUntilSettled: () => Promise<void>;
+  broadcastEvent: (e: BusEvent) => Promise<void>;
+  loadSave: (s: SaveState) => Promise<void>;
+  loadNew: (outsideTick: DOMHighResTimeStamp) => Promise<void>;
   adapters: Adapters;
   objectives: ObjectiveTracker;
 };
@@ -180,7 +180,7 @@ export function makeSimulationStore(
     bus: { subscriptions: new Map() },
   });
   const { subscribe, set } = baseData;
-  const store = {
+  return {
     subscribe,
     processUntilSettled: async () => {
       const sim = get(baseData);
@@ -195,7 +195,6 @@ export function makeSimulationStore(
     },
     loadSave: async (s: SaveState) => {
       set(await loadSave(s, adapters));
-      return store;
     },
     loadNew: async (outsideTick: DOMHighResTimeStamp) => {
       const simulation = {
@@ -219,10 +218,8 @@ export function makeSimulationStore(
       );
 */
       set(simulation);
-      return store;
     },
     adapters,
     objectives,
   };
-  return store;
 }
