@@ -124,6 +124,15 @@
         >
           Hide All
         </button>
+        <button
+          class="border-gray-slate m-2 rounded border-2 p-2"
+          on:click={() => {
+            hidden.clear();
+            hidden = hidden;
+          }}
+        >
+          Show All
+        </button>
       </li>
       {#each [...slidingWindow.keys()].toSorted() as pointCategory}
         <li
