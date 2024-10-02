@@ -10,31 +10,27 @@ export function sqlEventPersistenceAdapter(
   sqlWorker: SqlWorker,
 ): EventPersistenceAdapter {
   return {
-    persistEvent(event: BusEvent) {
-      if (
-        "outside-clock-tick" !== event.tag &&
-        "simulation-clock-tick" !== event.tag
-      ) {
+    async persistEvent(event: BusEvent) {
+      // todo (clock refactor): remove this condition
+      if ("outside-clock-tick" !== event.tag) {
         const tick = getTick(event);
-        if ((event as TimeStamped)?.timeStamp !== undefined) {
-          if (tick !== undefined) {
-            return sqlWorker.persistTickTimestampEvent(
-              tick,
-              event as BusEvent & TimeStamped,
-            );
-          } else {
-            return sqlWorker.persistTimestampEvent(
-              event as BusEvent & TimeStamped,
-            );
-          }
+        const timeStamp = (event as TimeStamped)?.timeStamp;
+        if (tick !== undefined && timeStamp !== undefined) {
+          await sqlWorker.persistTickTimestampEvent(
+            tick,
+            event as BusEvent & TimeStamped,
+          );
         } else if (tick !== undefined) {
-          return sqlWorker.persistTickEvent(tick, event);
+          await sqlWorker.persistTickEvent(tick, event);
+        } else if (timeStamp !== undefined) {
+          await sqlWorker.persistTimestampEvent(
+            event as BusEvent & TimeStamped,
+          );
         }
       }
-      return Promise.resolve();
     },
-    deliverEvent(event: BusEvent, to: string) {
-      return sqlWorker.deliverToInbox(event, to);
+    async deliverEvent(event: BusEvent, to: string) {
+      await sqlWorker.deliverToInbox(event, to);
     },
   };
 }
