@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fly } from "svelte/transition";
   import { onMount } from "svelte";
-  import type { LeafObjective } from "./objectiveTracker/objectives";
+  import type { Aside, LeafObjective } from "./objectiveTracker/objectives";
 
   export let fragments: LeafObjective["details"];
 
@@ -16,8 +16,8 @@
     const offset = index === 0 ? 2 : 1;
     return STANDARD_DELAY * (asideIndex + offset);
   }
-  function resolveAsKey(data: string | string[]): string {
-    return typeof data === "string" ? data : data[1];
+  function resolveAsKey(data: Aside | (string | [string, string])): string {
+    return typeof data === "string" ? data : data[1][1];
   }
 </script>
 
