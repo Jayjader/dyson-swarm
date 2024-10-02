@@ -1,8 +1,14 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { makeCloneDialogStore } from "./cloneDialog";
+  import {
+    type CloneDialog,
+    makeCloneDialogStore,
+    type StoreState,
+  } from "./cloneDialog";
   import { readSaveStateFromStorage, writeSlotToStorage } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
+  import type { EventHandler } from "svelte/elements";
+  import type { Save } from "../uiStore";
 
   const dispatch = createEventDispatcher();
 
@@ -11,25 +17,37 @@
     element.showModal();
   });
 
+  const onDialogClose: EventHandler<Event, HTMLDialogElement> = (event) =>
+    dispatch("close", event.target!.returnValue);
+
   export let clonedSaveName: string;
+  function startRead() {
+    return new Promise((resolve, reject) => {
+      const saveState = readSaveStateFromStorage(
+        clonedSaveName,
+        window.localStorage,
+      );
+      if (saveState !== null) {
+        resolve(saveState);
+      } else {
+        reject(null);
+      }
+    });
+  }
+  function startWrite(saveState: Save) {
+    return new Promise<void>((resolve) => {
+      writeSlotToStorage(saveState, window.localStorage);
+      resolve();
+    });
+  }
   const store = makeCloneDialogStore();
-  let current;
-  let confirm, cancel;
+  let current: undefined | StoreState<CloneDialog | "closed">;
+  let confirm: undefined | (() => void);
+  let cancel: undefined | (() => void);
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") {
       if (current === undefined) {
-        store.act(() =>
-          actions.startClone(
-            new Promise((resolve, reject) => {
-              const saveState = readSaveStateFromStorage(
-                clonedSaveName,
-                window.localStorage,
-              );
-              if (saveState === null) return reject(null);
-              resolve(saveState);
-            }),
-          ),
-        );
+        store.act(() => actions.startClone(startRead()));
       }
       return;
     } else if (
@@ -42,35 +60,28 @@
       cancel =
         actions.cancel === undefined
           ? undefined
-          : store.act.bind(this, actions.cancel);
+          : () => store.act(actions.cancel);
       confirm =
         actions.confirm === undefined
           ? undefined
-          : store.act.bind(this, actions.confirm);
+          : () => store.act(actions.confirm);
     }
 
     if (dialog.state === "progress-read-save") {
       dialog.promise.then(
         (saveState) => {
           saveState.name = `${clonedSaveName} (cloned)`;
-          store.act(
-            actions.success.bind(
-              this,
-              new Promise((resolve) => {
-                writeSlotToStorage(saveState, window.localStorage);
-                resolve();
-              }),
-            ),
-          );
+          store.act(() => actions.success(startWrite(saveState)));
         },
-        (error) => store.act(actions.fail.bind(this, error)),
+        (error) => store.act(() => actions.fail(error)),
       );
     } else if (dialog.state === "progress-write-save") {
-      dialog.promise.then(store.act.bind(this, actions.success), (error) =>
-        store.act(actions.fail.bind(this, error)),
+      dialog.promise.then(
+        () => store.act(actions.success),
+        (error) => store.act(() => actions.fail(error)),
       );
     }
-    current = { dialog, actions };
+    current = { dialog, actions } as StoreState<typeof dialog>;
   });
   onDestroy(storeSub);
 </script>
@@ -78,27 +89,29 @@
 <dialog
   class="border-2 border-slate-900"
   bind:this={element}
-  on:close={(event) => dispatch("close", event.target.returnValue)}
+  on:close={onDialogClose}
 >
   <form method="dialog">
     <h3>Clone save: {clonedSaveName}</h3>
-    {#if current.dialog.state === "progress-read-save"}
+    {#if current === undefined || current.dialog === "closed"}
+      This should not be visible!!!!!!!!!
+    {:else if current && current.dialog.state === "progress-read-save"}
       <label>
         Reading save...
         <progress />
       </label>
-    {:else if current.dialog.state === "failure-read-save"}
+    {:else if current && current.dialog.state === "failure-read-save"}
       <p class="text-red-700">Reading save failed.</p>
       <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
-    {:else if current.dialog.state === "progress-write-save"}
+    {:else if current && current.dialog.state === "progress-write-save"}
       <label>
         Writing save...
         <progress />
       </label>
-    {:else if current.dialog.state === "failure-write-save"}
+    {:else if current && current.dialog.state === "failure-write-save"}
       <p class="text-red-700">Writing save failed.</p>
       <ErrorDisplay>{current.dialog.error}</ErrorDisplay>
-    {:else if current.dialog.state === "success-clone"}
+    {:else if current && current.dialog.state === "success-clone"}
       <p>Save cloned.</p>
     {/if}
     <div class="flex flex-row justify-between gap-2">
