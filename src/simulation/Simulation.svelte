@@ -28,6 +28,7 @@
   import type { Adapters } from "../adapters";
   import Introduction from "../Introduction.svelte";
   import type { LeafObjective } from "../objectiveTracker/objectives";
+  import { makeClockStore } from "./clockStore";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   async function readStoredResource(
@@ -74,6 +75,22 @@
     clockFrame = 0;
   }
 
+  const ticksRequested = new Set();
+  const ticksSimulated = new Set();
+  const promises: Array<Promise<void>> = [];
+  const clockStore = makeClockStore(1000, (tick: number) => {
+    ticksRequested.add(tick);
+    const promise = simulation
+      .tickClock(tick)
+      .then(() => simulation.processUntilSettled())
+      .then(() => {
+        ticksSimulated.add(tick);
+        promises.splice(promises.indexOf(promise), 1);
+      });
+    promises.push(promise);
+  });
+  let firstTimestamp: DOMHighResTimeStamp | undefined;
+  let lastTimestamp: undefined | DOMHighResTimeStamp = undefined;
   function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
     if (swarm >= 2 ** 50) {
       cancelCallback();
@@ -84,9 +101,32 @@
           "This game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published.",
       );
     }
-    simulation.broadcastEvent({ tag: "outside-clock-tick", timeStamp });
-    simulation.processUntilSettled();
-    scheduleCallback(outsideClockLoop);
+    if (firstTimestamp === undefined) {
+      firstTimestamp = timeStamp;
+    }
+    if (lastTimestamp === undefined) {
+      lastTimestamp = timeStamp;
+    }
+
+    clockStore.outsideDelta(timeStamp - lastTimestamp);
+
+    if (ticksRequested.size < 10) {
+      scheduleCallback(outsideClockLoop);
+    } else {
+      console.debug("ticks requested:", [...ticksRequested]);
+      const difference = ticksRequested.difference(ticksSimulated);
+      if (difference.size > 0) {
+        console.log("waiting for requested ticks to simulate:", [
+          ...difference,
+        ]);
+        // todo: store refs to promises and do a Promise.settled(..) on them
+        Promise.allSettled(promises).then(() =>
+          console.log("finished simulating"),
+        );
+      }
+      console.debug("ticks simulated:", [...ticksSimulated]);
+    }
+    lastTimestamp = timeStamp;
   }
 
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
@@ -108,7 +148,7 @@
   const introDetails = (simulation.objectives.objectives[0] as LeafObjective)
     .details;
 
-  //scheduleCallback(outsideClockLoop);
+  scheduleCallback(outsideClockLoop);
 </script>
 
 {#if showIntro}

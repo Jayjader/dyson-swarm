@@ -167,6 +167,7 @@ export const SIMULATION_STORE = Symbol();
 export type SimulationStore = Readable<Simulation> & {
   processUntilSettled: () => Promise<void>;
   broadcastEvent: (e: BusEvent) => Promise<void>;
+  tickClock: (t: number) => Promise<void>;
   loadSave: (s: SaveState) => Promise<void>;
   loadNew: (outsideTick: DOMHighResTimeStamp) => Promise<void>;
   adapters: Adapters;
@@ -192,6 +193,11 @@ export function makeSimulationStore(
       const sim = get(baseData);
       const broadcasted = await broadcastEvent(sim, e, adapters);
       set(broadcasted);
+    },
+    tickClock: async (t: number) => {
+      const sim = get(baseData);
+      const ticked = await tickClock(t, sim, adapters);
+      set(ticked);
     },
     loadSave: async (s: SaveState) => {
       set(await loadSave(s, adapters));
