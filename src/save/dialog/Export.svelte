@@ -1,38 +1,53 @@
 <script lang="ts">
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { makeExportDialogStore } from "./exportDialog";
-  import { readSaveStateFromStorage, writeSaveDataToBlob } from "../save";
+  import { type ExportDialog, makeExportDialogStore } from "./exportDialog";
+  import {
+    readSaveStateFromStorage,
+    type SaveState,
+    writeSaveDataToBlob,
+  } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
+  import type { EventHandler } from "svelte/elements";
 
   const dispatch = createEventDispatcher();
+  const dispatchClose: EventHandler<Event, HTMLDialogElement> = (event) =>
+    dispatch("close", event.target!.returnValue);
 
   let element: HTMLDialogElement;
   onMount(() => {
     element.showModal();
   });
 
+  function startPreparingSave() {
+    return new Promise<SaveState>((resolve, reject) => {
+      const saveState = readSaveStateFromStorage(saveName, window.localStorage);
+      if (saveState !== null) {
+        resolve(saveState);
+      } else {
+        reject(new Error("save state is null"));
+      }
+    });
+  }
+
+  function startExport(fileName: string, saveState: SaveState) {
+    return new Promise<void>((resolve) => {
+      const save = { name: `${fileName}.json`, ...saveState };
+      writeSaveDataToBlob(save, document);
+      resolve();
+    });
+  }
+
   export let saveName: string;
   const store = makeExportDialogStore();
-  let current;
-  let confirm, cancel;
-  let fileName, fileData;
+  let current: undefined | { dialog: ExportDialog | "closed"; actions: any };
+  let confirm: undefined | (() => void);
+  let cancel: undefined | (() => void);
+  let fileName: undefined | string;
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") return;
     if (dialog.state === "input-filename") {
-      cancel = store.act.bind(this, actions.cancel);
-      confirm = store.act.bind(this, () =>
-        actions.confirm(
-          new Promise((resolve, reject) => {
-            const saveState = readSaveStateFromStorage(
-              saveName,
-              window.localStorage,
-            );
-            if (saveState === null)
-              return reject(new Error("save state is null"));
-            resolve(saveState);
-          }),
-        ),
-      );
+      cancel = () => store.act(actions.cancel);
+      confirm = () => store.act(() => actions.confirm(startPreparingSave()));
     } else if (
       dialog.state === "progress-read-save" ||
       dialog.state === "progress-export-save"
@@ -43,33 +58,22 @@
       confirm =
         actions.confirm === undefined
           ? undefined
-          : store.act.bind(this, actions.confirm);
+          : () => store.act(actions.confirm);
       cancel =
         actions.cancel === undefined
           ? undefined
-          : store.act.bind(this, actions.cancel);
+          : () => store.act(actions.cancel);
     }
     if (dialog.state === "progress-read-save") {
       dialog.promise.then(
         (saveState) =>
-          store.act(() =>
-            actions.success(
-              new Promise((resolve) => {
-                const save = { name: `${fileName}.json`, ...saveState };
-                writeSaveDataToBlob(save, document);
-                resolve();
-              }),
-            ),
-          ),
-        (error) => store.act(actions.fail.bind(this, error)),
+          store.act(() => actions.success(startExport(fileName!, saveState))),
+        (error) => store.act(() => actions.fail(error)),
       );
     } else if (dialog.state === "progress-export-save") {
       dialog.promise.then(
-        (data) => {
-          fileData = data;
-          store.act(actions.success);
-        },
-        (error) => store.act(actions.fail.bind(this, error)),
+        () => store.act(actions.success),
+        (error) => store.act(() => actions.fail(error)),
       );
     }
     current = { dialog, actions };
@@ -80,11 +84,13 @@
 <dialog
   class="border-2 border-slate-900"
   bind:this={element}
-  on:close={(event) => dispatch("close", event.target.returnValue)}
+  on:close={dispatchClose}
 >
   <form method="dialog">
     <h3>Export save: {saveName}</h3>
-    {#if current.dialog.state === "input-filename"}
+    {#if current === undefined || current.dialog === "closed"}
+      This should not be visible!!!!!!!!!
+    {:else if current.dialog.state === "input-filename"}
       <label
         >File name<input
           name="fileName"

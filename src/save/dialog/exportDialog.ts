@@ -1,22 +1,23 @@
 import type { Failure, Progress, Success } from "./types";
 import { derived, writable } from "svelte/store";
+import type { SaveState } from "../save";
 
 export type ExportDialog = { action: "export" } & (
   | {
       state: "input-filename" | Success<"export-save">;
     }
-  | { state: Progress<"read-save">; promise: Promise<any> }
+  | { state: Progress<"read-save">; promise: Promise<SaveState> }
   | { state: Failure<"read-save">; error: Error }
-  | { state: Progress<"export-save">; promise: Promise<any> }
+  | { state: Progress<"export-save">; promise: Promise<void> }
   | { state: Failure<"export-save">; error: Error }
 );
 export const export_graph = {
   closed: {
-    startExport: () => ({ action: "export", state: "input-filename" } as const),
+    startExport: () => ({ action: "export", state: "input-filename" }) as const,
   },
   "input-filename": {
     cancel: () => "closed",
-    confirm: (promise: Promise<any>) => ({
+    confirm: (promise: Promise<SaveState>) => ({
       action: "export",
       state: "progress-read-save",
       promise,
@@ -28,7 +29,7 @@ export const export_graph = {
       state: "failure-read-save",
       error,
     }),
-    success: (promise: Promise<any>) => ({
+    success: (promise: Promise<void>) => ({
       action: "export",
       state: "progress-export-save",
       promise,
@@ -48,7 +49,7 @@ export const export_graph = {
 };
 export function makeExportDialogStore() {
   const current = writable<"closed" | ExportDialog>(
-    export_graph.closed.startExport()
+    export_graph.closed.startExport(),
   );
   const withActions = derived(current, (dialog) => ({
     dialog,
