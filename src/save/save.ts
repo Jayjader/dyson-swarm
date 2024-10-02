@@ -39,34 +39,6 @@ export type OldSaveState = {
     Processor["core"] & { data: Processor["data"]; incoming: [] }
   >;
 };
-async function loadOldSave(actualSaveState: OldSaveState, adapters: Adapters) {
-  const sim = { bus: { subscriptions: new Map() } };
-  for (const processor of actualSaveState.processors) {
-    if (SUBSCRIPTIONS[processor.tag] === undefined) {
-      continue;
-    }
-    for (const eventTag of SUBSCRIPTIONS[processor.tag]) {
-      const subsForEvent = sim.bus.subscriptions.get(eventTag);
-      if (subsForEvent !== undefined) {
-        subsForEvent.add(processor.id);
-      } else {
-        sim.bus.subscriptions.set(eventTag, new Set([processor.id]));
-      }
-    }
-    await adapters.eventSources.insertSource(processor.id);
-    await adapters.snapshots.persistSnapshot(
-      actualSaveState.stream.data.unfinishedTick, // todo: check if this works with all old save files
-      processor.id,
-      processor.data,
-    );
-    for (const [_tick, events] of actualSaveState.stream.data.received) {
-      for (const event of events) {
-        await adapters.events.write.persistEvent(event);
-      }
-    }
-  }
-  return sim;
-}
 export function migrateOldSave(save: OldSaveState): SaveState {
   const migrated: SaveState = {
     version: versions[1],
@@ -92,7 +64,10 @@ export function migrateOldSave(save: OldSaveState): SaveState {
   }
   return migrated;
 }
-async function loadNewSave(save: SaveState, adapters: Adapters) {
+export async function loadSave(
+  save: SaveState,
+  adapters: Adapters,
+): Promise<Simulation> {
   const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
   for (const { id, tag } of save.sources) {
     if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
@@ -141,16 +116,6 @@ async function loadNewSave(save: SaveState, adapters: Adapters) {
     }
   }
   return sim;
-}
-export async function loadSave(
-  save: SaveState,
-  adapters: Adapters,
-): Promise<Simulation> {
-  if (save.version === "adapters-rewrite") {
-    return await loadNewSave(save, adapters);
-  } else {
-    return await loadOldSave(save as unknown as OldSaveState, adapters);
-  }
 }
 
 export async function generateSave(adapters: Adapters): Promise<SaveState> {

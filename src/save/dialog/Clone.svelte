@@ -75,11 +75,8 @@
     if (dialog.state === "progress-read-save") {
       dialog.promise.then(
         ({ name, ...saveState }: Save) => {
-          if (saveState.version === "initial-json") {
-            saveState = migrateOldSave(saveState as unknown as OldSaveState);
-          }
-          const cloned = { name: `${name} (cloned)`, ...saveState };
-          store.act(() => actions.success(startWrite(cloned)));
+          const taggedAsCloned = { name: `${name} (cloned)`, ...saveState };
+          store.act(() => actions.success(startWrite(taggedAsCloned)));
         },
         (error) => store.act(() => actions.fail(error)),
       );
