@@ -5549,7 +5549,7 @@
       "height": 80,
       "angle": 0,
       "strokeColor": "#1e1e1e",
-      "backgroundColor": "#ffec99",
+      "backgroundColor": "#b2f2bb",
       "fillStyle": "solid",
       "strokeWidth": 2,
       "strokeStyle": "solid",
@@ -5561,8 +5561,8 @@
         "type": 3
       },
       "seed": 1633417974,
-      "version": 674,
-      "versionNonce": 1989990435,
+      "version": 675,
+      "versionNonce": 35270307,
       "isDeleted": false,
       "boundElements": [
         {
@@ -5614,7 +5614,7 @@
           "type": "arrow"
         }
       ],
-      "updated": 1727876856623,
+      "updated": 1727881445059,
       "link": null,
       "locked": false
     },
