@@ -1,90 +1,100 @@
 <script lang="ts">
-  import { makeImportDialogStore } from "./importDialog";
+  import { type ImportDialog, makeImportDialogStore } from "./importDialog";
   import { createEventDispatcher, onDestroy, onMount } from "svelte";
-  import { deleteSave, type SaveState, writeSlotToStorage } from "../save";
+  import {
+    deleteSave,
+    migrateOldSave,
+    type OldSaveState,
+    type SaveState,
+    writeSlotToStorage,
+  } from "../save";
   import ErrorDisplay from "./ErrorDisplay.svelte";
   import { SaveJSON } from "../save.js";
+  import type { Save } from "../uiStore";
+  import type { EventHandler } from "svelte/elements";
 
   const dispatch = createEventDispatcher();
+  const dispatchOnClose: EventHandler<Event, HTMLDialogElement> = (event) =>
+    dispatch("close", event.target!.returnValue);
 
   let element: HTMLDialogElement;
   onMount(() => {
     element.showModal();
   });
 
-  export let overWrittenName: undefined | string;
+  async function startParse(fileData: File) {
+    const data = await fileData.text();
+    let parsed = SaveJSON.parse(data) as SaveState;
+    if (parsed?.version === undefined || parsed?.version === "initial-json") {
+      parsed = migrateOldSave(parsed as unknown as OldSaveState);
+    }
+    return { name: fileData.name, ...parsed };
+  }
+
+  function startDelete() {
+    return new Promise<void>((resolve) => {
+      deleteSave(window.localStorage, nameToOverwrite!);
+      resolve();
+    });
+  }
+
+  function startWrite(save: Save) {
+    return new Promise<void>((resolve) => {
+      writeSlotToStorage(save, window.localStorage);
+      resolve();
+    });
+  }
+
+  export let nameToOverwrite: undefined | string;
   const store = makeImportDialogStore();
-  let current;
-  let confirm, cancel;
+  let current: undefined | { dialog: ImportDialog | "closed"; actions: any };
+  let confirm: undefined | (() => void);
+  let cancel: undefined | (() => void);
   const storeSub = store.subscribe(({ dialog, actions }) => {
     if (dialog === "closed") {
       if (current === undefined) {
-        store.act(
-          actions.startImport.bind(this, overWrittenName !== undefined),
-        );
+        store.act(() => actions.startImport(nameToOverwrite !== undefined));
       }
       return;
     } else if (dialog.state === "input-file") {
-      cancel = store.act.bind(this, actions.cancel);
-      confirm = store.act.bind(this, () => {
-        const fileData = element.firstChild!.elements["fileName"].files[0];
-        return actions.confirm(
-          fileData.text().then((data) => {
-            return {
-              name: fileData.name,
-              ...(SaveJSON.parse(data) as SaveState),
-            };
-          }),
-        );
-      });
+      cancel = () => store.act.bind(actions.cancel);
+      confirm = () =>
+        store.act(() => {
+          const fileData = element.firstChild!.elements["fileName"].files[0];
+          return actions.confirm(startParse(fileData));
+        });
     } else {
       confirm =
         actions.confirm === undefined
           ? undefined
-          : store.act.bind(this, actions.confirm);
+          : () => store.act(actions.confirm);
       cancel =
         actions.cancel === undefined
           ? undefined
-          : store.act.bind(this, actions.cancel);
+          : () => store.act(actions.cancel);
     }
     if (dialog.state === "progress-import-save") {
       dialog.promise.then(
         (save) => {
-          const overWritten = overWrittenName !== undefined;
-          store.act(
-            actions.success.bind(
-              this,
+          const overWritten = nameToOverwrite !== undefined;
+          store.act(() =>
+            actions.success(
               overWritten,
-              overWritten
-                ? new Promise((resolve) => {
-                    deleteSave(window.localStorage, overWrittenName!);
-                    resolve(save);
-                  })
-                : new Promise<void>((resolve) => {
-                    writeSlotToStorage(save, window.localStorage);
-                    resolve();
-                  }),
+              overWritten ? startDelete().then(() => save) : startWrite(save),
             ),
           );
         },
-        (error) => store.act(actions.fail.bind(this, error)),
+        (error) => store.act(() => actions.fail(error)),
       );
     } else if (dialog.state === "progress-delete") {
       dialog.promise.then(
-        (save) =>
-          store.act(() =>
-            actions.success(
-              new Promise<void>((resolve) => {
-                writeSlotToStorage(save, window.localStorage);
-                resolve();
-              }),
-            ),
-          ),
-        (error) => store.act(actions.fail.bind(this, error)),
+        (save) => store.act(() => actions.success(startWrite(save))),
+        (error) => store.act(() => actions.fail(error)),
       );
     } else if (dialog.state === "progress-write-save") {
-      dialog.promise.then(store.act.bind(this, actions.success), (error) =>
-        store.act(actions.fail.bind(this, error)),
+      dialog.promise.then(
+        () => store.act(actions.success),
+        (error) => store.act(() => actions.fail(error)),
       );
     }
     current = { dialog, actions };
@@ -95,13 +105,15 @@
 <dialog
   class="border-2 border-slate-900"
   bind:this={element}
-  on:close={(event) => dispatch("close", event.target.returnValue)}
+  on:close={dispatchOnClose}
 >
   <form method="dialog">
     <h3>Import save</h3>
-    {#if current.dialog.state === "warn-overwrite"}
+    {#if current === undefined || current.dialog === "closed"}
+      This should not be visible!!!!!!!!!
+    {:else if current.dialog.state === "warn-overwrite"}
       <p>
-        This will delete the existing simulation data for {overWrittenName}.
+        This will delete the existing simulation data for {nameToOverwrite}.
         Delete saved data?
       </p>
     {:else if current.dialog.state === "input-file"}

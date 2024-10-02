@@ -197,7 +197,7 @@
       }}
     />
   {:else if dialog === "import"}
-    <Import overWrittenName={selected.name} on:close={uiStore.endAction} />
+    <Import nameToOverwrite={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "export" && selected.name}
     <Export saveName={selected.name} on:close={uiStore.endAction} />
   {:else if dialog === "clone" && selected.name}
