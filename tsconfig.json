@@ -4,10 +4,9 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules/*", "__sapper__/*", "public/*"],
   "compilerOptions": {
-    "types": ["jest", "svelte", "@testing-library/jest-dom"],
+    "types": ["svelte"],
     "target": "ESNext",
     "strict": true,
-    "verbatimModuleSyntax": true,
     "moduleResolution": "Bundler"
   }
 }
