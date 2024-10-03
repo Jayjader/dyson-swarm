@@ -86,7 +86,7 @@ interface ClockStore {
 const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
 export function makeClockStore(
   millisBeforeClockTick: number,
-  callback: (tick: number) => void,
+  simTickCallback: (tick: number) => void,
   options: Partial<
     Primitive & {
       mode: "play" | "pause" | "indirect-pause";
@@ -101,22 +101,20 @@ export function makeClockStore(
   return {
     counter,
     outsideDelta(delta: number) {
-      counter = outsideDelta(counter, delta, callback);
-      counter.outsideMillisBeforeNextTick -= delta;
-      while (counter.outsideMillisBeforeNextTick <= 0) {
-        counter.outsideMillisBeforeNextTick += Math.floor(1_000 / speed);
-        console.debug("clock store tick: ", tick);
-        tick += 1;
-        callback(tick);
+      if (mode === "play") {
+        counter.outsideMillisBeforeNextTick -= delta;
+        while (counter.outsideMillisBeforeNextTick <= 0) {
+          counter.outsideMillisBeforeNextTick += Math.floor(1_000 / speed);
+          console.debug(
+            "clock store tick: ",
+            tick,
+            "; primitive: ",
+            JSON.stringify(primitive),
+          );
+          tick += 1;
+          simTickCallback(tick);
+        }
       }
     },
   };
-}
-
-function outsideDelta(
-  state: ClockCounter,
-  delta: number,
-  callback: (t: number) => void,
-) {
-  return state;
 }
