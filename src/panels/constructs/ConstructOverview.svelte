@@ -30,9 +30,9 @@
   } from "../../events/processes/satelliteSwarm";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
-  import { getPrimitive } from "../../hud/types";
   import { getClock } from "../../events/processes/clock";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
+  import { getPrimitive } from "../../simulation/clockStore";
 
   const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
 
@@ -63,15 +63,35 @@
     constructs.set("planet", await getPlanetMass(simulation.adapters));
     constructs.set("swarm", await getSwarmCount(simulation.adapters));
     constructs = constructs;
+    console.debug(constructs);
     const fab = await getFabricator(simulation.adapters);
     fabricator.working = fab.working;
     fabricator.job = fab.job;
   });
 
-  const count = (map, tag) => map.get(tag)?.count ?? 0;
-  const working = (map, tag) => map.get(tag)?.working ?? 0;
+  const count = (
+    map: Map<
+      "star" | "planet" | "swarm" | Construct,
+      { count: number; working: number }
+    >,
+    tag: "star" | "planet" | "swarm" | Construct,
+  ) => map.get(tag)?.count ?? 0;
+  const working = (
+    map: Map<
+      "star" | "planet" | "swarm" | Construct,
+      { count: number; working: number }
+    >,
+    tag: "star" | "planet" | "swarm" | Construct,
+  ) => map.get(tag)?.working ?? 0;
 
-  const setCount = (construct, count) => {
+  const setCount = (
+    construct:
+      | Construct.MINER
+      | Construct.REFINER
+      | Construct.SATELLITE_FACTORY
+      | Construct.SATELLITE_LAUNCHER,
+    count: number,
+  ) => {
     const busEvent = {
       tag: "command-set-working-count",
       count,
@@ -116,7 +136,10 @@
           <div class="flex flex-col">
             <h5 class="font-bold">Mass:</h5>
             <output style="overflow-wrap: anywhere"
-              >{formatter.format(constructs.get("star"))} {kilogram}</output
+              >{formatter.format(
+                constructs.get("star") ?? Number.NEGATIVE_INFINITY,
+              )}
+              {kilogram}</output
             >
           </div>
         </div>
@@ -154,7 +177,9 @@
           <fieldset class="flex flex-col">
             <legend class="font-bold">Count:</legend>
             <output style="overflow-wrap: anywhere"
-              >{formatter.format(constructs.get("swarm"))}</output
+              >{formatter.format(
+                constructs.get("swarm") ?? Number.NEGATIVE_INFINITY,
+              )}</output
             >
           </fieldset>
         </div>
@@ -390,7 +415,10 @@
           max={count(constructs, Construct.SATELLITE_FACTORY)}
           value={working(constructs, Construct.SATELLITE_FACTORY)}
           on:change={(e) =>
-            setCount(Construct.SATELLITE_FACTORY, parseInt(e.target.value, 10))}
+            setCount(
+              Construct.SATELLITE_FACTORY,
+              parseInt(e.target?.value ?? "0", 10),
+            )}
           style="max-width: {widthForNumberInput(
             working(constructs, Construct.SATELLITE_FACTORY),
           )}ch"
