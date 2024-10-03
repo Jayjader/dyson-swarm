@@ -87,6 +87,7 @@ interface ClockStore {
 }
 type ClockMode = "play" | "pause";
 const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
+const MILLISECONDS_IN_A_SECOND = 1_000;
 export function makeClockStore(
   millisBeforeClockTick: number,
   simTickCallback: (tick: number) => void,
@@ -106,11 +107,9 @@ export function makeClockStore(
     outsideDelta(delta: number) {
       update((state) => {
         if (state.mode === "play" && !state.isInterrupted) {
-          counter.outsideMillisBeforeNextTick -= delta;
+          counter.outsideMillisBeforeNextTick -= delta * state.speed;
           while (counter.outsideMillisBeforeNextTick <= 0) {
-            counter.outsideMillisBeforeNextTick += Math.floor(
-              1_000 / state.speed,
-            );
+            counter.outsideMillisBeforeNextTick += MILLISECONDS_IN_A_SECOND;
             state.tick += 1;
             console.debug(
               "clock store tick: ",

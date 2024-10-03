@@ -141,3 +141,32 @@ describe("interruptability/hard-lock/indirectly pausing by user actions", () => 
     );
   });
 });
+
+describe("speed behavior", () => {
+  test("twice the speed means double the ticks (and callbacks) over the same time delta", () => {
+    const initialSpeed = 1;
+    const initialTick = 10;
+    const initialMillisLeft = 900;
+    const delta = (initialMillisLeft * 1.1) / initialSpeed;
+    const initialCallback = vitest.fn();
+    const store = makeClockStore(initialMillisLeft, initialCallback, {
+      mode: "play",
+      speed: initialSpeed,
+      tick: initialTick,
+    });
+    store.outsideDelta(delta);
+    store.subscribe(({ tick }) => expect(tick).toEqual(initialTick + 1));
+    expect(initialCallback).toHaveBeenCalledOnce();
+
+    const doubleSpeed = initialSpeed * 2;
+    const doubleCallback = vitest.fn();
+    const doubleStore = makeClockStore(initialMillisLeft, doubleCallback, {
+      mode: "play",
+      speed: doubleSpeed,
+      tick: initialTick,
+    });
+    doubleStore.outsideDelta(delta);
+    doubleStore.subscribe(({ tick }) => expect(tick).toEqual(initialTick + 2));
+    expect(doubleCallback).toHaveBeenCalledTimes(2);
+  });
+});
