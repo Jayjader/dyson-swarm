@@ -119,7 +119,6 @@
         console.log("waiting for requested ticks to simulate:", [
           ...difference,
         ]);
-        // todo: store refs to promises and do a Promise.settled(..) on them
         Promise.allSettled(promises).then(() =>
           console.log("finished simulating"),
         );
