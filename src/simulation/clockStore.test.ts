@@ -44,3 +44,11 @@ test("paused clock does not advance counter nor trigger callback when given an o
   expect(store.counter.outsideMillisBeforeNextTick).toEqual(800);
   expect(callback).not.toHaveBeenCalled();
 });
+
+test("play->pause method", () => {
+  const store = makeClockStore(800, () => {}, { mode: "play" });
+  store.pause();
+  store.subscribe(({ mode }) => {
+    expect(mode).toEqual("pause");
+  });
+});

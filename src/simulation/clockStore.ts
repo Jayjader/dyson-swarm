@@ -1,3 +1,5 @@
+import { writable } from "svelte/store";
+
 type Primitive = {
   speed: number;
   tick: number;
@@ -83,38 +85,48 @@ type ClockCounter = { outsideMillisBeforeNextTick: number };
 interface ClockStore {
   outsideDelta(delta: number): void;
 }
+type ClockMode = "play" | "pause" | "indirect-pause" | "editing-speed";
 const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
 export function makeClockStore(
   millisBeforeClockTick: number,
   simTickCallback: (tick: number) => void,
-  options: Partial<
-    Primitive & {
-      mode: "play" | "pause" | "indirect-pause";
-    }
-  > = {},
+  options: Partial<Primitive & { mode: ClockMode }> = {},
 ) {
   let counter = { outsideMillisBeforeNextTick: millisBeforeClockTick };
-  let mode = options?.mode ?? clockDefaults.mode;
-  let speed = options?.speed ?? clockDefaults.speed;
-  let tick = options?.tick ?? clockDefaults.tick;
-  let primitive = { speed, tick };
+  const mode = options?.mode ?? clockDefaults.mode;
+  const speed = options?.speed ?? clockDefaults.speed;
+  const tick = options?.tick ?? clockDefaults.tick;
+  const primitive = { speed, tick };
+  const { subscribe, update } = writable({ mode, speed, tick });
   return {
+    subscribe,
     counter,
     outsideDelta(delta: number) {
-      if (mode === "play") {
-        counter.outsideMillisBeforeNextTick -= delta;
-        while (counter.outsideMillisBeforeNextTick <= 0) {
-          counter.outsideMillisBeforeNextTick += Math.floor(1_000 / speed);
-          console.debug(
-            "clock store tick: ",
-            tick,
-            "; primitive: ",
-            JSON.stringify(primitive),
-          );
-          tick += 1;
-          simTickCallback(tick);
+      update((state) => {
+        if (state.mode === "play") {
+          counter.outsideMillisBeforeNextTick -= delta;
+          while (counter.outsideMillisBeforeNextTick <= 0) {
+            counter.outsideMillisBeforeNextTick += Math.floor(
+              1_000 / state.speed,
+            );
+            state.tick += 1;
+            console.debug(
+              "clock store tick: ",
+              state.tick,
+              "; primitive: ",
+              JSON.stringify(primitive),
+            );
+            simTickCallback(tick);
+          }
         }
-      }
+        return { mode, speed, tick };
+      });
+    },
+    pause() {
+      update((state) => {
+        state.mode = "pause";
+        return state;
+      });
     },
   };
 }
