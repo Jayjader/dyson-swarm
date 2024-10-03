@@ -1,6 +1,5 @@
 import type { Resource } from "../../gameRules";
 import type { SUBSCRIPTIONS } from "../subscriptions";
-import type { Clock } from "./clock";
 import type { CollectorManager } from "./collector";
 import type { Fabricator } from "./fabricator";
 import type { LauncherManager } from "./launcher";
@@ -29,7 +28,6 @@ export type EventProcessor<
   : never;
 
 export type Processor =
-  | Clock
   | Star
   | Planet
   | CollectorManager

@@ -1,13 +1,15 @@
 <script lang="ts">
   import Job from "./Job.svelte";
   import BuildQueue from "./BuildQueue.svelte";
+  import type { ClockStore } from "../../simulation/clockStore";
+  export let clockStore: ClockStore;
 </script>
 
 <section class="rounded border-2 border-slate-100 p-2 text-slate-100">
   <h2 class="text-center">Fabricator</h2>
   <div class="flex flex-row flex-wrap gap-2">
-    <Job />
-    <BuildQueue />
+    <Job {clockStore} />
+    <BuildQueue {clockStore} />
   </div>
 </section>
 

@@ -30,18 +30,21 @@
   } from "../../events/processes/satelliteSwarm";
   import { getFabricator } from "../../events/processes/fabricator";
   import { getContext, onDestroy } from "svelte";
-  import { getClock } from "../../events/processes/clock";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
+
+  export let clockStore: ClockStore;
+  let lastTick = Number.NEGATIVE_INFINITY;
+  $: lastTick = $clockStore.tick;
 
   let constructs = new Map();
   let fabricator = { working: false, job: null as Construct | null };
-  let lastTick = 0;
 
   const unsubscribeFromSim = simulation.subscribe(async (_sim) => {
-    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
     constructs.set(
       Construct.SOLAR_COLLECTOR,
       await getCollectorCount(simulation.adapters),
@@ -67,6 +70,7 @@
     const fab = await getFabricator(simulation.adapters);
     fabricator.working = fab.working;
     fabricator.job = fab.job;
+    console.debug(fabricator);
   });
 
   const count = (
@@ -218,7 +222,7 @@
           constructs.get("swarm") === 0
             ? ""
             : ` (+ ${formatter.format(
-                BigInt(constructs.get("swarm")) *
+                BigInt(constructs.get("swarm") ?? 0) *
                   fluxReflected(SOL_LUMINOSITY_W, MERCURY_SEMIMAJOR_AXIS_M, 1),
               )} ${watt} reflected from satellites)`
         }`,
@@ -239,8 +243,8 @@
       >
     </fieldset>
   </ConstructOverview>
-  <GridBreaker />
-  <Fabricator />
+  <GridBreaker {clockStore} />
+  <Fabricator {clockStore} />
   <div class="flex flex-grow flex-row justify-items-stretch gap-1">
     <div
       class="flex flex-grow basis-2/5 flex-row gap-1 rounded border-2 border-orange-300 bg-zinc-600 p-1 text-amber-300"
@@ -268,14 +272,16 @@
       consumes={[
         {
           name: "energy",
-          value: tickConsumption[Construct.MINER].get(Resource.ELECTRICITY),
+          value:
+            tickConsumption[Construct.MINER].get(Resource.ELECTRICITY) ??
+            Number.NaN,
           unit: watt,
           icon: energy,
         },
       ]}
       produces={{
         name: "metal ore",
-        value: tickProduction[Construct.MINER].get(Resource.ORE),
+        value: tickProduction[Construct.MINER].get(Resource.ORE) ?? Number.NaN,
         unit: kilogram,
         icon: ore,
       }}
@@ -298,7 +304,10 @@
               min={0}
               value={working(constructs, Construct.MINER)}
               on:change={(e) =>
-                setCount(Construct.MINER, parseInt(e?.target?.value ?? 0, 10))}
+                setCount(
+                  Construct.MINER,
+                  parseInt(e?.target?.value ?? "0", 10),
+                )}
               style="max-width: {widthForNumberInput(
                 working(constructs, Construct.MINER),
               )}ch"
@@ -324,20 +333,21 @@
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY),
+        value:
+          tickConsumption[Construct.REFINER].get(Resource.ELECTRICITY) ?? NaN,
         unit: watt,
         icon: energy,
       },
       {
         name: "ore",
-        value: tickConsumption[Construct.REFINER].get(Resource.ORE),
+        value: tickConsumption[Construct.REFINER].get(Resource.ORE) ?? NaN,
         unit: kilogram,
         icon: ore,
       },
     ]}
     produces={{
       name: "refined metal",
-      value: tickProduction[Construct.REFINER].get(Resource.METAL),
+      value: tickProduction[Construct.REFINER].get(Resource.METAL) ?? NaN,
       unit: kilogram,
       icon: metal,
     }}
@@ -356,7 +366,7 @@
           max={count(constructs, Construct.REFINER)}
           value={working(constructs, Construct.REFINER)}
           on:change={(e) =>
-            setCount(Construct.REFINER, parseInt(e.target.value, 10))}
+            setCount(Construct.REFINER, parseInt(e.target?.value ?? "0", 10))}
           style="max-width: {widthForNumberInput(
             working(constructs, Construct.REFINER),
           )}ch"
@@ -379,24 +389,28 @@
     consumes={[
       {
         name: "energy",
-        value: tickConsumption[Construct.SATELLITE_FACTORY].get(
-          Resource.ELECTRICITY,
-        ),
+        value:
+          tickConsumption[Construct.SATELLITE_FACTORY].get(
+            Resource.ELECTRICITY,
+          ) ?? NaN,
         unit: watt,
         icon: energy,
       },
       {
         name: "refined metal",
-        value: tickConsumption[Construct.SATELLITE_FACTORY].get(Resource.METAL),
+        value:
+          tickConsumption[Construct.SATELLITE_FACTORY].get(Resource.METAL) ??
+          NaN,
         unit: kilogram,
         icon: metal,
       },
     ]}
     produces={{
       name: "packaged satellite",
-      value: tickProduction[Construct.SATELLITE_FACTORY].get(
-        Resource.PACKAGED_SATELLITE,
-      ),
+      value:
+        tickProduction[Construct.SATELLITE_FACTORY].get(
+          Resource.PACKAGED_SATELLITE,
+        ) ?? NaN,
       unit: "(packaged)",
       icon: satellite,
     }}
@@ -486,7 +500,7 @@
           on:change={(e) =>
             setCount(
               Construct.SATELLITE_LAUNCHER,
-              parseInt(e.target.value, 10),
+              parseInt(e.target?.value ?? "0", 10),
             )}
           style="max-width: {widthForNumberInput(
             working(constructs, Construct.SATELLITE_LAUNCHER),

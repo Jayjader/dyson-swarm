@@ -47,10 +47,14 @@ export function fluxReflected(
   reflectionOrbitSurfaceRadius: bigint,
   swarmCount: number,
 ): bigint {
+  const factor = 128;
+  const dividedByFactor = reflectionOrbitSurfaceRadius / BigInt(factor);
   // inverse power square law
   return (
     (BigInt(swarmCount) * fluxEmitted) /
-    BigInt(4 * Math.PI * Number(reflectionOrbitSurfaceRadius ** 2n))
+    (BigInt(Math.floor(4 * Math.PI * factor)) *
+      dividedByFactor *
+      reflectionOrbitSurfaceRadius)
   );
   // Before refactoring the above expression, please consider the following:
   // As a general rule, attempt to minimize loss of information/precision incurred from necessary conversions

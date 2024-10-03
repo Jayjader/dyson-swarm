@@ -1,15 +1,6 @@
 import { Resource } from "../gameRules";
 
 export const SUBSCRIPTIONS = {
-  clock: new Set([
-    "outside-clock-tick",
-    "command-simulation-clock-play",
-    "command-simulation-clock-pause",
-    "command-simulation-clock-indirect-pause",
-    "command-simulation-clock-indirect-resume",
-    "command-simulation-clock-start-editing-speed",
-    "command-simulation-clock-set-speed",
-  ] as const),
   star: new Set(["simulation-clock-tick"] as const),
   planet: new Set(["mine-planet-surface", "simulation-clock-tick"] as const),
   collector: new Set([

@@ -17,7 +17,7 @@
   const showIntro = false;
 
   async function startNewSimulation() {
-    await appStateStore.startNewSim(window.performance.now(), showIntro);
+    await appStateStore.startNewSim(showIntro);
   }
 
   function closeSettings(event: CustomEvent) {

@@ -2,18 +2,20 @@
   import { getGridState } from "../../events/processes/powerGrid";
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
-  import { getClock } from "../../events/processes/clock";
   import type { BusEvent } from "../../events/events";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
-  let tripped = false,
-    lastTick = 0;
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
-  const unsubSim = simulation.subscribe(async (sim) => {
+  let lastTick = Number.NEGATIVE_INFINITY;
+  let tripped = false;
+  export let clockStore: ClockStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
+  const unsubscribeFromClock = clockStore.subscribe(async ({ tick }) => {
+    lastTick = tick;
     tripped = (await getGridState(simulation.adapters)).breakerTripped;
-    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
   });
-  onDestroy(unsubSim);
+  onDestroy(unsubscribeFromClock);
 
   const toggleBreaker = () => {
     const timeStamp = performance.now();

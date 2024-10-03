@@ -1,17 +1,18 @@
 <script lang="ts">
   export let name: string = "unknown";
   export let consumesVerb = "consumes";
+  type ValueType = string | number | bigint;
   export let consumes = [
     {
       name: "unknown",
-      value: 0,
+      value: 0 as ValueType,
       unit: "unit",
       icon: "https://via.placeholder.com/28.png",
     },
   ];
   export let produces = {
     name: "unknown",
-    value: 0,
+    value: 0 as ValueType,
     unit: "unit",
     icon: "https://via.placeholder.com/28.png",
   };

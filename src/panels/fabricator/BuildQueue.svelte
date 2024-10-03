@@ -3,7 +3,6 @@
   import { scale } from "svelte/transition";
   import { flip } from "svelte/animate";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
-  import { getClock } from "../../events/processes/clock";
   import { getFabricator } from "../../events/processes/fabricator";
   import { Construct } from "../../gameRules";
   import type { BuildOrder, Repeat } from "../../types";
@@ -20,48 +19,64 @@
     queryAt,
     stackMode,
   } from "./store";
-  import { OBJECTIVE_TRACKER_CONTEXT } from "../../objectiveTracker/store";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import {
+    OBJECTIVE_TRACKER_CONTEXT,
+    type ObjectiveTracker,
+  } from "../../objectiveTracker/store";
+  import { type ClockStore } from "../../simulation/clockStore";
+  import type { ObjectivePosition } from "../../objectiveTracker/objectives";
 
-  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT);
+  const { objectives } = getContext(OBJECTIVE_TRACKER_CONTEXT) as {
+    objectives: ObjectiveTracker;
+  };
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
 
   let savedQueue: BuildOrder[] = [];
   let uiQueue: BuildOrder[] = [];
   let tick = 0;
   let showProcessorQueue = true;
 
-  const unsubSim = simulation.subscribe(async (sim) => {
-    savedQueue = getFabricator(sim).queue;
-    tick = getPrimitive(await getClock(simulation.adapters)).tick;
+  export let clockStore: ClockStore;
+
+  const unsubSim = clockStore.subscribe(async (clock) => {
+    tick = clock.tick;
+    savedQueue = (await getFabricator(simulation.adapters)).queue;
   });
   const uiState = makeBuildQueueUiStore(objectives);
 
   setContext(BUILD_QUEUE_STORE, { uiState });
-  let mode;
-  let edited, previousFiniteValue, insertionPoint;
+  let mode: ReturnType<typeof stackMode>;
+  let edited:
+      | { position: [number, ...number[]]; repeatCount: number }
+      | undefined,
+    previousFiniteValue: number,
+    insertionPoint: ObjectivePosition;
   const unsubUi = uiState.subscribe((stack) => {
     mode = stackMode(stack);
     showProcessorQueue = mode === "read-only";
     uiQueue = clone(stack.at(mode === "edit" ? 0 : 1)?.present.queue ?? []);
     insertionPoint =
-      mode !== "add-build-select-construct" ? undefined : stack[0].before;
+      mode !== "add-build-select-construct" ? undefined : stack[0]!.before;
     edited =
       mode !== "add-repeat-confirm"
         ? undefined
         : {
-            position: stack[0].initial,
+            position: stack[0]!.initial,
             repeatCount: (
-              queryAt(stack[0].initial, stack[1].present.queue) as Repeat
+              queryAt(stack[0]!.initial, stack[1]!.present.queue) as Repeat
             ).count,
           };
   });
   function setRepeatCount(newCount: number) {
-    if (!Number.isFinite(newCount)) {
-      previousFiniteValue = edited.repeatCount;
+    if (edited) {
+      if (!Number.isFinite(newCount)) {
+        previousFiniteValue = edited.repeatCount;
+      }
+      uiState.changeRepeatCount(edited.position, newCount);
     }
-    uiState.changeRepeatCount(edited.position, newCount);
   }
   $: queue = showProcessorQueue ? savedQueue : uiQueue;
   function enterEdit() {

@@ -4,22 +4,30 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
-  import type { Construct } from "../../gameRules";
+  import { type Construct, type Input, Resource } from "../../gameRules";
   import { constructionCosts } from "../../gameRules";
-  import { getClock } from "../../events/processes/clock";
   import WorkingCountToggle from "./WorkingCountToggle.svelte";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
 
-  let lastTick = 0;
+  export let clockStore: ClockStore;
+  let lastTick = Number.NEGATIVE_INFINITY;
+  $: lastTick = $clockStore.tick;
+
   let on = true;
   let buildOrder: Construct | null;
-  let consumes = [];
-  const unsubscribe = simulation.subscribe(async (sim) => {
-    lastTick = getPrimitive(await getClock(simulation.adapters)).tick;
-    on = getFabricator(sim).working;
-    buildOrder = getFabricator(sim).job;
+  let consumes: Array<{
+    name: Resource;
+    value: BigInt;
+    unit: string;
+    icon: string;
+  }> = [];
+  const unsubscribe = simulation.subscribe(async (_sim) => {
+    on = (await getFabricator(simulation.adapters)).working;
+    buildOrder = (await getFabricator(simulation.adapters)).job;
     if (buildOrder) {
       consumes = [...constructionCosts[buildOrder]].map(
         ([resource, amount]) => ({

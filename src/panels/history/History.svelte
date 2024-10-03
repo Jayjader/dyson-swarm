@@ -1,11 +1,10 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
-  import { getClock } from "../../events/processes/clock";
   import type { BusEvent } from "../../events/events";
   import HistoryGraph from "./graph/Graph.svelte";
   import colors from "./graph/colors";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
   const getPointData = (e: BusEvent) => {
     switch (e.tag) {
@@ -44,19 +43,15 @@
     [number, number][] | [number, bigint][]
   >();
   let windowPromise: Promise<void> | undefined;
-  $: {
-    if (windowPromise === undefined) {
-      windowPromise = queryEvents();
-    }
-  }
-  const unsubFromSim = simulation.subscribe(async () => {
-    const currentTick = getPrimitive(await getClock(simulation.adapters)).tick;
+  export let clockStore: ClockStore;
+  const unsubscribeFromClock = clockStore.subscribe(async ({ tick }) => {
+    const currentTick = tick;
     if (currentTick !== lastTick) {
       lastTick = currentTick;
-      windowPromise = undefined;
+      windowPromise = queryEvents();
     }
   });
-  onDestroy(unsubFromSim);
+  onDestroy(unsubscribeFromClock);
   const windowSize = 300;
   async function queryEvents() {
     const events = await simulation.adapters.events.read.getTickEventsRange(
@@ -87,6 +82,7 @@
         }
       }
     }
+    console.log({ slidingWindowMapContents: [...slidingWindow] });
     slidingWindow = slidingWindow;
   }
 
@@ -98,14 +94,19 @@
   <button
     class="m-2 rounded border-2 border-gray-900 px-2"
     on:click={() => {
-      console.log({ slidingWindowMap: [...slidingWindow] });
       simulation.adapters.eventSources.debugSources();
       simulation.adapters.snapshots.debugSnapshots();
+      simulation.adapters.events.read.getTickEventsRange(0).then(console.debug);
     }}
   >
     debug points
   </button>
   <div class="flex flex-row items-stretch gap-1">
+    {#if windowPromise}
+      {#await windowPromise}
+        querying...
+      {/await}
+    {/if}
     <HistoryGraph
       data={[...slidingWindow.entries()].filter(([key]) => !hidden.has(key))}
       toX={lastTick}

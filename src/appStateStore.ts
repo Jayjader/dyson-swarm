@@ -73,10 +73,7 @@ export function makeAppStateStore(settings: SettingsStore, inMemory: boolean) {
         return state;
       });
     },
-    async startNewSim(
-      outsideClockTick: DOMHighResTimeStamp,
-      showIntro: boolean,
-    ) {
+    async startNewSim(showIntro: boolean) {
       const objectiveTracker = makeObjectiveTracker();
       if (showIntro) {
         objectiveTracker.setActive([0]); // Intro
@@ -85,7 +82,7 @@ export function makeAppStateStore(settings: SettingsStore, inMemory: boolean) {
         ? initInMemoryAdapters()
         : initSqlAdapters(await getOrCreateSqlWorker());
       const simulationStore = makeSimulationStore(objectiveTracker, adapters);
-      await simulationStore.loadNew(outsideClockTick);
+      await simulationStore.loadNew();
       update(({ settings }) => {
         return {
           settings,

@@ -80,17 +80,17 @@
   const promises: Array<Promise<void>> = [];
   const clockStore = makeClockStore(1000, (tick: number) => {
     ticksRequested.add(tick);
-    const promise = simulation
-      .tickClock(tick)
-      .then(() => simulation.processUntilSettled())
-      .then(() => {
-        ticksSimulated.add(tick);
-        promises.splice(promises.indexOf(promise), 1);
-      });
+    const promise = (async () => {
+      await simulation.tickClock(tick);
+      await simulation.processUntilSettled();
+    })().then(() => {
+      ticksSimulated.add(tick);
+      promises.splice(promises.indexOf(promise), 1);
+    });
     promises.push(promise);
   });
   let firstTimestamp: DOMHighResTimeStamp | undefined;
-  let lastTimestamp: undefined | DOMHighResTimeStamp = undefined;
+  let lastTimestamp: DOMHighResTimeStamp | undefined = undefined;
   function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
     if (swarm >= 2 ** 50) {
       cancelCallback();
@@ -163,7 +163,7 @@
     </div>
 
     <div class="flex flex-row flex-wrap justify-around gap-2">
-      <TimeControl />
+      <TimeControl {clockStore} />
       <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
@@ -195,16 +195,16 @@
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
     {#if $uiPanelsState.has("history")}
-      <History />
+      <History {clockStore} />
     {/if}
     {#if $uiPanelsState.has("construct-overview")}
-      <ConstructOverview />
+      <ConstructOverview {clockStore} />
     {/if}
     {#if $uiPanelsState.has("storage-overview")}
-      <StorageOverview {resources} />
+      <StorageOverview {resources} {clockStore} />
     {/if}
     {#if $uiPanelsState.has("fabricator")}
-      <Fabricator />
+      <Fabricator {clockStore} />
     {/if}
   </div>
   <PanelSelector />

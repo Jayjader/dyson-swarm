@@ -1,10 +1,9 @@
 <script lang="ts">
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
-  import { getClock } from "../../events/processes/clock";
   import { Resource } from "../../gameRules";
   import Storage from "./Storage.svelte";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
   const watt = "W";
   const wattTick = `${watt}t`;
@@ -12,7 +11,9 @@
 
   export let resources = new Map();
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
 
   let last = {
     tick: 0,
@@ -23,8 +24,9 @@
       [Resource.PACKAGED_SATELLITE, { produce: 0n, supply: 0n }],
     ]),
   };
-  const unsubSim = simulation.subscribe(async (_sim) => {
-    const currentTick = getPrimitive(await getClock(simulation.adapters)).tick; // todo: don't forget this part in the upcoming refactor of clock vs simulation
+  export let clockStore: ClockStore;
+  const unsubscribeFromClock = clockStore.subscribe(async ({ tick }) => {
+    const currentTick = tick;
     if (currentTick > last.tick) {
       const events =
         await simulation.adapters.events.read.getTickEvents(currentTick);
@@ -51,7 +53,7 @@
       }
     }
   });
-  onDestroy(unsubSim);
+  onDestroy(unsubscribeFromClock);
 </script>
 
 <section class="flex flex-col gap-1 rounded border-2 border-slate-100 p-1">

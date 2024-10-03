@@ -2,7 +2,6 @@ import { get, type Readable, writable } from "svelte/store";
 import { Resource } from "../gameRules";
 import { type BusEvent, type EventTag, getTick } from "./events";
 import { type Id, type Processor, tagFromId } from "./processes";
-import { type Clock, clockProcess, createClock } from "./processes/clock";
 import { type CollectorManager, collectorProcess } from "./processes/collector";
 import { type Fabricator, fabricatorProcess } from "./processes/fabricator";
 import { type LauncherManager, launcherProcess } from "./processes/launcher";
@@ -82,8 +81,6 @@ export async function tickClock(
 
 function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
   switch (p.core.tag) {
-    case "clock":
-      return clockProcess(p as Clock, inbox);
     case "star":
       return starProcess(p as Star, inbox);
     case "planet":
@@ -132,6 +129,7 @@ export async function processUntilSettled(
   while ((await adapters.events.read.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
     for (let processorId of await adapters.eventSources.getAllSourceIds()) {
+      // todo: peek inbox only for "next" tick + empty it afterwards
       const inbox = await adapters.events.read.getInbox(processorId);
       if (inbox.length > 0) {
         const inboxTick = getTick(inbox[0])!;
@@ -169,7 +167,7 @@ export type SimulationStore = Readable<Simulation> & {
   broadcastEvent: (e: BusEvent) => Promise<void>;
   tickClock: (t: number) => Promise<void>;
   loadSave: (s: SaveState) => Promise<void>;
-  loadNew: (outsideTick: DOMHighResTimeStamp) => Promise<void>;
+  loadNew: () => Promise<void>;
   adapters: Adapters;
   objectives: ObjectiveTracker;
 };
@@ -202,19 +200,13 @@ export function makeSimulationStore(
     loadSave: async (s: SaveState) => {
       set(await loadSave(s, adapters));
     },
-    loadNew: async (outsideTick: DOMHighResTimeStamp) => {
+    loadNew: async () => {
       const simulation = {
         bus: { subscriptions: new Map() },
       };
       for (let processor of newGame()) {
         await insertProcessor(simulation, processor, adapters);
       }
-      // todo: remove this once the refactoring out of the clock processor type is finished
-      await insertProcessor(
-        simulation,
-        createClock(outsideTick, "clock-0", { mode: "pause" }),
-        adapters,
-      );
       /*
       // todo: remove this once the refactoring of the objectives is finished
       insertProcessor(

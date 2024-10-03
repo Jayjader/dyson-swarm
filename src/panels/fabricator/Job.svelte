@@ -10,13 +10,14 @@
   import { getContext, onDestroy } from "svelte";
   import { SIMULATION_STORE, type SimulationStore } from "../../events";
   import { getFabricator } from "../../events/processes/fabricator";
-  import { getClock } from "../../events/processes/clock";
   import { ICON } from "../../icons";
-  import { getPrimitive } from "../../simulation/clockStore";
+  import { type ClockStore } from "../../simulation/clockStore";
 
   type Job = [Construct, Input] | null;
 
-  const simulation = getContext(SIMULATION_STORE).simulation as SimulationStore;
+  const { simulation } = getContext(SIMULATION_STORE) as {
+    simulation: SimulationStore;
+  };
 
   const matsProgress = tweened<number>(0, {
     duration: 150,
@@ -39,8 +40,9 @@
     matsTotal = 0n;
   let lastTick = 0;
 
-  const unsubSim = simulation.subscribe(async () => {
-    const simClockTick = getPrimitive(await getClock(simulation.adapters)).tick;
+  export let clockStore: ClockStore;
+  const unsubscribeFromClock = clockStore.subscribe(async ({ tick }) => {
+    const simClockTick = tick;
     if (lastTick === simClockTick) {
       return;
     }
@@ -87,7 +89,7 @@
       await matsProgress.update(() => matsCurrent);
     }
   });
-  onDestroy(unsubSim);
+  onDestroy(unsubscribeFromClock);
 
   function clearJob() {
     const busEvent = {
