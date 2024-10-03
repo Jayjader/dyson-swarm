@@ -82,12 +82,10 @@ export function setSpeed(c: NotEditing, speed: number): NotEditing {
 }
 
 type ClockCounter = { outsideMillisBeforeNextTick: number };
-interface ClockStore {
-  outsideDelta(delta: number): void;
-}
 type ClockMode = "play" | "pause";
 const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
 const MILLISECONDS_IN_A_SECOND = 1_000;
+export type ClockStore = ReturnType<typeof makeClockStore>;
 export function makeClockStore(
   millisBeforeClockTick: number,
   simTickCallback: (tick: number) => void,
@@ -144,6 +142,12 @@ export function makeClockStore(
     resume() {
       update((state) => {
         state.isInterrupted = false;
+        return state;
+      });
+    },
+    setSpeed(speed: number) {
+      update((state) => {
+        state.speed = speed;
         return state;
       });
     },

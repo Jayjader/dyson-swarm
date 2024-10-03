@@ -169,4 +169,9 @@ describe("speed behavior", () => {
     doubleStore.subscribe(({ tick }) => expect(tick).toEqual(initialTick + 2));
     expect(doubleCallback).toHaveBeenCalledTimes(2);
   });
+  test("method for setting speed", () => {
+    const store = makeClockStore(800, () => {}, { speed: 4, mode: "play" });
+    store.setSpeed(25);
+    store.subscribe(({ speed }) => expect(speed).toEqual(25));
+  });
 });
