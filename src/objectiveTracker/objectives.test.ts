@@ -127,6 +127,7 @@ describe("objective tracker", () => {
       });
     });
     describe("find next objective", () => {
+      // todo: investigate whether getNextObjective should be able to recurse out of a top-level objective to the next top-level in the list
       test("flat objective list", () => {
         expect(
           getNextObjective(
@@ -159,13 +160,17 @@ describe("objective tracker", () => {
           { title: "g", details: [""], steps: [] },
           { title: "h", details: [""], steps: [] },
         ];
-        expect(getNextObjective(objectives, [0])).toEqual([
+        expect(getNextObjective(objectives, [0] /* a */)).toEqual([
           { title: "d", details: [""], steps: [] },
           [1, 0, 0],
         ]);
-        expect(getNextObjective(objectives, [1, 0, 1])).toEqual([
+        expect(getNextObjective(objectives, [1, 0, 1] /* e */)).toEqual([
+          { title: "f", details: [""], steps: [] },
+          [1, 1],
+        ]);
+        expect(getNextObjective(objectives, [1, 1] /* f */)).toEqual([
           { title: "g", details: [""], steps: [] },
-          [1, 1, 0],
+          [2],
         ]);
       });
     });
