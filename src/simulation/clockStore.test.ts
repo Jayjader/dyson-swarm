@@ -52,3 +52,11 @@ test("play->pause method", () => {
     expect(mode).toEqual("pause");
   });
 });
+
+test("pause->play method", () => {
+  const store = makeClockStore(800, () => {}, { mode: "pause" });
+  store.play();
+  store.subscribe(({ mode }) => {
+    expect(mode).toEqual("play");
+  });
+});

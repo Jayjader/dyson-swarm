@@ -119,12 +119,18 @@ export function makeClockStore(
             simTickCallback(tick);
           }
         }
-        return { mode, speed, tick };
+        return state;
       });
     },
     pause() {
       update((state) => {
         state.mode = "pause";
+        return state;
+      });
+    },
+    play() {
+      update((state) => {
+        state.mode = "play";
         return state;
       });
     },
