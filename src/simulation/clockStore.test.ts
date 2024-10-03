@@ -35,28 +35,109 @@ describe("clock store doesn't leak time", () => {
   });
 });
 
-test("paused clock does not advance counter nor trigger callback when given an outside time delta", () => {
-  let callback = vitest.fn();
-  const store = makeClockStore(800, callback, {
-    mode: "pause",
+describe("fundamental play/pause needs", () => {
+  test("paused clock does not advance counter nor trigger callback when given an outside time delta", () => {
+    let callback = vitest.fn();
+    const store = makeClockStore(800, callback, {
+      mode: "pause",
+    });
+    store.outsideDelta(1000);
+    expect(store.counter.outsideMillisBeforeNextTick).toEqual(800);
+    expect(callback).not.toHaveBeenCalled();
   });
-  store.outsideDelta(1000);
-  expect(store.counter.outsideMillisBeforeNextTick).toEqual(800);
-  expect(callback).not.toHaveBeenCalled();
+
+  test("play->pause method", () => {
+    const store = makeClockStore(800, () => {}, { mode: "play" });
+    store.pause();
+    store.subscribe(({ mode }) => {
+      expect(mode).toEqual("pause");
+    });
+  });
+
+  test("pause->play method", () => {
+    const store = makeClockStore(800, () => {}, { mode: "pause" });
+    store.play();
+    store.subscribe(({ mode }) => {
+      expect(mode).toEqual("play");
+    });
+  });
 });
 
-test("play->pause method", () => {
-  const store = makeClockStore(800, () => {}, { mode: "play" });
-  store.pause();
-  store.subscribe(({ mode }) => {
-    expect(mode).toEqual("pause");
+describe("interruptability/hard-lock/indirectly pausing by user actions", () => {
+  test("interrupted clock does not advance internal countdown", () => {
+    const callback = vitest.fn();
+    const startingCountdown = 800;
+    const store = makeClockStore(startingCountdown, callback, {
+      mode: "play",
+      isInterrupted: true,
+    });
+    store.outsideDelta(1000);
+    expect(store.counter.outsideMillisBeforeNextTick).toEqual(
+      startingCountdown,
+    );
+    expect(callback).not.toHaveBeenCalled();
   });
-});
+  describe("allow clock to be interrupted", () => {
+    test("when paused", () => {
+      const store = makeClockStore(800, () => {}, { mode: "pause" });
+      store.interrupt();
+      store.subscribe(({ isInterrupted }) => {
+        expect(isInterrupted).toBeTruthy();
+      });
+    });
+    test("when playing", () => {
+      const store = makeClockStore(800, () => {}, { mode: "play" });
+      store.interrupt();
+      store.subscribe(({ isInterrupted }) => {
+        expect(isInterrupted).toBeTruthy();
+      });
+    });
+  });
 
-test("pause->play method", () => {
-  const store = makeClockStore(800, () => {}, { mode: "pause" });
-  store.play();
-  store.subscribe(({ mode }) => {
-    expect(mode).toEqual("play");
+  describe("allow clock to be resumed when previously interrupted", () => {
+    test("when paused", () => {
+      const store = makeClockStore(800, () => {}, { mode: "pause" });
+      store.interrupt();
+      store.resume();
+      store.subscribe(({ isInterrupted }) => {
+        expect(isInterrupted).toBeFalsy();
+      });
+    });
+    test("when playing", () => {
+      const store = makeClockStore(800, () => {}, { mode: "play" });
+      store.interrupt();
+      store.resume();
+      store.subscribe(({ isInterrupted }) => {
+        expect(isInterrupted).toBeFalsy();
+      });
+    });
+  });
+
+  describe("toggling back and forth repeatedly should work", () => {
+    test.each(["play", "pause"] as const)(
+      "ending interrupted while in %s",
+      (mode) => {
+        const store = makeClockStore(800, () => {}, { mode });
+        store.interrupt();
+        store.resume();
+        store.interrupt();
+        store.subscribe(({ isInterrupted }) => {
+          expect(isInterrupted).toBeTruthy();
+        });
+      },
+    );
+    test.each(["play", "pause"] as const)(
+      "ending not interrupted while in %s",
+      (mode) => {
+        const store = makeClockStore(800, () => {}, { mode });
+        store.interrupt();
+        store.resume();
+        store.interrupt();
+        store.resume();
+        store.subscribe(({ isInterrupted }) => {
+          expect(isInterrupted).toBeFalsy();
+        });
+      },
+    );
   });
 });

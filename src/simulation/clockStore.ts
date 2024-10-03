@@ -85,25 +85,27 @@ type ClockCounter = { outsideMillisBeforeNextTick: number };
 interface ClockStore {
   outsideDelta(delta: number): void;
 }
-type ClockMode = "play" | "pause" | "indirect-pause" | "editing-speed";
+type ClockMode = "play" | "pause";
 const clockDefaults = { mode: "pause", speed: 1, tick: 0 } as const;
 export function makeClockStore(
   millisBeforeClockTick: number,
   simTickCallback: (tick: number) => void,
-  options: Partial<Primitive & { mode: ClockMode }> = {},
+  options: Partial<
+    Primitive & { mode: ClockMode; isInterrupted: boolean }
+  > = {},
 ) {
   let counter = { outsideMillisBeforeNextTick: millisBeforeClockTick };
   const mode = options?.mode ?? clockDefaults.mode;
   const speed = options?.speed ?? clockDefaults.speed;
   const tick = options?.tick ?? clockDefaults.tick;
-  const primitive = { speed, tick };
-  const { subscribe, update } = writable({ mode, speed, tick });
+  const isInterrupted = options?.isInterrupted ?? false;
+  const { subscribe, update } = writable({ mode, speed, tick, isInterrupted });
   return {
     subscribe,
     counter,
     outsideDelta(delta: number) {
       update((state) => {
-        if (state.mode === "play") {
+        if (state.mode === "play" && !state.isInterrupted) {
           counter.outsideMillisBeforeNextTick -= delta;
           while (counter.outsideMillisBeforeNextTick <= 0) {
             counter.outsideMillisBeforeNextTick += Math.floor(
@@ -113,8 +115,8 @@ export function makeClockStore(
             console.debug(
               "clock store tick: ",
               state.tick,
-              "; primitive: ",
-              JSON.stringify(primitive),
+              "; speed: ",
+              state.speed,
             );
             simTickCallback(tick);
           }
@@ -131,6 +133,18 @@ export function makeClockStore(
     play() {
       update((state) => {
         state.mode = "play";
+        return state;
+      });
+    },
+    interrupt() {
+      update((state) => {
+        state.isInterrupted = true;
+        return state;
+      });
+    },
+    resume() {
+      update((state) => {
+        state.isInterrupted = false;
         return state;
       });
     },
