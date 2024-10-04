@@ -6,7 +6,11 @@
     setContext,
   } from "svelte";
   import "../app.css";
-  import { makeSimulationStore, SIMULATION_STORE } from "../events";
+  import {
+    makeSimulationStore,
+    type Simulation,
+    SIMULATION_STORE,
+  } from "../events";
   import { getGridState } from "../events/processes/powerGrid";
   import { getSwarmCount } from "../events/processes/satelliteSwarm";
   import { readStored } from "../events/processes/storage";
@@ -28,7 +32,7 @@
   import type { Adapters } from "../adapters";
   import Introduction from "../Introduction.svelte";
   import type { LeafObjective } from "../objectiveTracker/objectives";
-  import { makeClockStore } from "./clockStore";
+  import { type ClockStore, makeClockStore } from "./clockStore";
 
   export let simulation: ReturnType<typeof makeSimulationStore>;
   async function readStoredResource(
@@ -48,7 +52,8 @@
   let resources = new Map();
   let swarm = 0;
 
-  const unsubFromSim = simulation.subscribe(async (_sim) => {
+  let clockStore: ClockStore;
+  const unsubFromSim = simulation.subscribe(async (sim) => {
     swarm = await getSwarmCount(simulation.adapters);
     for (const resource of [
       Resource.ELECTRICITY,
@@ -62,6 +67,13 @@
       );
     }
     resources = resources; // trigger svelte reactivity
+    if (clockStore === undefined) {
+      clockStore = prepareClock(
+        sim.globalVirtualTime === Number.NEGATIVE_INFINITY
+          ? 0
+          : sim.globalVirtualTime,
+      );
+    }
   });
   onDestroy(unsubFromSim);
 
@@ -78,18 +90,31 @@
   const ticksRequested = new Set();
   const ticksSimulated = new Set();
   const promises: Array<Promise<void>> = [];
-  const clockStore = makeClockStore(1000, (tick: number) => {
-    console.debug("inside clock store callback for tick ", tick);
-    ticksRequested.add(tick);
-    const promise = (async () => {
-      await simulation.tickClock(tick);
-      await simulation.processUntilSettled();
-    })().then(() => {
-      ticksSimulated.add(tick);
-      promises.splice(promises.indexOf(promise), 1);
-    });
-    promises.push(promise);
-  });
+  // todo: figure out how to determine the starting tick from the simulation['s adapters]
+  // for a new game the default of 0 already works
+  // but to load an existing game it probably won't.
+  // what could make sense is to grab the latest snapshot of each event source,
+  // then find the earliest among them.
+  // alternatively, we track this "global virtual time"/GVT at the simulation level,
+  // and attach it to savestates to be read back at load
+  function prepareClock(forTick: number) {
+    return makeClockStore(
+      1000,
+      (tick: number) => {
+        console.debug("inside clock store callback for tick ", tick);
+        ticksRequested.add(tick);
+        const promise = (async () => {
+          await simulation.tickClock(tick);
+          await simulation.processUntilSettled();
+        })().then(() => {
+          ticksSimulated.add(tick);
+          promises.splice(promises.indexOf(promise), 1);
+        });
+        promises.push(promise);
+      },
+      { tick: forTick },
+    );
+  }
   let lastTimestamp: DOMHighResTimeStamp | undefined = undefined;
   function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
     if (swarm >= 2 ** 50) {
@@ -115,6 +140,9 @@
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
 
   const dispatchEvent = createEventDispatcher();
+  function openMenu() {
+    dispatchEvent("open-menu");
+  }
 
   let tracked = [],
     guideOpen = false;
@@ -125,7 +153,12 @@
       guideOpen = open;
     },
   );
-  onDestroy(unsubFromObjectives);
+  onDestroy(() => {
+    if (clockFrame != 0) {
+      cancelCallback();
+    }
+    unsubFromObjectives();
+  });
   let showIntro = true;
 
   const introDetails = (simulation.objectives.objectives[0] as LeafObjective)
@@ -147,11 +180,13 @@
     </div>
 
     <div class="flex flex-row flex-wrap justify-around gap-2">
-      <TimeControl {clockStore} />
+      {#if clockStore}
+        <TimeControl {clockStore} />
+      {/if}
       <div class="flex-basis-auto flex flex-grow-0 flex-col gap-2">
         <button
           class="min-h-max flex-grow self-stretch rounded border-2 border-slate-100 px-2 text-slate-100"
-          on:click={() => dispatchEvent("open-menu")}
+          on:click={openMenu}
         >
           Menu
         </button>
@@ -178,16 +213,16 @@
   </div>
 
   <div class="panels grid-auto grid overflow-y-scroll" style="--gap: 0.5rem">
-    {#if $uiPanelsState.has("history")}
+    {#if $uiPanelsState.has("history") && clockStore}
       <History {clockStore} />
     {/if}
-    {#if $uiPanelsState.has("construct-overview")}
+    {#if $uiPanelsState.has("construct-overview") && clockStore}
       <ConstructOverview {clockStore} />
     {/if}
-    {#if $uiPanelsState.has("storage-overview")}
+    {#if $uiPanelsState.has("storage-overview") && clockStore}
       <StorageOverview {resources} {clockStore} />
     {/if}
-    {#if $uiPanelsState.has("fabricator")}
+    {#if $uiPanelsState.has("fabricator") && clockStore}
       <Fabricator {clockStore} />
     {/if}
   </div>

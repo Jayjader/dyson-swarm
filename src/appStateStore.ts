@@ -44,7 +44,7 @@ export function makeAppStateStore(settings: SettingsStore, inMemory: boolean) {
         return state;
       });
     },
-    exitSettingsAndSim() {
+    exitMenuAndSim() {
       update(({ settings }) => {
         return {
           settings,

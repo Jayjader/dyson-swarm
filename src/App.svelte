@@ -20,11 +20,11 @@
     await appStateStore.startNewSim(showIntro);
   }
 
-  function closeSettings(event: CustomEvent) {
+  function closeMenu(event: CustomEvent) {
     if (event.detail === "exit-sim") {
-      appStateStore.exitSettingsAndSim();
+      appStateStore.exitMenuAndSim();
     } else {
-      appStateStore.closeSettings();
+      appStateStore.closeMenu();
     }
   }
 </script>
@@ -33,7 +33,7 @@
   <SimulationMenu
     on:open-save={appStateStore.openSave}
     on:open-settings={appStateStore.openSettings}
-    on:close={closeSettings}
+    on:close={closeMenu}
   />
 {:else if $appStateStore.inSettings}
   <Settings
@@ -42,7 +42,12 @@
   />
 {:else if $appStateStore.inSave}
   <SaveSlots />
-{:else if $appStateStore.simulation === undefined}
+{:else if $appStateStore.simulation !== undefined}
+  <Simulation
+    simulation={$appStateStore.simulation}
+    on:open-menu={appStateStore.openMenu}
+  />
+{:else}
   <main
     class="m-2 flex flex-col justify-between overflow-y-scroll rounded border-2 bg-slate-200 px-2"
   >
@@ -75,11 +80,6 @@
       </a>
     </div>
   </main>
-{:else}
-  <Simulation
-    simulation={$appStateStore.simulation}
-    on:open-menu={appStateStore.openMenu}
-  />
 {/if}
 
 <style>
@@ -88,6 +88,7 @@
     height: calc(100dvh - 2.5em);
     max-height: calc(100dvh - 2.5em);
   }
+
   button {
     min-height: 3rem;
   }
