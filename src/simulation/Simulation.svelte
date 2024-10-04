@@ -105,24 +105,11 @@
       lastTimestamp = timeStamp;
     }
 
-    clockStore.outsideDelta(timeStamp - lastTimestamp);
-
-    if (ticksRequested.size < 10) {
-      scheduleCallback(outsideClockLoop);
-    } else {
-      console.debug("ticks requested:", [...ticksRequested]);
-      const difference = ticksRequested.difference(ticksSimulated);
-      if (difference.size > 0) {
-        console.log("waiting for requested ticks to simulate:", [
-          ...difference,
-        ]);
-        Promise.allSettled(promises).then(() =>
-          console.log("finished simulating"),
-        );
-      }
-      console.debug("ticks simulated:", [...ticksSimulated]);
+    if (promises.length === 0) {
+      clockStore.outsideDelta(timeStamp - lastTimestamp);
+      lastTimestamp = timeStamp;
     }
-    lastTimestamp = timeStamp;
+    scheduleCallback(outsideClockLoop);
   }
 
   onDestroy(window.cancelAnimationFrame.bind(window, clockFrame));
