@@ -68,6 +68,7 @@ export async function tickClock(
   simulation: Simulation,
   adapters: Adapters,
 ): Promise<Simulation> {
+  console.debug("tickClock call, tick:", tick);
   await broadcastEvent(
     simulation,
     {

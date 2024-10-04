@@ -79,6 +79,7 @@
   const ticksSimulated = new Set();
   const promises: Array<Promise<void>> = [];
   const clockStore = makeClockStore(1000, (tick: number) => {
+    console.debug("inside clock store callback for tick ", tick);
     ticksRequested.add(tick);
     const promise = (async () => {
       await simulation.tickClock(tick);

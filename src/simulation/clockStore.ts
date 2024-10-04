@@ -41,7 +41,7 @@ export function makeClockStore(
               "; speed: ",
               state.speed,
             );
-            simTickCallback(tick);
+            simTickCallback(state.tick);
           }
         }
         return state;
