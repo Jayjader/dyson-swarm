@@ -8,7 +8,7 @@ export type EventsQueryAdapter = {
   getTotalInboxSize(): Promise<number>;
   getInboxSize(sourceId: string): Promise<number>;
   peekInbox(sourceId: string): Promise<BusEvent[]>;
-  getInbox(sourceId: string): Promise<BusEvent[]>; // todo: turn this into getFirstInboxAggregate or something (i.e. only get the first event from the inbox, using Time Warp's notion of "event" (all events/messages received for the same tick))
+  popInbox(sourceId: string): Promise<BusEvent[]>;
   getTickEventsRange(
     startTick: number,
     endTick?: number,
@@ -41,8 +41,8 @@ export function sqlEventsQueryAdapter(
       }
       return busEvents;
     },
-    async getInbox(sourceId: string) {
-      const rawEvents = await sqlWorker.consumeInbox(sourceId);
+    async popInbox(sourceId: string) {
+      const rawEvents = await sqlWorker.popInbox(sourceId);
       const busEvents: Array<BusEvent> = [];
       for (const rawEvent of rawEvents) {
         busEvents.push(SaveJSON.parse(rawEvent) as BusEvent);
@@ -69,10 +69,29 @@ export function memoryEventsQueryAdapter(
   inboxes: Map<Id, BusEvent[]>,
 ): EventsQueryAdapter {
   return {
-    async getInbox(sourceId: string) {
+    async popInbox(sourceId: string) {
       const inbox = inboxes.get(sourceId as Id);
-      if (inbox) {
-        return inbox.splice(0);
+      if (inbox?.length) {
+        let firstTick = Number.POSITIVE_INFINITY;
+        for (const event of inbox) {
+          const tick = getTick(event)!;
+          if (tick < firstTick) {
+            firstTick = tick;
+          }
+        }
+        const onFirstTick: BusEvent[] = [];
+        let i = 0;
+        while (i < inbox.length) {
+          const event = inbox[i];
+          const tick = getTick(event)!;
+          if (tick === firstTick) {
+            inbox.splice(0, 1);
+            onFirstTick.push(event);
+          } else {
+            i += 1;
+          }
+        }
+        return onFirstTick;
       } else {
         return [];
       }

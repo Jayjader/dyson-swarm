@@ -129,8 +129,7 @@ export async function processUntilSettled(
   while ((await adapters.events.read.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
     for (let processorId of await adapters.eventSources.getAllSourceIds()) {
-      // todo: peek inbox only for "next" tick + empty it afterwards
-      const inbox = await adapters.events.read.getInbox(processorId);
+      const inbox = await adapters.events.read.popInbox(processorId);
       if (inbox.length > 0) {
         const inboxTick = getTick(inbox[0])!;
         const [lastTick, data] =

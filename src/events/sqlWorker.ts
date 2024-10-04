@@ -49,6 +49,17 @@ CREATE TABLE ${inboxes_table_name} (
   event_id INTEGER NOT NULL,
   owner_id INTEGER NOT NULL
 );`;
+function get_single_inbox(ownerName: string) {
+  return `SELECT e.id, e.tick, e.data
+          FROM ${events_table_name} as e
+          JOIN inboxes as inb
+          ON inb.owner_id = (
+            SELECT id
+            FROM ${event_sources_table_name}
+            WHERE name = ${ownerName}
+)`;
+}
+
 // todo: different tables for different simulation savefiles
 // todo: handle generations
 
@@ -320,24 +331,22 @@ export async function getOrCreateSqlWorker() {
       const queryId = messageId;
       const [{ values }] = (await postSqlMessage(
         queryId,
-        `SELECT events.tick, events.data FROM ${events_table_name} as events
-        JOIN ${inboxes_table_name} as inboxes
-        ON inboxes.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
-        AND inboxes.event_id = events.id`,
+        `WITH owner_inbox AS (${get_single_inbox(sourceName)})
+        SELECT tick, data FROM owner_inbox
+        ;`,
         { $inboxOwner: sourceName },
       )) as Array<{ values: Array<[number, string]> }>;
       values.sort(([aTick], [bTick]) => aTick - bTick);
       return values.map(([_tick, data]) => data) ?? [];
     },
-    async consumeInbox(sourceName: string): Promise<string[]> {
+    async popInbox(sourceName: string): Promise<string[]> {
       messageId = messageId + 1;
       const queryId = messageId;
       const [{ values }] = (await postSqlMessage(
         queryId,
-        `DELETE FROM ${inboxes_table_name} as inbox
-            JOIN ${events_table_name} as e
-            ON inbox.owner_id = (SELECT id FROM ${event_sources_table_name} WHERE name = $inboxOwner)
-              AND inbox.event_id = e.id
+        `WITH owner_inbox AS (${get_single_inbox(sourceName)}),
+              to_pop AS (SELECT * from owner_inbox WHERE tick = (SELECT MIN(tick) FROM owner_inbox))
+         DELETE FROM ${inboxes_table_name} WHERE id in (SELECT id FROM to_pop)
           RETURNING tick, data
           ;`,
         { $inboxOwner: sourceName },
