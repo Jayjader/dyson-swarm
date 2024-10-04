@@ -16,11 +16,11 @@ export function sqlEventSourcesAdapter(
     debugSources() {
       sqlWorker.debugEventSources();
     },
-    insertSource(name: string) {
-      return sqlWorker.insertEventSource(name);
+    async insertSource(name: string) {
+      await sqlWorker.insertEventSource(name);
     },
-    getAllSourceIds() {
-      return sqlWorker.getAllEventSourceIds() as Promise<Array<Id>>;
+    async getAllSourceIds() {
+      return (await sqlWorker.getAllEventSourceIds()) as Array<Id>;
     },
   };
 }
