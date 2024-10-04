@@ -11,22 +11,17 @@ export function sqlEventPersistenceAdapter(
 ): EventPersistenceAdapter {
   return {
     async persistEvent(event: BusEvent) {
-      // todo (clock refactor): remove this condition
-      if ("outside-clock-tick" !== event.tag) {
-        const tick = getTick(event);
-        const timeStamp = (event as TimeStamped)?.timeStamp;
-        if (tick !== undefined && timeStamp !== undefined) {
-          await sqlWorker.persistTickTimestampEvent(
-            tick,
-            event as BusEvent & TimeStamped,
-          );
-        } else if (tick !== undefined) {
-          await sqlWorker.persistTickEvent(tick, event);
-        } else if (timeStamp !== undefined) {
-          await sqlWorker.persistTimestampEvent(
-            event as BusEvent & TimeStamped,
-          );
-        }
+      const tick = getTick(event);
+      const timeStamp = (event as TimeStamped)?.timeStamp;
+      if (tick !== undefined && timeStamp !== undefined) {
+        await sqlWorker.persistTickTimestampEvent(
+          tick,
+          event as BusEvent & TimeStamped,
+        );
+      } else if (tick !== undefined) {
+        await sqlWorker.persistTickEvent(tick, event);
+      } else if (timeStamp !== undefined) {
+        await sqlWorker.persistTimestampEvent(event as BusEvent & TimeStamped);
       }
     },
     async deliverEvent(event: BusEvent, to: string) {
@@ -45,10 +40,6 @@ export function memoryEventPersistenceAdapter(
       inbox.push(event);
     },
     async persistEvent(event: BusEvent) {
-      // todo: cleanup after clock refactor (outside clock ticks might no longer be simulation events)
-      if ("outside-clock-tick" === event.tag) {
-        return;
-      }
       const eventTick = getTick(event);
       if (eventTick !== undefined) {
         const eventsForTick = streamMemory.get(eventTick);
@@ -58,7 +49,7 @@ export function memoryEventPersistenceAdapter(
           streamMemory.set(eventTick, [event]);
         }
       } else {
-        console.warn("no tick found to persist event in memory: ", event);
+        console.error("no tick found to persist event in memory: ", event);
       }
     },
   };
