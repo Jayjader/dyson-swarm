@@ -90,7 +90,6 @@
     });
     promises.push(promise);
   });
-  let firstTimestamp: DOMHighResTimeStamp | undefined;
   let lastTimestamp: DOMHighResTimeStamp | undefined = undefined;
   function outsideClockLoop(timeStamp: DOMHighResTimeStamp) {
     if (swarm >= 2 ** 50) {
@@ -101,9 +100,6 @@
           "If you feel up to the effort, I would greatly appreciate you save your game, export that save to a file, and find a way to share that file with me (I will try to update this message with an email address once I have set that up).\n" +
           "This game is not finished being developed. While there is no way to subscribe to updates (yet), a good rule of thumb is to be ready to wait several months before a new version is published.",
       );
-    }
-    if (firstTimestamp === undefined) {
-      firstTimestamp = timeStamp;
     }
     if (lastTimestamp === undefined) {
       lastTimestamp = timeStamp;
