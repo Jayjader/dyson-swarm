@@ -90,14 +90,8 @@
   const ticksRequested = new Set();
   const ticksSimulated = new Set();
   const promises: Array<Promise<void>> = [];
-  // todo: figure out how to determine the starting tick from the simulation['s adapters]
-  // for a new game the default of 0 already works
-  // but to load an existing game it probably won't.
-  // what could make sense is to grab the latest snapshot of each event source,
-  // then find the earliest among them.
-  // alternatively, we track this "global virtual time"/GVT at the simulation level,
-  // and attach it to savestates to be read back at load
   function prepareClock(forTick: number) {
+    console.log("preparing clock for tick", forTick);
     return makeClockStore(
       1000,
       (tick: number) => {
