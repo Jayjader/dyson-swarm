@@ -72,7 +72,7 @@ export async function loadSave(
     bus: { subscriptions: new Map<EventTag, Set<Id>>() },
     globalVirtualTime: Number.NEGATIVE_INFINITY,
   };
-  // let earliestLastTick = Number.POSITIVE_INFINITY;
+  let earliestLastTick = Number.POSITIVE_INFINITY;
   for (const { id, tag } of save.sources) {
     if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
       continue;
@@ -110,6 +110,12 @@ export async function loadSave(
     await adapters.eventSources.insertSource(id as Id);
     // todo: investigate persisting *each* snapshot
     await adapters.snapshots.persistSnapshot(lastTick, id as Id, data);
+    if (earliestLastTick > lastTick) {
+      earliestLastTick = lastTick;
+    }
+  }
+  if (Number.isFinite(earliestLastTick)) {
+    sim.globalVirtualTime = earliestLastTick;
   }
   for (const event of save.events) {
     await adapters.events.write.persistEvent(event);
