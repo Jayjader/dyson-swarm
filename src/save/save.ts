@@ -20,6 +20,9 @@ import { isRepeat } from "../types";
 import type { Adapters } from "../adapters";
 
 export const versions = ["initial-json", "adapters-rewrite"] as const;
+/**
+ * The saved state of a simulation. Can be serialized to a string using ```SaveJSON``` and can be loaded into a runnable/'live' simulation.
+ */
 export type SaveState = {
   version: (typeof versions)[number];
   sources: Array<{ id: string; tag: string }>;
