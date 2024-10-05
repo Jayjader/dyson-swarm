@@ -30,6 +30,7 @@ type EventBus = {
 };
 export type Simulation = {
   bus: EventBus;
+  globalVirtualTime: number;
 };
 
 export async function insertProcessor(
@@ -127,9 +128,10 @@ export async function processUntilSettled(
   sim: Simulation,
   adapters: Adapters,
 ): Promise<Simulation> {
+  const allProcessorIds = await adapters.eventSources.getAllSourceIds();
   while ((await adapters.events.read.getTotalInboxSize()) > 0) {
     const emitted = [] as BusEvent[];
-    for (let processorId of await adapters.eventSources.getAllSourceIds()) {
+    for (let processorId of allProcessorIds) {
       const inbox = await adapters.events.read.popInbox(processorId);
       if (inbox.length > 0) {
         const inboxTick = getTick(inbox[0])!;
@@ -157,6 +159,17 @@ export async function processUntilSettled(
       await broadcastEvent(sim, event, adapters);
     }
   }
+  // calculate new GVT
+  let newGVT = Number.POSITIVE_INFINITY;
+  for (let processorId of allProcessorIds) {
+    const [lastTick] = await adapters.snapshots.getLastSnapshot(processorId);
+    if (lastTick < newGVT) {
+      newGVT = lastTick;
+    }
+  }
+  if (newGVT !== sim.globalVirtualTime) {
+    sim.globalVirtualTime = newGVT;
+  }
   return sim;
 }
 
@@ -177,6 +190,7 @@ export function makeSimulationStore(
 ): SimulationStore {
   const baseData = writable<Simulation>({
     bus: { subscriptions: new Map() },
+    globalVirtualTime: Number.NEGATIVE_INFINITY,
   });
   const { subscribe, set } = baseData;
   return {
@@ -203,6 +217,7 @@ export function makeSimulationStore(
     loadNew: async () => {
       const simulation = {
         bus: { subscriptions: new Map() },
+        globalVirtualTime: Number.NEGATIVE_INFINITY,
       };
       for (let processor of newGame()) {
         await insertProcessor(simulation, processor, adapters);

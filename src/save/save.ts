@@ -68,7 +68,11 @@ export async function loadSave(
   save: SaveState,
   adapters: Adapters,
 ): Promise<Simulation> {
-  const sim = { bus: { subscriptions: new Map<EventTag, Set<Id>>() } };
+  const sim = {
+    bus: { subscriptions: new Map<EventTag, Set<Id>>() },
+    globalVirtualTime: Number.NEGATIVE_INFINITY,
+  };
+  // let earliestLastTick = Number.POSITIVE_INFINITY;
   for (const { id, tag } of save.sources) {
     if (SUBSCRIPTIONS[tag as keyof typeof SUBSCRIPTIONS] === undefined) {
       continue;
