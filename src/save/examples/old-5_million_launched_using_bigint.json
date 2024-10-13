@@ -1,0 +1,2906 @@
+{
+    "stream": {
+        "data": {
+            "unfinishedTick": 48348,
+            "received": [
+                [
+                    0,
+                    [
+                        {
+                            "tag": "command-simulation-clock-indirect-pause",
+                            "afterTick": 0,
+                            "timeStamp": 10044
+                        },
+                        {
+                            "tag": "command-set-fabricator-queue",
+                            "queue": [
+                                {
+                                    "building": "miner"
+                                },
+                                {
+                                    "building": "refiner"
+                                },
+                                {
+                                    "repeat": [
+                                        {
+                                            "repeat": [
+                                                {
+                                                    "building": "collector"
+                                                }
+                                            ],
+                                            "count": 15
+                                        },
+                                        {
+                                            "building": "refiner"
+                                        },
+                                        {
+                                            "repeat": [
+                                                {
+                                                    "building": "miner"
+                                                }
+                                            ],
+                                            "count": 3
+                                        }
+                                    ],
+                                    "count": null
+                                }
+                            ],
+                            "afterTick": 0,
+                            "timeStamp": 68899
+                        },
+                        {
+                            "tag": "command-simulation-clock-indirect-resume",
+                            "afterTick": 0,
+                            "timeStamp": 68899
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 70865,
+                            "afterTick": 0
+                        }
+                    ]
+                ],
+                [
+                    12,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 12,
+                            "timeStamp": 83584
+                        }
+                    ]
+                ],
+                [
+                    24,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 24,
+                            "timeStamp": 95617
+                        }
+                    ]
+                ],
+                [
+                    28,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 28,
+                            "timeStamp": 99071
+                        }
+                    ]
+                ],
+                [
+                    38,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 38,
+                            "timeStamp": 109091
+                        }
+                    ]
+                ],
+                [
+                    61,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 61,
+                            "timeStamp": 132014
+                        }
+                    ]
+                ],
+                [
+                    66,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 66,
+                            "timeStamp": 137808
+                        }
+                    ]
+                ],
+                [
+                    69,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 139951,
+                            "afterTick": 69
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 31,
+                            "timeStamp": 140078,
+                            "afterTick": 69
+                        }
+                    ]
+                ],
+                [
+                    221,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 144762,
+                            "afterTick": 221
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 1,
+                            "timeStamp": 145072,
+                            "afterTick": 221
+                        }
+                    ]
+                ],
+                [
+                    248,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 172268,
+                            "afterTick": 248
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 1,
+                            "timeStamp": 172386,
+                            "afterTick": 248
+                        }
+                    ]
+                ],
+                [
+                    249,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 172785,
+                            "afterTick": 249
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 2,
+                            "timeStamp": 172785,
+                            "afterTick": 249
+                        },
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 172976,
+                            "afterTick": 249
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 3,
+                            "timeStamp": 172976,
+                            "afterTick": 249
+                        }
+                    ]
+                ],
+                [
+                    250,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 173224,
+                            "afterTick": 250
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 4,
+                            "timeStamp": 173224,
+                            "afterTick": 250
+                        }
+                    ]
+                ],
+                [
+                    251,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 173446,
+                            "afterTick": 251
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 5,
+                            "timeStamp": 173446,
+                            "afterTick": 251
+                        }
+                    ]
+                ],
+                [
+                    360,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 195185,
+                            "afterTick": 360
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 10,
+                            "timeStamp": 197127,
+                            "afterTick": 360
+                        }
+                    ]
+                ],
+                [
+                    3277,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 486864,
+                            "afterTick": 3277
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 1,
+                            "timeStamp": 487307,
+                            "afterTick": 3277
+                        }
+                    ]
+                ],
+                [
+                    3303,
+                    [
+                        {
+                            "tag": "command-simulation-clock-indirect-pause",
+                            "afterTick": 3303,
+                            "timeStamp": 513477
+                        },
+                        {
+                            "tag": "command-set-fabricator-queue",
+                            "queue": [
+                                {
+                                    "building": "miner"
+                                },
+                                {
+                                    "building": "miner"
+                                }
+                            ],
+                            "afterTick": 3303,
+                            "timeStamp": 530797
+                        },
+                        {
+                            "tag": "command-simulation-clock-indirect-resume",
+                            "afterTick": 3303,
+                            "timeStamp": 530797
+                        }
+                    ]
+                ],
+                [
+                    3335,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 3335,
+                            "timeStamp": 563182
+                        }
+                    ]
+                ],
+                [
+                    3338,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "refiner",
+                            "afterTick": 3338,
+                            "timeStamp": 566712
+                        }
+                    ]
+                ],
+                [
+                    3340,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 72,
+                            "construct": "miner",
+                            "afterTick": 3340,
+                            "timeStamp": 568688
+                        }
+                    ]
+                ],
+                [
+                    3348,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 24,
+                            "construct": "refiner",
+                            "afterTick": 3348,
+                            "timeStamp": 575933
+                        }
+                    ]
+                ],
+                [
+                    3464,
+                    [
+                        {
+                            "tag": "command-simulation-clock-indirect-pause",
+                            "afterTick": 3464,
+                            "timeStamp": 691866
+                        },
+                        {
+                            "tag": "command-set-fabricator-queue",
+                            "queue": [
+                                {
+                                    "building": "launcher"
+                                },
+                                {
+                                    "building": "factory"
+                                }
+                            ],
+                            "afterTick": 3464,
+                            "timeStamp": 699667
+                        },
+                        {
+                            "tag": "command-simulation-clock-indirect-resume",
+                            "afterTick": 3464,
+                            "timeStamp": 699667
+                        }
+                    ]
+                ],
+                [
+                    3476,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 3476,
+                            "timeStamp": 712183
+                        }
+                    ]
+                ],
+                [
+                    3485,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 3485,
+                            "timeStamp": 720806
+                        }
+                    ]
+                ],
+                [
+                    3501,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 737355,
+                            "afterTick": 3501
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 15,
+                            "timeStamp": 739907,
+                            "afterTick": 3501
+                        }
+                    ]
+                ],
+                [
+                    3599,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 3599,
+                            "timeStamp": 743178
+                        }
+                    ]
+                ],
+                [
+                    3705,
+                    [
+                        {
+                            "tag": "command-trip-circuit-breaker",
+                            "afterTick": 3705,
+                            "timeStamp": 750178
+                        }
+                    ]
+                ],
+                [
+                    3952,
+                    [
+                        {
+                            "tag": "command-reset-circuit-breaker",
+                            "afterTick": 3952,
+                            "timeStamp": 766483
+                        }
+                    ]
+                ],
+                [
+                    9303,
+                    [
+                        {
+                            "tag": "command-simulation-clock-indirect-pause",
+                            "afterTick": 9303,
+                            "timeStamp": 1119664
+                        },
+                        {
+                            "tag": "command-set-fabricator-queue",
+                            "queue": [
+                                {
+                                    "repeat": [
+                                        {
+                                            "repeat": [
+                                                {
+                                                    "building": "refiner"
+                                                },
+                                                {
+                                                    "repeat": [
+                                                        {
+                                                            "building": "miner"
+                                                        }
+                                                    ],
+                                                    "count": 3
+                                                }
+                                            ],
+                                            "count": 2
+                                        },
+                                        {
+                                            "building": "launcher"
+                                        },
+                                        {
+                                            "building": "factory"
+                                        }
+                                    ],
+                                    "count": null
+                                }
+                            ],
+                            "afterTick": 9303,
+                            "timeStamp": 1236873
+                        },
+                        {
+                            "tag": "command-simulation-clock-indirect-resume",
+                            "afterTick": 9303,
+                            "timeStamp": 1236873
+                        }
+                    ]
+                ],
+                [
+                    10042,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 1285708,
+                            "afterTick": 10042
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 60,
+                            "timeStamp": 1286270,
+                            "afterTick": 10042
+                        }
+                    ]
+                ],
+                [
+                    19805,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1441870,
+                            "afterTick": 19805
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 1467630,
+                            "afterTick": 19805
+                        }
+                    ]
+                ],
+                [
+                    19928,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1469614,
+                            "afterTick": 19928
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 1476477,
+                            "afterTick": 19928
+                        }
+                    ]
+                ],
+                [
+                    20050,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1478451,
+                            "afterTick": 20050
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 1484719,
+                            "afterTick": 20050
+                        }
+                    ]
+                ],
+                [
+                    20274,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1488322,
+                            "afterTick": 20274
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 1494574,
+                            "afterTick": 20274
+                        }
+                    ]
+                ],
+                [
+                    20520,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1498518,
+                            "afterTick": 20520
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 1533068,
+                            "afterTick": 20520
+                        }
+                    ]
+                ],
+                [
+                    29763,
+                    [
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 1680977,
+                            "afterTick": 29763
+                        },
+                        {
+                            "tag": "command-simulation-clock-indirect-resume",
+                            "afterTick": 29763,
+                            "timeStamp": 191985
+                        },
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 194423,
+                            "afterTick": 29763
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 1,
+                            "timeStamp": 194689,
+                            "afterTick": 29763
+                        },
+                        {
+                            "tag": "command-simulation-clock-play",
+                            "timeStamp": 195416,
+                            "afterTick": 29763
+                        }
+                    ]
+                ],
+                [
+                    29773,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 205839,
+                            "afterTick": 29773
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 32,
+                            "timeStamp": 205919,
+                            "afterTick": 29773
+                        }
+                    ]
+                ],
+                [
+                    30539,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 30539,
+                            "timeStamp": 229170
+                        }
+                    ]
+                ],
+                [
+                    30934,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 30934,
+                            "timeStamp": 241432
+                        }
+                    ]
+                ],
+                [
+                    31039,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "refiner",
+                            "afterTick": 31039,
+                            "timeStamp": 244680
+                        }
+                    ]
+                ],
+                [
+                    31090,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31090,
+                            "timeStamp": 246259
+                        }
+                    ]
+                ],
+                [
+                    31129,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31129,
+                            "timeStamp": 247484
+                        }
+                    ]
+                ],
+                [
+                    31134,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31134,
+                            "timeStamp": 247644
+                        }
+                    ]
+                ],
+                [
+                    31140,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31140,
+                            "timeStamp": 247817
+                        }
+                    ]
+                ],
+                [
+                    31156,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31156,
+                            "timeStamp": 248327
+                        }
+                    ]
+                ],
+                [
+                    31162,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31162,
+                            "timeStamp": 248504
+                        }
+                    ]
+                ],
+                [
+                    31167,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31167,
+                            "timeStamp": 248667
+                        }
+                    ]
+                ],
+                [
+                    31173,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31173,
+                            "timeStamp": 248845
+                        }
+                    ]
+                ],
+                [
+                    31179,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31179,
+                            "timeStamp": 249014
+                        }
+                    ]
+                ],
+                [
+                    31196,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31196,
+                            "timeStamp": 249555
+                        }
+                    ]
+                ],
+                [
+                    31202,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31202,
+                            "timeStamp": 249732
+                        }
+                    ]
+                ],
+                [
+                    31208,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31208,
+                            "timeStamp": 249932
+                        }
+                    ]
+                ],
+                [
+                    31213,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31213,
+                            "timeStamp": 250098
+                        }
+                    ]
+                ],
+                [
+                    31218,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31218,
+                            "timeStamp": 250247
+                        }
+                    ]
+                ],
+                [
+                    31224,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31224,
+                            "timeStamp": 250428
+                        }
+                    ]
+                ],
+                [
+                    31236,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31236,
+                            "timeStamp": 250791
+                        }
+                    ]
+                ],
+                [
+                    31242,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31242,
+                            "timeStamp": 250983
+                        }
+                    ]
+                ],
+                [
+                    31247,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31247,
+                            "timeStamp": 251149
+                        }
+                    ]
+                ],
+                [
+                    31253,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31253,
+                            "timeStamp": 251324
+                        }
+                    ]
+                ],
+                [
+                    31259,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31259,
+                            "timeStamp": 251506
+                        }
+                    ]
+                ],
+                [
+                    31399,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 1049,
+                            "construct": "refiner",
+                            "afterTick": 31399,
+                            "timeStamp": 255843
+                        }
+                    ]
+                ],
+                [
+                    31429,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 3150,
+                            "construct": "miner",
+                            "afterTick": 31429,
+                            "timeStamp": 256786
+                        }
+                    ]
+                ],
+                [
+                    31538,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "refiner",
+                            "afterTick": 31538,
+                            "timeStamp": 260153
+                        }
+                    ]
+                ],
+                [
+                    31588,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 1058,
+                            "construct": "refiner",
+                            "afterTick": 31588,
+                            "timeStamp": 261695
+                        }
+                    ]
+                ],
+                [
+                    31718,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 0,
+                            "construct": "miner",
+                            "afterTick": 31718,
+                            "timeStamp": 265743
+                        }
+                    ]
+                ],
+                [
+                    31741,
+                    [
+                        {
+                            "tag": "command-set-working-count",
+                            "count": 3198,
+                            "construct": "miner",
+                            "afterTick": 31741,
+                            "timeStamp": 266437
+                        }
+                    ]
+                ],
+                [
+                    33278,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 314101,
+                            "afterTick": 33278
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 15,
+                            "timeStamp": 316295,
+                            "afterTick": 33278
+                        }
+                    ]
+                ],
+                [
+                    34827,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 416317,
+                            "afterTick": 34827
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 60,
+                            "timeStamp": 417143,
+                            "afterTick": 34827
+                        }
+                    ]
+                ],
+                [
+                    48264,
+                    [
+                        {
+                            "tag": "command-simulation-clock-start-editing-speed",
+                            "timeStamp": 631327,
+                            "afterTick": 48264
+                        },
+                        {
+                            "tag": "command-simulation-clock-set-speed",
+                            "speed": 1,
+                            "timeStamp": 631497,
+                            "afterTick": 48264
+                        }
+                    ]
+                ],
+                [
+                    48338,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16830",
+                            "receivedTick": 48338,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9350",
+                            "receivedTick": 48338,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "23075",
+                            "receivedTick": 48338,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "3735",
+                            "toId": "refiner-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "toId": "factory-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "toId": "launcher-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5610",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2001430800",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "15945",
+                            "forId": "miner-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "8885",
+                            "forId": "refiner-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "609",
+                            "forId": "refiner-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "23075",
+                            "forId": "factory-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "forId": "factory-0",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "launch-satellite",
+                            "count": 924,
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5559529",
+                            "receivedTick": 48338
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48338
+                        }
+                    ]
+                ],
+                [
+                    48339,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "15945",
+                            "receivedTick": 48339,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "8885",
+                            "receivedTick": 48339,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "23075",
+                            "receivedTick": 48339,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "609",
+                            "toId": "refiner-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "toId": "factory-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2001430800",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16830",
+                            "forId": "miner-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5610,
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "2487",
+                            "forId": "refiner-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "satellite",
+                            "amount": "924",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "forId": "launcher-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "forId": "launcher-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5560453",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48339
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48339
+                        }
+                    ]
+                ],
+                [
+                    48340,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16830",
+                            "receivedTick": 48340,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9355",
+                            "receivedTick": 48340,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "receivedTick": 48340,
+                            "toId": "launcher-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48340,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "2487",
+                            "toId": "refiner-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "toId": "launcher-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5610",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2001763440",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "885",
+                            "forId": "miner-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "470",
+                            "forId": "refiner-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "1878",
+                            "forId": "refiner-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "25",
+                            "forId": "factory-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "4",
+                            "forId": "factory-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "forId": "launcher-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "forId": "launcher-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5560453",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48340
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48340
+                        }
+                    ]
+                ],
+                [
+                    48341,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "885",
+                            "receivedTick": 48341,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "470",
+                            "receivedTick": 48341,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "25",
+                            "receivedTick": 48341,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "receivedTick": 48341,
+                            "toId": "launcher-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48341,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "1878",
+                            "toId": "refiner-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "4",
+                            "toId": "factory-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "toId": "launcher-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2001763440",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16830",
+                            "forId": "miner-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5610,
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "5004",
+                            "forId": "refiner-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "25",
+                            "forId": "factory-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "4",
+                            "forId": "factory-0",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "launch-satellite",
+                            "count": 924,
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5560453",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "construct-fabricated",
+                            "construct": "miner",
+                            "receivedTick": 48341
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48341
+                        }
+                    ]
+                ],
+                [
+                    48342,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16830",
+                            "receivedTick": 48342,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9355",
+                            "receivedTick": 48342,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "25",
+                            "receivedTick": 48342,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "5004",
+                            "toId": "refiner-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "4",
+                            "toId": "factory-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5610",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2001763440",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "15948",
+                            "forId": "miner-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "8885",
+                            "forId": "refiner-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "3126",
+                            "forId": "refiner-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "satellite",
+                            "amount": "924",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "forId": "launcher-0",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5561377",
+                            "receivedTick": 48342
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48342
+                        }
+                    ]
+                ],
+                [
+                    48343,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "15948",
+                            "receivedTick": 48343,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "8885",
+                            "receivedTick": 48343,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "3126",
+                            "toId": "refiner-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "toId": "launcher-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002096080",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16833",
+                            "forId": "miner-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5611,
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "3735",
+                            "forId": "refiner-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "23075",
+                            "forId": "factory-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "forId": "factory-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "forId": "launcher-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5561377",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48343
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48343
+                        }
+                    ]
+                ],
+                [
+                    48344,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16833",
+                            "receivedTick": 48344,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9355",
+                            "receivedTick": 48344,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "23075",
+                            "receivedTick": 48344,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48344,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "3735",
+                            "toId": "refiner-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "toId": "factory-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "toId": "launcher-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5611",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002096080",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "885",
+                            "forId": "miner-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "470",
+                            "forId": "refiner-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "609",
+                            "forId": "refiner-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "23075",
+                            "forId": "factory-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "forId": "factory-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "launch-satellite",
+                            "count": 924,
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5561377",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48344
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48344
+                        }
+                    ]
+                ],
+                [
+                    48345,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "885",
+                            "receivedTick": 48345,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "470",
+                            "receivedTick": 48345,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "23075",
+                            "receivedTick": 48345,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48345,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "609",
+                            "toId": "refiner-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "toId": "factory-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002096080",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16833",
+                            "forId": "miner-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5611,
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "2487",
+                            "forId": "refiner-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "satellite",
+                            "amount": "924",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "forId": "launcher-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "forId": "launcher-0",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5562301",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "construct-fabricated",
+                            "construct": "miner",
+                            "receivedTick": 48345
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48345
+                        }
+                    ]
+                ],
+                [
+                    48346,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16833",
+                            "receivedTick": 48346,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9355",
+                            "receivedTick": 48346,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "receivedTick": 48346,
+                            "toId": "launcher-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "2487",
+                            "toId": "refiner-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "toId": "launcher-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5611",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002428720",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "15951",
+                            "forId": "miner-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "8885",
+                            "forId": "refiner-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "1878",
+                            "forId": "refiner-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "25",
+                            "forId": "factory-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "4",
+                            "forId": "factory-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "forId": "launcher-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "forId": "launcher-0",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5562301",
+                            "receivedTick": 48346
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48346
+                        }
+                    ]
+                ],
+                [
+                    48347,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "15951",
+                            "receivedTick": 48347,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "8885",
+                            "receivedTick": 48347,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "25",
+                            "receivedTick": 48347,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "1293600",
+                            "receivedTick": 48347,
+                            "toId": "launcher-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "1878",
+                            "toId": "refiner-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "4",
+                            "toId": "factory-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "923",
+                            "toId": "launcher-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002428720",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16836",
+                            "forId": "miner-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5612,
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "5004",
+                            "forId": "refiner-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "25",
+                            "forId": "factory-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "4",
+                            "forId": "factory-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "launch-satellite",
+                            "count": 924,
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5562301",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48347
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48347
+                        }
+                    ]
+                ],
+                [
+                    48348,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "16836",
+                            "receivedTick": 48348,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "9355",
+                            "receivedTick": 48348,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "25",
+                            "receivedTick": 48348,
+                            "toId": "factory-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48348,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "5004",
+                            "toId": "refiner-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "4",
+                            "toId": "factory-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "ore",
+                            "amount": "5612",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002428720",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "885",
+                            "forId": "miner-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "470",
+                            "forId": "refiner-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "3126",
+                            "forId": "refiner-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "satellite",
+                            "amount": "924",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "forId": "launcher-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5563225",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "150",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "30",
+                            "forId": "fabricator-0",
+                            "receivedTick": 48348
+                        },
+                        {
+                            "tag": "simulation-clock-tick",
+                            "tick": 48348
+                        },
+                        {
+                            "tag": "command-simulation-clock-pause",
+                            "timeStamp": 716274,
+                            "afterTick": 48348
+                        }
+                    ]
+                ],
+                [
+                    48349,
+                    [
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "885",
+                            "receivedTick": 48349,
+                            "toId": "miner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "470",
+                            "receivedTick": 48349,
+                            "toId": "refiner-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "power",
+                            "amount": "150",
+                            "receivedTick": 48349,
+                            "toId": "fabricator-0"
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "ore",
+                            "amount": "3126",
+                            "toId": "refiner-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "metal",
+                            "amount": "30",
+                            "toId": "fabricator-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "supply",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "toId": "launcher-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "star-flux-emission",
+                            "flux": "1",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "power",
+                            "amount": "2002761360",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "16836",
+                            "forId": "miner-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "mine-planet-surface",
+                            "minerCount": 5612,
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "9355",
+                            "forId": "refiner-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "ore",
+                            "amount": "3735",
+                            "forId": "refiner-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "produce",
+                            "resource": "metal",
+                            "amount": "1871",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "power",
+                            "amount": "23075",
+                            "forId": "factory-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "metal",
+                            "amount": "1844",
+                            "forId": "factory-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "draw",
+                            "resource": "satellite",
+                            "amount": "1",
+                            "forId": "launcher-0",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "satellite-flux-reflection",
+                            "flux": "5563225",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "construct-fabricated",
+                            "construct": "miner",
+                            "receivedTick": 48349
+                        },
+                        {
+                            "tag": "simulation-clock-pause",
+                            "beforeTick": 48349
+                        }
+                    ]
+                ]
+            ]
+        },
+        "tag": "stream",
+        "id": "stream-0",
+        "incoming": []
+    },
+    "processors": [
+        {
+            "id": "power grid-0",
+            "incoming": [],
+            "tag": "power grid",
+            "data": {
+                "stored": "24702713616305",
+                "breakerTripped": false,
+                "received": [
+                    {
+                        "tag": "produce",
+                        "resource": "power",
+                        "amount": "2002761360",
+                        "receivedTick": 48349
+                    },
+                    {
+                        "tag": "draw",
+                        "resource": "power",
+                        "amount": "16836",
+                        "forId": "miner-0",
+                        "receivedTick": 48349
+                    },
+                    {
+                        "tag": "draw",
+                        "resource": "power",
+                        "amount": "9355",
+                        "forId": "refiner-0",
+                        "receivedTick": 48349
+                    },
+                    {
+                        "tag": "draw",
+                        "resource": "power",
+                        "amount": "23075",
+                        "forId": "factory-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "storage-ore-0",
+            "tag": "storage-ore",
+            "incoming": [],
+            "data": {
+                "stored": "496476",
+                "received": [
+                    {
+                        "tag": "draw",
+                        "resource": "ore",
+                        "amount": "3735",
+                        "forId": "refiner-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "storage-metal-0",
+            "tag": "storage-metal",
+            "incoming": [],
+            "data": {
+                "stored": "2552408",
+                "received": [
+                    {
+                        "tag": "produce",
+                        "resource": "metal",
+                        "amount": "1871",
+                        "receivedTick": 48349
+                    },
+                    {
+                        "tag": "draw",
+                        "resource": "metal",
+                        "amount": "1844",
+                        "forId": "factory-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "storage-satellite-0",
+            "tag": "storage-satellite",
+            "incoming": [],
+            "data": {
+                "stored": "1395",
+                "received": [
+                    {
+                        "tag": "draw",
+                        "resource": "satellite",
+                        "amount": "1",
+                        "forId": "launcher-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "star-0",
+            "incoming": [],
+            "tag": "star",
+            "data": {
+                "mass": "1988999999999999901909255192576"
+            }
+        },
+        {
+            "id": "planet-0",
+            "tag": "planet",
+            "incoming": [],
+            "data": {
+                "mass": "330099999999999925921603",
+                "received": [
+                    {
+                        "tag": "mine-planet-surface",
+                        "minerCount": 5612,
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "collector-0",
+            "incoming": [],
+            "tag": "collector",
+            "data": {
+                "count": 360,
+                "received": [
+                    {
+                        "tag": "star-flux-emission",
+                        "flux": "1",
+                        "receivedTick": 48349
+                    },
+                    {
+                        "tag": "satellite-flux-reflection",
+                        "flux": "5563225",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "miner-0",
+            "tag": "miner",
+            "incoming": [],
+            "data": {
+                "working": 5612,
+                "count": 5612,
+                "received": [
+                    {
+                        "tag": "supply",
+                        "resource": "power",
+                        "amount": "885",
+                        "receivedTick": 48349,
+                        "toId": "miner-0"
+                    },
+                    {
+                        "tag": "construct-fabricated",
+                        "construct": "miner",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "refiner-0",
+            "tag": "refiner",
+            "incoming": [],
+            "data": {
+                "working": 1871,
+                "count": 1871,
+                "received": [
+                    {
+                        "tag": "supply",
+                        "resource": "ore",
+                        "amount": "1878",
+                        "toId": "refiner-0",
+                        "receivedTick": 48348
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "power",
+                        "amount": "470",
+                        "receivedTick": 48349,
+                        "toId": "refiner-0"
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "ore",
+                        "amount": "3126",
+                        "toId": "refiner-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "factory-0",
+            "tag": "factory",
+            "incoming": [],
+            "data": {
+                "count": 924,
+                "working": 924,
+                "received": [
+                    {
+                        "tag": "supply",
+                        "resource": "power",
+                        "amount": "25",
+                        "toId": "factory-0",
+                        "receivedTick": 48348
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "metal",
+                        "amount": "4",
+                        "toId": "factory-0",
+                        "receivedTick": 48348
+                    }
+                ]
+            }
+        },
+        {
+            "id": "launcher-0",
+            "tag": "launcher",
+            "incoming": [],
+            "data": {
+                "working": 924,
+                "count": 924,
+                "charge": "2587200",
+                "received": [
+                    {
+                        "tag": "supply",
+                        "resource": "power",
+                        "amount": "1293600",
+                        "toId": "launcher-0",
+                        "receivedTick": 48348
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "satellite",
+                        "amount": "923",
+                        "toId": "launcher-0",
+                        "receivedTick": 48348
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "satellite",
+                        "amount": "1",
+                        "toId": "launcher-0",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "swarm-0",
+            "tag": "swarm",
+            "incoming": [],
+            "data": {
+                "count": 5563225,
+                "received": [
+                    {
+                        "tag": "star-flux-emission",
+                        "flux": "1",
+                        "receivedTick": 48349
+                    }
+                ]
+            }
+        },
+        {
+            "id": "fabricator-0",
+            "tag": "fabricator",
+            "incoming": [],
+            "data": {
+                "working": true,
+                "job": null,
+                "received": [
+                    {
+                        "tag": "supply",
+                        "resource": "power",
+                        "amount": "150",
+                        "receivedTick": 48349,
+                        "toId": "fabricator-0"
+                    },
+                    {
+                        "tag": "supply",
+                        "resource": "metal",
+                        "amount": "30",
+                        "toId": "fabricator-0",
+                        "receivedTick": 48349
+                    }
+                ],
+                "queue": [
+                    {
+                        "building": "refiner"
+                    },
+                    {
+                        "repeat": [
+                            {
+                                "building": "miner"
+                            }
+                        ],
+                        "count": 3
+                    },
+                    {
+                        "building": "launcher"
+                    },
+                    {
+                        "building": "factory"
+                    },
+                    {
+                        "repeat": [
+                            {
+                                "repeat": [
+                                    {
+                                        "building": "refiner"
+                                    },
+                                    {
+                                        "repeat": [
+                                            {
+                                                "building": "miner"
+                                            }
+                                        ],
+                                        "count": 3
+                                    }
+                                ],
+                                "count": 2
+                            },
+                            {
+                                "building": "launcher"
+                            },
+                            {
+                                "building": "factory"
+                            }
+                        ],
+                        "count": null
+                    }
+                ]
+            }
+        },
+        {
+            "id": "clock-0",
+            "incoming": [],
+            "tag": "clock",
+            "data": {
+                "state": [
+                    {
+                        "speed": 1,
+                        "tick": 48348
+                    },
+                    "pause"
+                ],
+                "lastOutsideTickProvokingSimulationTick": 715296,
+                "received": []
+            }
+        }
+    ]
+}

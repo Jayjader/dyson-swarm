@@ -1,0 +1,205 @@
+{
+    "stream": {
+        "data": {
+            "unfinishedTick": 0,
+            "received": [
+                [
+                    0,
+                    [
+                        {
+                            "tag": "command-simulation-clock-indirect-pause",
+                            "afterTick": 0,
+                            "timeStamp": 4901293
+                        }
+                    ]
+                ],
+                [
+                    1,
+                    [
+                        {
+                            "tag": "simulation-clock-indirect-pause",
+                            "beforeTick": 1
+                        }
+                    ]
+                ]
+            ]
+        },
+        "tag": "stream",
+        "id": "stream-0",
+        "incoming": []
+    },
+    "processors": [
+        {
+            "id": "power grid-0",
+            "incoming": [],
+            "tag": "power grid",
+            "data": {
+                "stored": 49284,
+                "breakerTripped": false,
+                "received": []
+            }
+        },
+        {
+            "id": "storage-ore-0",
+            "tag": "storage-ore",
+            "incoming": [],
+            "data": {
+                "stored": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "storage-metal-0",
+            "tag": "storage-metal",
+            "incoming": [],
+            "data": {
+                "stored": 200,
+                "received": []
+            }
+        },
+        {
+            "id": "storage-satellite-0",
+            "tag": "storage-satellite",
+            "incoming": [],
+            "data": {
+                "stored": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "star-0",
+            "incoming": [],
+            "tag": "star",
+            "data": {
+                "mass": 1.989e+30
+            }
+        },
+        {
+            "id": "planet-0",
+            "tag": "planet",
+            "incoming": [],
+            "data": {
+                "mass": 3.301e+23,
+                "received": []
+            }
+        },
+        {
+            "id": "collector-0",
+            "incoming": [],
+            "tag": "collector",
+            "data": {
+                "count": 15,
+                "received": []
+            }
+        },
+        {
+            "id": "miner-0",
+            "tag": "miner",
+            "incoming": [],
+            "data": {
+                "working": 0,
+                "count": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "refiner-0",
+            "tag": "refiner",
+            "incoming": [],
+            "data": {
+                "working": 0,
+                "count": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "factory-0",
+            "tag": "factory",
+            "incoming": [],
+            "data": {
+                "count": 0,
+                "working": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "launcher-0",
+            "tag": "launcher",
+            "incoming": [],
+            "data": {
+                "working": 0,
+                "count": 0,
+                "charge": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "swarm-0",
+            "tag": "swarm",
+            "incoming": [],
+            "data": {
+                "count": 0,
+                "received": []
+            }
+        },
+        {
+            "id": "fabricator-0",
+            "tag": "fabricator",
+            "incoming": [],
+            "data": {
+                "working": true,
+                "job": null,
+                "queue": [
+                    {
+                        "repeat": [
+                            {
+                                "building": "refiner"
+                            },
+                            {
+                                "repeat": [
+                                    {
+                                        "building": "miner"
+                                    }
+                                ],
+                                "count": 3
+                            },
+                            {
+                                "repeat": [
+                                    {
+                                        "building": "collector"
+                                    }
+                                ],
+                                "count": 15
+                            },
+                            {
+                                "building": "launcher"
+                            },
+                            {
+                                "building": "factory"
+                            }
+                        ],
+                        "count": null
+                    }
+                ],
+                "received": []
+            }
+        },
+        {
+            "id": "clock-0",
+            "incoming": [],
+            "tag": "clock",
+            "data": {
+                "state": [
+                    {
+                        "speed": 1,
+                        "tick": 0
+                    },
+                    "pause",
+                    "indirect-pause"
+                ],
+                "lastOutsideTickProvokingSimulationTick": 4888908,
+                "received": []
+            }
+        }
+    ]
+}

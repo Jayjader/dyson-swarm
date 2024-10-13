@@ -1,0 +1,112 @@
+{
+  "version": "adapters-rewrite",
+  "sources": [
+    { "id": "power grid-0", "tag": "power grid" },
+    { "id": "storage-ore-0", "tag": "storage-ore" },
+    { "id": "storage-metal-0", "tag": "storage-metal" },
+    { "id": "storage-satellite-0", "tag": "storage-satellite" },
+    { "id": "star-0", "tag": "star" },
+    { "id": "planet-0", "tag": "planet" },
+    { "id": "collector-0", "tag": "collector" },
+    { "id": "miner-0", "tag": "miner" },
+    { "id": "refiner-0", "tag": "refiner" },
+    { "id": "factory-0", "tag": "factory" },
+    { "id": "launcher-0", "tag": "launcher" },
+    { "id": "swarm-0", "tag": "swarm" },
+    { "id": "fabricator-0", "tag": "fabricator" },
+    { "id": "clock-0", "tag": "clock" }
+  ],
+  "snapshots": [
+    {
+      "id": "power grid-0",
+      "tick": 0,
+      "data": "{\"stored\":\"49284\",\"breakerTripped\":false,\"received\":[]}"
+    },
+    {
+      "id": "storage-ore-0",
+      "tick": 0,
+      "data": "{\"stored\":\"0\",\"received\":[]}"
+    },
+    {
+      "id": "storage-metal-0",
+      "tick": 0,
+      "data": "{\"stored\":\"200\",\"received\":[]}"
+    },
+    {
+      "id": "storage-satellite-0",
+      "tick": 0,
+      "data": "{\"stored\":\"0\",\"received\":[]}"
+    },
+    {
+      "id": "star-0",
+      "tick": 0,
+      "data": "{\"mass\":\"1988999999999999901909255192576\"}"
+    },
+    {
+      "id": "planet-0",
+      "tick": 0,
+      "data": "{\"mass\":\"330099999999999977979904\",\"received\":[]}"
+    },
+    {
+      "id": "collector-0",
+      "tick": 0,
+      "data": "{\"count\":15,\"received\":[]}"
+    },
+    {
+      "id": "miner-0",
+      "tick": 0,
+      "data": "{\"working\":0,\"count\":0,\"received\":[]}"
+    },
+    {
+      "id": "refiner-0",
+      "tick": 0,
+      "data": "{\"working\":0,\"count\":0,\"received\":[]}"
+    },
+    {
+      "id": "factory-0",
+      "tick": 0,
+      "data": "{\"count\":0,\"working\":0,\"received\":[]}"
+    },
+    {
+      "id": "launcher-0",
+      "tick": 0,
+      "data": "{\"working\":0,\"count\":0,\"charge\":\"0\",\"received\":[]}"
+    },
+    { "id": "swarm-0", "tick": 0, "data": "{\"count\":0,\"received\":[]}" },
+    {
+      "id": "fabricator-0",
+      "tick": 0,
+      "data": "{\"working\":true,\"job\":null,\"queue\":[{\"repeat\":[{\"building\":\"refiner\"},{\"repeat\":[{\"building\":\"miner\"}],\"count\":3},{\"repeat\":[{\"building\":\"collector\"}],\"count\":15},{\"building\":\"launcher\"},{\"building\":\"factory\"}],\"count\":null}],\"received\":[]}"
+    },
+    {
+      "id": "clock-0",
+      "tick": 0,
+      "data": "{\"state\":[{\"speed\":1,\"tick\":0},\"pause\",\"indirect-pause\"],\"lastOutsideTickProvokingSimulationTick\":4888908,\"received\":[]}"
+    }
+  ],
+  "events": [
+    {
+      "tag": "command-simulation-clock-indirect-pause",
+      "afterTick": 0,
+      "timeStamp": 4901293
+    },
+    { "tag": "simulation-clock-indirect-pause", "beforeTick": 1 }
+  ],
+  "inboxes": [
+    { "sourceId": "power grid-0", "events": [] },
+    { "sourceId": "storage-ore-0", "events": [] },
+    { "sourceId": "storage-metal-0", "events": [] },
+    { "sourceId": "storage-satellite-0", "events": [] },
+    { "sourceId": "star-0", "events": [] },
+    { "sourceId": "planet-0", "events": [] },
+    { "sourceId": "collector-0", "events": [] },
+    { "sourceId": "miner-0", "events": [] },
+    { "sourceId": "refiner-0", "events": [] },
+    { "sourceId": "factory-0", "events": [] },
+    { "sourceId": "launcher-0", "events": [] },
+    { "sourceId": "swarm-0", "events": [] },
+    { "sourceId": "fabricator-0", "events": [] },
+    { "sourceId": "clock-0", "events": [] }
+  ]
+}
+
