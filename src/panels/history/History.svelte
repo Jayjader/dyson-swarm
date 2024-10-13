@@ -101,7 +101,7 @@
   >
     debug points
   </button>
-  <div class="flex flex-row items-stretch gap-1">
+  <div class="flex flex-row items-center gap-1">
     {#if windowPromise}
       {#await windowPromise}
         querying...

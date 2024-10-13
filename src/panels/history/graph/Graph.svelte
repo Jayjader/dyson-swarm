@@ -16,13 +16,15 @@
 </script>
 
 <svg
-  class="max-h-48 flex-grow"
+  class="flex-grow"
   viewBox="
 {fromX - gutter / 2},
 {fromY - gutter / 2},
 {width + gutter},
 {height + gutter}"
-  preserveAspectRatio="xMinYMin"
+  width="100%"
+  height="100%"
+  preserveAspectRatio="none"
 >
   <rect x={fromX} y="0" {height} {width} />
   <Axis {width} {height} {fromX} />
