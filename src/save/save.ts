@@ -70,8 +70,10 @@ export function migrateOldSave(save: OldSaveState): SaveState {
 export async function loadSave(
   save: SaveState,
   adapters: Adapters,
+  window: Window,
 ): Promise<Simulation> {
   const sim = {
+    id: window.crypto.randomUUID(),
     bus: { subscriptions: new Map<EventTag, Set<Id>>() },
     globalVirtualTime: Number.NEGATIVE_INFINITY,
   };

@@ -29,6 +29,7 @@ type EventBus = {
   subscriptions: Map<EventTag, Set<Id>>;
 };
 export type Simulation = {
+  id: string;
   bus: EventBus;
   globalVirtualTime: number;
 };
@@ -124,6 +125,8 @@ function process(p: Processor, inbox: BusEvent[]): [Processor, BusEvent[]] {
   return [p, []];
 }
 
+// todo: write processOnce() that finds processor with earliest event(s) in inbox,
+// and processes just that single group of earliest events for that processor before returning
 export async function processUntilSettled(
   sim: Simulation,
   adapters: Adapters,
@@ -175,12 +178,12 @@ export async function processUntilSettled(
 
 export const SIMULATION_STORE = Symbol();
 
-export type SimulationStore = Readable<Simulation> & {
+export type SimulationStore = Readable<Simulation | undefined> & {
   processUntilSettled: () => Promise<void>;
   broadcastEvent: (e: BusEvent) => Promise<void>;
   tickClock: (t: number) => Promise<void>;
-  loadSave: (s: SaveState) => Promise<void>;
-  loadNew: () => Promise<void>;
+  loadSave: (s: SaveState, w: Window) => Promise<void>;
+  loadNew: (w: Window) => Promise<void>;
   adapters: Adapters;
   objectives: ObjectiveTracker;
 };
@@ -188,34 +191,32 @@ export function makeSimulationStore(
   objectives: ObjectiveTracker,
   adapters: Adapters,
 ): SimulationStore {
-  const baseData = writable<Simulation>({
-    bus: { subscriptions: new Map() },
-    globalVirtualTime: Number.NEGATIVE_INFINITY,
-  });
+  const baseData = writable<Simulation | undefined>();
   const { subscribe, set } = baseData;
   return {
     subscribe,
     processUntilSettled: async () => {
-      const sim = get(baseData);
+      const sim = get(baseData)!;
       const settled = await processUntilSettled(sim, adapters);
       set(settled);
     },
     // todo-long-term: investigate renaming as createDivergentTimeline / createUserIntervention / etc...
     broadcastEvent: async (e: BusEvent) => {
-      const sim = get(baseData);
+      const sim = get(baseData)!;
       const broadcasted = await broadcastEvent(sim, e, adapters);
       set(broadcasted);
     },
     tickClock: async (t: number) => {
-      const sim = get(baseData);
+      const sim = get(baseData)!;
       const ticked = await tickClock(t, sim, adapters);
       set(ticked);
     },
-    loadSave: async (s: SaveState) => {
-      set(await loadSave(s, adapters));
+    loadSave: async (s: SaveState, window: Window) => {
+      set(await loadSave(s, adapters, window));
     },
-    loadNew: async () => {
+    loadNew: async (window: Window) => {
       const simulation = {
+        id: window.crypto.randomUUID(),
         bus: { subscriptions: new Map() },
         globalVirtualTime: Number.NEGATIVE_INFINITY,
       };

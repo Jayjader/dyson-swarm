@@ -82,7 +82,7 @@ export function makeAppStateStore(settings: SettingsStore, inMemory: boolean) {
         ? initInMemoryAdapters()
         : initSqlAdapters(await getOrCreateSqlWorker());
       const simulationStore = makeSimulationStore(objectiveTracker, adapters);
-      await simulationStore.loadNew();
+      await simulationStore.loadNew(window);
       update(({ settings }) => {
         return {
           settings,

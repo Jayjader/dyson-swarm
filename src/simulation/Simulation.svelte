@@ -52,6 +52,7 @@
   let resources = new Map();
   let swarm = 0;
 
+  let simId: string;
   let clockStore: ClockStore;
   const unsubFromSim = simulation.subscribe(async (sim) => {
     swarm = await getSwarmCount(simulation.adapters);
@@ -67,7 +68,8 @@
       );
     }
     resources = resources; // trigger svelte reactivity
-    if (clockStore === undefined) {
+    if (sim !== undefined && (clockStore === undefined || sim.id !== simId)) {
+      simId = sim.id;
       clockStore = prepareClock(
         sim.globalVirtualTime === Number.NEGATIVE_INFINITY
           ? 0
