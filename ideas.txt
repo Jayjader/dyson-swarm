@@ -1,0 +1,36 @@
+random seed => generate solar system:
+    - star type
+    - number of planets
+    - mass of each planet
+    - distance from sun for planets
+    - ore richness of each planet
+
+
+planet temperature at ground level affects smelting energy cost
+
+make satellite deployment time "realistic" / depend on launcher distance to target orbit
++ allow creating lasers to push satellites into their orbit?
+=> can give reason for gas planets to exist (I think powerful lasers use excited gaz) (though we could just have rocky planets have atmospheres)
++ make this a mod / content pack / config option
+
+
+
+"unlock" sim time by progressing through tutorial/objectives:
+  - each parallel sim consumes ticks? going back in time to change something forks into a parallel timeline, maybe by default? (<- user setting would be preferable)
+  - could determine how many ticks can be kept in memory as well? might just not be fun
+
+
+data needed to save/load/clone a timeline:
+ - *!*recorded player commands*!*
+ - snapshots, events? every T ticks before and after a player command
+ - construct fabrication. well, maybe instead we need satellite launches and constructed count changes
+
+
+2+ simulations UI:
+ - part of the ui should visualize the existing timelines:
+   - shared parts of timelines should be clearly delineated as such
+   - the player should be able to "select" 1+ timelines.
+   - distinguish where each timeline has been "fully" simulated? (instead of stripped to the minimum data needed for persistence&recreation)
+ - part of the ui should visualize the "selected" timeline(s):
+   - graph events, snapshots, commands?
+   - might need to restrict max number of points drawn
